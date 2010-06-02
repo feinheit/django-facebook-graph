@@ -1,0 +1,3 @@
+[submodule "python-sdk"]
+	path = python-sdk
+	url = git://github.com/facebook/python-sdk.git

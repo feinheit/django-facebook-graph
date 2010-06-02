@@ -1,0 +1,9 @@
+*.pyc
+*~
+.*.swp
+\#*#
+*.mo
+.settings
+.project
+.pydevproject
+.hg
