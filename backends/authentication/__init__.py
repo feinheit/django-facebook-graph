@@ -3,6 +3,8 @@ import hashlib
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 
+from django.template.defaultfilters import slugify
+
 import facebook
 from facebook.models import FacebookUser
 
@@ -21,7 +23,7 @@ class AuthenticationBackend:
             user = facebook_user.user
         except ObjectDoesNotExist:
             facebook_user = FacebookUser(id=uid, profile_url=profile["link"], access_token=access_token)
-            user, created = User.objects.get_or_create(username=profile["name"], email=profile["email"], password=hashlib.md5(uid).hexdigest())
+            user, created = User.objects.get_or_create(username=slugify(profile["name"]), email=profile["email"], password=hashlib.md5(uid).hexdigest())
             facebook_user.user = user
             facebook_user.save()
         
