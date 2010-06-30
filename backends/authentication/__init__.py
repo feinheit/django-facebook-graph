@@ -22,8 +22,16 @@ class AuthenticationBackend:
             facebook_user.save()
             user = facebook_user.user
         except ObjectDoesNotExist:
-            facebook_user = FacebookUser(id=uid, profile_url=profile["link"], access_token=access_token)
-            user, created = User.objects.get_or_create(username=slugify(profile["name"]), email=profile["email"], password=hashlib.md5(uid).hexdigest())
+            facebook_user = FacebookUser(id=uid, 
+                                         profile_url=profile["link"], 
+                                         access_token=access_token)
+            user, c = User.objects.get_or_create(
+                                username=slugify(profile["name"]),
+                                email=profile["email"], 
+                                password=hashlib.md5(uid).hexdigest())
+            user.first_name = profile['first_name']
+            user.last_name = profile['last_name']
+            user.save()
             facebook_user.user = user
             facebook_user.save()
         

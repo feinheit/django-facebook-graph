@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import *
 
-from views import login, logout
+from views import login, logout, connect
 
 urlpatterns = patterns('',
                        url(r'^login/$', 
@@ -11,5 +11,8 @@ urlpatterns = patterns('',
                            logout,
                            {'template_name': 'registration/logout.html'},
                            name='auth_logout'),
-                       (r'', include('registration.auth_urls')),
+                       url(r'^connect/$',
+                           connect, {},
+                           name='fb_connect'),
+                       (r'', include('registration.backends.default.urls')),
                        )
