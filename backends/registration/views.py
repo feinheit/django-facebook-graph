@@ -103,8 +103,6 @@ def connect(request, redirect_field_name=REDIRECT_FIELD_NAME):
                         'registration/facebook/user_exists.html', ctx,
                         context_instance=RequestContext(request))
         except FacebookUser.DoesNotExist:
-            print 'create'
-            
             fb_user = FacebookUser(id=cookie['uid'], 
                                    user=request.user,
                                    profile_url=profile["link"],
@@ -122,4 +120,3 @@ def connect(request, redirect_field_name=REDIRECT_FIELD_NAME):
         # there is no facebook graph cookie and the user is not logged in
         # -> redirect to login page
         return HttpResponseRedirect(reverse('auth_login'))
-    
