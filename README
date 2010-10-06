@@ -7,3 +7,13 @@ tested apps:
 please read the code. we will update documentation soon.
 
 makes use of the original facebook graph python library via submodule : http://github.com/facebook/python-sdk/ (symlinked to __init__.py)
+
+
+
+Simple usage of Facebook Auth:
+==============================
+
+ * add 'facebook' to your INSTALLED_APPS. it will create a table where to store all connected facebook users.
+ * add 'facebook.backends.authentication.AuthenticationBackend' to AUTHENTICATION_BACKENDS
+ * add url(r'^accounts/', include('facebook.backends.registration.urls')) to your urls
+ * now you can insert the facebook button: <fb:login-button perms="email" onlogin="window.location.href='{% url auth_login %}?next={{ request.get_full_path }}'"></fb:login-button> 

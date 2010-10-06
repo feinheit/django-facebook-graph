@@ -17,8 +17,6 @@ from django.http import HttpResponseRedirect
 import facebook
 from facebook.models import FacebookUser
 
-from registration import signals
-
 @csrf_protect
 @never_cache
 def login(request, template_name='registration/login.html',
@@ -48,9 +46,12 @@ def login(request, template_name='registration/login.html',
             new_user = authenticate(uid=cookie["uid"], 
                                     access_token=cookie["access_token"])
             auth_login(request, new_user)
-            signals.user_registered.send(sender='facebook_login',
-                                     user=new_user,
-                                     request=request)
+            
+            if 'registration' in settings.INSTALLED_APPS:
+                from registration import signals
+                signals.user_registered.send(sender='facebook_login',
+                                         user=new_user,
+                                         request=request)
 
         return HttpResponseRedirect(redirect_to)
     else:
