@@ -51,7 +51,7 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
                                          response["error"]["message"])
         else:
             raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned json (%s), expected access_token' % response)
-    except simplejson.JSONDecodeError:
+    except:
         # if the response ist not json, it is 
         access_token = raw.split('=')[1]
     finally:
