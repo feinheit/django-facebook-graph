@@ -7,7 +7,32 @@ from django.db import models
 from fields import JSONField
 from utils import get_graph
 
-class FacebookUser(models.Model):
+class Base(models.Model):
+    class Meta:
+        abstract = True
+        
+    def refresh(self, save=True):
+        graph = get_graph()
+        response = graph.request(str(self.id))
+        
+        if response:
+            self._graph = response
+            for prop, (val) in response.items():
+                if hasattr(self, '_%s' % prop):
+                    setattr(self, '_%s' % prop, val)
+        else:
+            logger.debug('graph not retrieved', extra=response)
+        
+        if save: 
+            self.save(refresh=False)
+        return self
+    
+    def save(self, refresh=True, *args, **kwargs):
+        if refresh:
+            self.refresh()
+        super(Base, self).save(*args, **kwargs)
+
+class FacebookUser(Base):
     id = models.BigIntegerField(primary_key=True, unique=True)
     access_token = models.CharField(max_length=250, blank=True)
     user = models.OneToOneField(User, blank=True, null=True)
@@ -35,24 +60,3 @@ class FacebookUser(models.Model):
     
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
-    
-    def refresh(self, save=True):
-        graph = get_graph()
-        response = graph.request(str(self.id))
-        
-        if response:
-            self._graph = response
-            for prop, (val) in response.items():
-                if hasattr(self, '_%s' % prop):
-                    setattr(self, '_%s' % prop, val)
-        else:
-            logger.debug('graph not retrieved', extra=response)
-        
-        if save: 
-            self.save(refresh=False)
-        return self
-    
-    def save(self, refresh=True, *args, **kwargs):
-        if refresh:
-            self.refresh()
-        super(FacebookUser, self).save(*args, **kwargs)
