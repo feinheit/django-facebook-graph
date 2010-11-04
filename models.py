@@ -11,7 +11,7 @@ class Base(models.Model):
     class Meta:
         abstract = True
         
-    def refresh(self, save=True):
+    def refresh(self, save=True, *args, **kwargs):
         graph = get_graph()
         response = graph.request(str(self.id))
         
@@ -24,13 +24,14 @@ class Base(models.Model):
             logger.debug('graph not retrieved', extra=response)
         
         if save: 
-            self.save(refresh=False)
+            super(Base, self).save(*args, **kwargs)
         return self
     
     def save(self, refresh=True, *args, **kwargs):
         if refresh:
-            self.refresh()
-        super(Base, self).save(*args, **kwargs)
+            self.refresh(*args, **kwargs)
+        else:
+            super(Base, self).save(*args, **kwargs)
 
 class FacebookUser(Base):
     id = models.BigIntegerField(primary_key=True, unique=True)
