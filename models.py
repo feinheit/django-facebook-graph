@@ -8,11 +8,21 @@ from fields import JSONField
 from utils import get_graph
 
 class Base(models.Model):
+    """ Last Lookup JSON """
+    _graph = JSONField(blank=True, null=True)
+    
+    @property
+    def graph(self):
+        return self._graph
+    
     class Meta:
         abstract = True
         
-    def refresh(self, save=True, *args, **kwargs):
-        graph = get_graph()
+    def refresh(self, save=True, request=None, access_token=None, \
+             client_secret=None, client_id=None, *args, **kwargs):
+        
+        graph = get_graph(request=request, access_token=access_token, \
+                          client_secret=client_secret, client_id=client_id)
         response = graph.request(str(self.id))
         
         if response:
@@ -27,9 +37,12 @@ class Base(models.Model):
             super(Base, self).save(*args, **kwargs)
         return self
     
-    def save(self, refresh=True, *args, **kwargs):
+    def save(self, refresh=True, request=None, access_token=None, \
+             client_secret=None, client_id=None, *args, **kwargs):
         if refresh:
-            self.refresh(*args, **kwargs)
+            self.refresh(request=request, access_token=access_token, \
+                        client_secret=client_secret, client_id=client_id, \
+                        *args, **kwargs)
         else:
             super(Base, self).save(*args, **kwargs)
 
@@ -48,13 +61,6 @@ class FacebookUser(Base):
     _location = models.CharField(max_length=70, blank=True, null=True)
     _gender = models.CharField(max_length=10, blank=True, null=True)
     _locale = models.CharField(max_length=6, blank=True, null=True)
-    
-    """ Last Lookup JSON """
-    _graph = JSONField(blank=True, null=True)
-    
-    @property
-    def graph(self):
-        return self._graph
     
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

@@ -18,6 +18,7 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
     
     """
     
+    # if no application is specified, get default from settings
     if not client_secret: client_secret = settings.FACEBOOK_APP_SECRET
     if not client_id: client_id = settings.FACEBOOK_APP_ID
     
@@ -38,6 +39,7 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
         else:
             logger.debug('could not get graph via cookie. cookies: %s' % request.COOKIES)
     
+    # get token by application
     file = urllib.urlopen('https://graph.facebook.com/oauth/access_token?%s' 
                           % urllib.urlencode({'type' : 'client_cred',
                                               'client_secret' : client_secret,
@@ -59,7 +61,7 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
     
     graph = facebook.GraphAPI(access_token)
     graph.via = 'application'
-    logger.debug('got graph via application. access_token: %s' % graph.access_token) 
+    logger.debug('got graph via application: %s. access_token: %s' %(client_id, graph.access_token)) 
     return graph
     
 
