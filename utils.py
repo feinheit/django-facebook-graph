@@ -33,6 +33,7 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
         
         if cookie != None:
             graph = facebook.GraphAPI(cookie["access_token"])
+            graph.user = cookie['uid']
             graph.via = 'cookie'
             logger.debug('got graph via cookie. access_token: %s' % graph.access_token) 
             return graph
