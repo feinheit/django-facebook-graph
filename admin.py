@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from models import User
+from models import User, Photo
 
 class UserAdmin(admin.ModelAdmin):
     list_display = ('id', 'profile_link', 'access_token', 'user', '_name', 'created', 'updated',)
@@ -17,3 +17,8 @@ class UserAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.get_from_facebook(save=True)
 admin.site.register(User, UserAdmin)
+
+
+class PhotoAdmin(admin.ModelAdmin):
+    readonly_fields = ('fb_id', '_name', '_likes', '_graph')
+admin.site.register(Photo, PhotoAdmin)

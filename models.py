@@ -98,3 +98,19 @@ class User(Base):
                 self.friends.add(friend)
         self.save()
         return friends
+
+class Photo(Base):
+    fb_id = models.BigIntegerField(unique=True, null=True, blank=True)
+    image = models.ImageField(upload_to='uploads/')
+    
+    _name = models.CharField(max_length=100, blank=True, null=True)
+    _likes = models.ManyToManyField(User)
+    
+    def send_to_facebook(self, save=False, request=None, access_token=None, \
+             client_secret=None, client_id=None):
+        
+        graph = get_graph(request=request, access_token=access_token, \
+                          client_secret=client_secret, client_id=client_id)
+        
+        response = graph.put_object('159457810754902', 'photos', source=self.image, message='asdf')
+        logger.debug('response', extra=response)
