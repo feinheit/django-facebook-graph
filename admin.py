@@ -20,5 +20,9 @@ admin.site.register(User, UserAdmin)
 
 
 class PhotoAdmin(admin.ModelAdmin):
-    readonly_fields = ('fb_id', '_name', '_likes', '_graph')
+    list_display = ('_id', '_name', 'like_count', '_from_id')
+    readonly_fields = ('fb_id', '_name', '_likes', '_graph', '_from_id', '_like_count')
+    
+    def save_model(self, request, obj, form, change):
+        obj.get_from_facebook(save=True)
 admin.site.register(Photo, PhotoAdmin)

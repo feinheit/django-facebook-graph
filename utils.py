@@ -1,8 +1,14 @@
 import logging
 logger = logging.getLogger(__name__)
 
-import facebook
+import itertools
+import mimetools
+import mimetypes
+
 import urllib
+import urllib2
+
+import facebook
 
 from django.conf import settings
 from django.utils import simplejson
@@ -69,3 +75,96 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
     return graph
     
 
+def post_image(access_token, image, message, object='me'):
+    form = MultiPartForm()
+    form.add_field('access_token', access_token)
+    form.add_field('message', '')
+    form.add_file('image', 'image.jpg', image)
+    
+    request = urllib2.Request('https://graph.facebook.com/%s/photos' % object)
+    logger.debug('posting photo to: https://graph.facebook.com/%s/photos %s' % (object, image))
+    #request.add_header('User-agent', 'Chef de cuisine - FB App')
+    body = str(form)
+    request.add_header('Content-type', form.get_content_type())
+    request.add_header('Content-length', len(body))
+    request.add_data(body)
+    
+    raw = urllib2.urlopen(request).read()
+    logger.debug('facebook response raw: %s' % raw)
+    
+    try:
+        response = _parse_json(raw)
+    except:
+        raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected json' % response)
+            
+    """ in some cases, response is not an object """
+    if response:
+        if response.get("error"):
+            raise GraphAPIError(response["error"]["type"],
+                                response["error"]["message"])
+    return response
+
+    
+# from http://www.doughellmann.com/PyMOTW/urllib2/
+class MultiPartForm(object):
+    """Accumulate the data to be used when posting a form."""
+
+    def __init__(self):
+        self.form_fields = []
+        self.files = []
+        self.boundary = mimetools.choose_boundary()
+        return
+    
+    def get_content_type(self):
+        return 'multipart/form-data; boundary=%s' % self.boundary
+
+    def add_field(self, name, value):
+        """Add a simple field to the form data."""
+        self.form_fields.append((name, value))
+        return
+
+    def add_file(self, fieldname, filename, fileHandle, mimetype=None):
+        """Add a file to be uploaded."""
+        body = fileHandle.read()
+        if mimetype is None:
+            mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        self.files.append((fieldname, filename, mimetype, body))
+        return
+    
+    def __str__(self):
+        """Return a string representing the form data, including attached files."""
+        # Build a list of lists, each containing "lines" of the
+        # request.  Each part is separated by a boundary string.
+        # Once the list is built, return a string where each
+        # line is separated by '\r\n'.  
+        parts = []
+        part_boundary = '--' + self.boundary
+        
+        # Add the form fields
+        parts.extend(
+            [ part_boundary,
+              'Content-Disposition: form-data; name="%s"' % name,
+              '',
+              value,
+            ]
+            for name, value in self.form_fields
+            )
+        
+        # Add the files to upload
+        parts.extend(
+            [ part_boundary,
+              'Content-Disposition: file; name="%s"; filename="%s"' % \
+                 (field_name, filename),
+              'Content-Type: %s' % content_type,
+              '',
+              body,
+            ]
+            for field_name, filename, content_type, body in self.files
+            )
+        
+        # Flatten the list and add closing boundary marker,
+        # then return CR+LF separated data
+        flattened = list(itertools.chain(*parts))
+        flattened.append('--' + self.boundary + '--')
+        flattened.append('')
+        return '\r\n'.join(flattened)
