@@ -12,8 +12,23 @@ import facebook
 
 from django.conf import settings
 from django.utils import simplejson
+from django.utils.http import urlquote
 
 _parse_json = lambda s: simplejson.loads(s)
+
+def get_FQL(fql):
+    query = 'https://api.facebook.com/method/fql.query?format=json&query=%s' % urlquote(fql)
+    file = urllib.urlopen(query)
+    raw = file.read()
+    
+    logger.debug('facebook FQL response raw: %s, query: %s, FQL: %s' % (raw, query, fql))
+    
+    try:
+        response = _parse_json(raw)
+    finally:
+        file.close()
+    
+    return response
 
 def get_graph(request=None, access_token=None, client_secret=None, client_id=None):
     """ Tries to get a facebook graph by different methods.
