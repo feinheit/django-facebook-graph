@@ -113,7 +113,11 @@ class User(Base):
     @property
     def _id(self):
         """ the facebook object id for inherited functions """
-        return self.id 
+        return self.id
+    
+    @property
+    def name(self):
+        return self._name 
     
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
