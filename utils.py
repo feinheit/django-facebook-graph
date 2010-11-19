@@ -93,7 +93,7 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
 def post_image(access_token, image, message, object='me'):
     form = MultiPartForm()
     form.add_field('access_token', access_token)
-    form.add_field('message', '')
+    form.add_field('message', message)
     form.add_file('image', 'image.jpg', image)
     
     request = urllib2.Request('https://graph.facebook.com/%s/photos' % object)

@@ -146,7 +146,7 @@ class User(Base):
 class Photo(Base):
     fb_id = models.BigIntegerField(unique=True, null=True, blank=True)
     image = models.ImageField(upload_to='uploads/')
-
+    
     _name = models.CharField(max_length=100, blank=True, null=True)
     _likes = models.ManyToManyField(User, related_name='photo_likes')
     _like_count = models.PositiveIntegerField(blank=True, null=True)
@@ -172,12 +172,12 @@ class Photo(Base):
         return self._from_id
     
     def send_to_facebook(self, object='me', save=False, request=None, access_token=None, \
-             client_secret=None, client_id=None):
+             client_secret=None, client_id=None, message=''):
         
         graph = get_graph(request=request, access_token=access_token, \
                           client_secret=client_secret, client_id=client_id)
         
-        response = post_image(graph.access_token, self.image.file, self._name, object=object)
+        response = post_image(graph.access_token, self.image.file, message, object=object)
         
         if save:
             self.fb_id = response['id']
