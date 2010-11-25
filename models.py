@@ -117,7 +117,11 @@ class User(Base):
     
     @property
     def name(self):
-        return self._name 
+        return self._name
+    
+    @property
+    def gender(self):
+        return self._gender
     
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
