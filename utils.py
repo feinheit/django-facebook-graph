@@ -1,6 +1,9 @@
 import logging
 logger = logging.getLogger(__name__)
 
+import base64
+import hashlib
+import hmac
 import itertools
 import mimetools
 import mimetypes
@@ -15,6 +18,30 @@ from django.utils import simplejson
 from django.utils.http import urlquote
 
 _parse_json = lambda s: simplejson.loads(s)
+
+def base64_url_decode(s):
+    return base64.urlsafe_b64decode(s.encode("utf-8") + '=' * (4 - len(s) % 4))
+
+def parseSignedRequest(signed_request, secret=None):
+    """
+    adapted from from http://web-phpproxy.appspot.com/687474703A2F2F7061737469652E6F72672F31303536363332
+    """
+    
+    if not secret: secret = settings.FACEBOOK_APP_SECRET
+    
+    (encoded_sig, payload) = signed_request.split(".", 2)
+
+    sig = base64_url_decode(encoded_sig)
+    data = simplejson.loads(base64_url_decode(payload))
+
+    if data.get("algorithm").upper() != "HMAC-SHA256":
+        return {}
+
+    expected_sig = hmac.new(secret, msg=payload, digestmod=hashlib.sha256).digest()
+    if sig != expected_sig:
+        return {}
+
+    return data
 
 def get_FQL(fql):
     query = 'https://api.facebook.com/method/fql.query?format=json&query=%s' % urlquote(fql)
@@ -53,13 +80,29 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
         cookie = facebook.get_user_from_cookie(request.COOKIES, client_id, client_secret)
         
         if cookie != None:
-            graph = facebook.GraphAPI(cookie["access_token"])
-            graph.user = cookie['uid']
-            graph.via = 'cookie'
-            logger.debug('got graph via cookie. access_token: %s' % graph.access_token) 
-            return graph
+            try:
+                graph = facebook.GraphAPI(cookie["access_token"])
+                graph.user = cookie['uid']
+                graph.via = 'cookie'
+                response = graph.request('me')
+                logger.debug('got graph via cookie. access_token: %s' % graph.access_token) 
+                return graph
+            except facebook.GraphAPIError, e:
+                logger.debug('could not use the accesstoken from cookie: %s' % e.message)
         else:
             logger.debug('could not get graph via cookie. cookies: %s' % request.COOKIES)
+        
+        if request.session.get('facebook', None):
+            if request.session['facebook'].get('access_token', None):
+                try:
+                    graph = facebook.GraphAPI(request.session['facebook']['access_token'])
+                    graph.via = 'session'
+                    response = graph.request('me')
+                    graph.user = response['id']
+                    logger.debug('got graph via session. access_token: %s' % graph.access_token)
+                    return graph
+                except facebook.GraphAPIError, e:
+                    logger.debug('could not use the accesstoken from session: %s' % e.message)
     
     # get token by application
     file = urllib.urlopen('https://graph.facebook.com/oauth/access_token?%s' 
