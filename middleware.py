@@ -19,7 +19,7 @@ class OAuth2ForCanvasMiddleware(object):
         
         if request.GET.get('signed_request', None):
             facebook['signed_request'] = parseSignedRequest(request.GET['signed_request'])
-            logger.debug('got signed_request from facebook: %s' % request.session['facebook'])
+            logger.debug('got signed_request from facebook: %s' % facebook['signed_request'])
             
             if facebook['signed_request'].get('oauth_token', None):
                 facebook['access_token'] = facebook['signed_request']['oauth_token']
