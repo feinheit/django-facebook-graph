@@ -71,10 +71,15 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
     if not client_id: client_id = settings.FACEBOOK_APP_ID
     
     if access_token:
+        try:
             graph = facebook.GraphAPI(access_token)
             graph.via = 'access_token'
+            response = graph.request('me')
+            graph.user = response['id']
             logger.debug('got graph via access_token: %s' % graph.access_token)
             return graph
+        except facebook.GraphAPIError, e:
+            logger.debug('could not use the accesstoken: %s' % e.message)
     
     if request:
         cookie = facebook.get_user_from_cookie(request.COOKIES, client_id, client_secret)
@@ -203,7 +208,7 @@ class MultiPartForm(object):
             [ part_boundary,
               'Content-Disposition: form-data; name="%s"' % name,
               '',
-              value,
+              str(value),
             ]
             for name, value in self.form_fields
             )
@@ -215,7 +220,7 @@ class MultiPartForm(object):
                  (field_name, filename),
               'Content-Type: %s' % content_type,
               '',
-              body,
+              str(body)
             ]
             for field_name, filename, content_type, body in self.files
             )
