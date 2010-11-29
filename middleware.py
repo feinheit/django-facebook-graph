@@ -5,7 +5,9 @@ import cgi
 import urllib
 
 from django.conf import settings
-from django.utils import simplejson as json
+from django.utils import simplejson
+
+_parse_json = lambda s: simplejson.loads(s)
 
 from utils import parseSignedRequest
 
@@ -17,14 +19,14 @@ class OAuth2ForCanvasMiddleware(object):
         """
         facebook = request.session.get('facebook', dict())
         
-        if request.GET.get('signed_request', None):
+        if request.REQUEST.get('signed_request', None):
             facebook['signed_request'] = parseSignedRequest(request.GET['signed_request'])
             logger.debug('got signed_request from facebook: %s' % facebook['signed_request'])
             
             if facebook['signed_request'].get('oauth_token', None):
                 facebook['access_token'] = facebook['signed_request']['oauth_token']
         
-        if request.GET.get('code', None):
+        if request.REQUEST.get('code', None):
             args = dict(client_id=settings.FACEBOOK_APP_ID,
                         client_secret=settings.FACEBOOK_APP_SECRET,
                         code=request.GET['code'],
@@ -41,7 +43,11 @@ class OAuth2ForCanvasMiddleware(object):
                 facebook['access_token'] = parsed["access_token"][-1]
                 logger.debug('got access_token from facebook callback: %s' % facebook['access_token'])
             else:
-                logger.debug('facebook did not respond an accesstoken: %s' % raw)
-            
+                logger.warning('facebook did not respond an accesstoken: %s' % raw)
+        
+        if request.REQUEST.get('session'):
+            session = _parse_json(request.REQUEST['session'])
+            facebook['access_token'] = session.get('access_token')
+            logger.debug('got access_token from session: %s' % request.REQUEST['session'])
         
         request.session['facebook'] = facebook
