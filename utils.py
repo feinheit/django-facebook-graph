@@ -43,6 +43,22 @@ def parseSignedRequest(signed_request, secret=None):
 
     return data
 
+def get_REST(method, params):
+    query = 'https://api.facebook.com/method/%s?format=json&%s' % (method, urllib.urlencode(params))
+    file = urllib.urlopen(query)
+    raw = file.read()
+    
+    logger.debug('facebook REST response raw: %s, query: %s' % (raw, query))
+    
+    try:
+        response = _parse_json(raw)
+    except:
+        response = {'response' : raw }
+    finally:
+        file.close()
+    
+    return response
+
 def get_FQL(fql):
     query = 'https://api.facebook.com/method/fql.query?format=json&query=%s' % urlquote(fql)
     file = urllib.urlopen(query)
