@@ -60,8 +60,8 @@ def get_REST(method, params):
     return response
 
 def get_FQL(fql):
-    query = 'https://api.facebook.com/method/fql.query?format=json&query=%s' % urlquote(fql)
-    file = urllib.urlopen(query)
+    query = 'https://api.facebook.com/method/fql.query?format=json'
+    file = urllib.urlopen(query, urllib.urlencode({'query' : fql}))
     raw = file.read()
     
     logger.debug('facebook FQL response raw: %s, query: %s, FQL: %s' % (raw, query, fql))
