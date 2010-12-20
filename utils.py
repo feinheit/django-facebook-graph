@@ -90,8 +90,8 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
         try:
             graph = facebook.GraphAPI(access_token)
             graph.via = 'access_token'
-            response = graph.request('me')
-            graph.user = response['id']
+            graph.me = graph.request('me')
+            graph.user = graph.me['id']
             logger.debug('got graph via access_token: %s' % graph.access_token)
             return graph
         except facebook.GraphAPIError, e:
@@ -105,7 +105,7 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
                 graph = facebook.GraphAPI(cookie["access_token"])
                 graph.user = cookie['uid']
                 graph.via = 'cookie'
-                response = graph.request('me')
+                graph.me = graph.request('me')
                 logger.debug('got graph via cookie. access_token: %s' % graph.access_token) 
                 return graph
             except facebook.GraphAPIError, e:
@@ -118,8 +118,8 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
                 try:
                     graph = facebook.GraphAPI(request.session['facebook']['access_token'])
                     graph.via = 'session'
-                    response = graph.request('me')
-                    graph.user = response['id']
+                    graph.me = graph.request('me')
+                    graph.user = graph.me['id']
                     logger.debug('got graph via session. access_token: %s' % graph.access_token)
                     return graph
                 except facebook.GraphAPIError, e:
