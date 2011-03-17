@@ -1,22 +1,21 @@
 import logging
 logger = logging.getLogger(__name__)
 
-<<<<<<< HEAD
-from django import forms
-from django.contrib.auth.models import User
-from django.core.serializers.json import DjangoJSONEncoder
-=======
 from datetime import datetime
 
-from django.contrib.auth.models import User as DjangoUser
->>>>>>> e326d935d2e4d5d921add8a11a57371c8c7265ad
+from django import forms
 from django.db import models
+from django.db import transaction
+from django.contrib.auth.models import User as DjangoUser
+from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import simplejson as json
 from django.utils.translation import ugettext_lazy as _
 
+from facebook import GraphAPIError
 
 from fields import JSONField
-from utils import get_graph
+from utils import get_graph, post_image
+
 
 class Base(models.Model):
     """ Last Lookup JSON """
@@ -37,44 +36,72 @@ class Base(models.Model):
         
         graph = get_graph(request=request, access_token=access_token, \
                           client_secret=client_secret, client_id=client_id)
-        response = graph.request(str(self.id))
-        
-        if response and save:
-            self.save_from_facebook(response)
-        if response:
-            self._graph = json.dumps(response, cls=DjangoJSONEncoder)
-            for prop, (val) in response.items():
-                if hasattr(self, '_%s' % prop):
-                    setattr(self, '_%s' % prop, val)
-            return response
-        else:
-            logger.debug('graph not retrieved', extra=response)
+        try:
+            response = graph.request(str(self._id))
+            if response and save:
+                self.save_from_facebook(response)
+            if response:
+                return response
+        except GraphAPIError:
+            logger.warning('Error in GraphAPI')
+            if save:
+                self.save()
             return None
     
     def save_from_facebook(self, json):
-        self._graph = json
+        self._graph = json.dumps(response, cls=DjangoJSONEncoder)
         for prop, (val) in json.items():
-            if hasattr(self, '_%s' % prop):
+            if prop != 'id' and hasattr(self, '_%s' % prop):
                 setattr(self, '_%s' % prop, val)
+            if prop == 'from' and hasattr(self, '_%s_id' % prop):
+                setattr(self, '_%s_id' % prop, val['id'])
         self.save()
     
-    def clean(self, refresh=True, request=None, access_token=None, \
-             client_secret=None, client_id=None, *args, **kwargs):
-        ''' On save, update timestamps '''
-        if not self.id:
-            self.created = datetime.now()
-        self.updated = datetime.now()
+    def get_connections(self, connection, save=False, request=None, \
+             access_token=None, client_secret=None, client_id=None):
         
-        if self._graph:
-            try:
-                self._graph = json.dumps(json.loads(self._graph), cls=DjangoJSONEncoder)
-            except ValueError:
-                raise forms.ValidationError(_('Invalid JSON Data'))
+        graph = get_graph(request=request, access_token=access_token, \
+                          client_secret=client_secret, client_id=client_id)
         
-        if refresh:
-            self.refresh(request=request, access_token=access_token, \
-                        client_secret=client_secret, client_id=client_id, \
-                        *args, **kwargs)
+        if connection == 'likes':
+            response = graph.request('%s/likes' % self._id)
+        
+        connections = response['data']
+        
+        if save:
+            self.save_connections(connection, connections)
+        return connections
+    
+    @transaction.commit_manually
+    def save_connections(self, connection, connections):
+        if connection == 'likes':
+            """ get all user ids """
+            user_ids = [ str(u[0]) for u in User.objects.all().values_list('id') ]
+            new_users = [liker for liker in connections if liker['id'] not in user_ids]
+            for new_user in new_users:
+                self._likes.create(id=new_user['id'], _name=new_user['name'])
+                
+            likers = [ str(u[0]) for u in self._likes.all().values_list('id') ]
+            new_likers = [liker for liker in connections if liker['id'] not in likers]
+            for new_liker in new_likers:
+                user, created = User.objects.get_or_create(id=new_liker['id'])
+                self._likes.add(user)
+                self.save()
+            transaction.commit()
+    
+        def clean(self, refresh=True, request=None, access_token=None, \
+                client_secret=None, client_id=None, *args, **kwargs):
+           ''' On save, update timestamps '''
+           if not self.id:
+               self.created = datetime.now()
+           self.updated = datetime.now()
+           
+           if self._graph:
+               try:
+                   self._graph = json.dumps(json.loads(self._graph), cls=DjangoJSONEncoder)
+               except ValueError:
+                   raise forms.ValidationError(_('Invalid JSON Data'))
+
 
 class User(Base):
     id = models.BigIntegerField(primary_key=True, unique=True)
@@ -93,6 +120,19 @@ class User(Base):
     _locale = models.CharField(max_length=6, blank=True, null=True)
     
     friends = models.ManyToManyField('self')
+    
+    @property
+    def _id(self):
+        """ the facebook object id for inherited functions """
+        return self.id
+    
+    @property
+    def name(self):
+        return self._name
+    
+    @property
+    def gender(self):
+        return self._gender
     
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
@@ -121,3 +161,44 @@ class User(Base):
                 self.friends.add(friend)
         self.save()
         return friends
+
+class Photo(Base):
+    fb_id = models.BigIntegerField(unique=True, null=True, blank=True)
+    image = models.ImageField(upload_to='uploads/')
+    
+    _name = models.CharField(max_length=100, blank=True, null=True)
+    _likes = models.ManyToManyField(User, related_name='photo_likes')
+    _like_count = models.PositiveIntegerField(blank=True, null=True)
+    _from_id = models.BigIntegerField(null=True, blank=True)
+    
+    @property
+    def _id(self):
+        """ the facebook object id for inherited functions """
+        return self.fb_id
+    
+    @property
+    def like_count(self):
+        self._like_count = self._likes.all().count()
+        self.save()
+        return self._like_count
+    
+    @property
+    def name(self):
+        return self._name
+    
+    @property
+    def from_object(self):
+        return self._from_id
+    
+    def send_to_facebook(self, object='me', save=False, request=None, access_token=None, \
+             client_secret=None, client_id=None, message=''):
+        
+        graph = get_graph(request=request, access_token=access_token, \
+                          client_secret=client_secret, client_id=client_id)
+        
+        response = post_image(graph.access_token, self.image.file, message, object=object)
+        
+        if save:
+            self.fb_id = response['id']
+            self.save()
+        return response['id']
