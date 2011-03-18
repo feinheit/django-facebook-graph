@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify
 
 import facebook
-from facebook.models import FacebookUser
+from facebook.models import User as FacebookUser
 
 class AuthenticationBackend:
     def authenticate(self, uid=None, access_token=None):

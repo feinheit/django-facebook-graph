@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.http import HttpResponseRedirect
 
 import facebook
-from facebook.models import FacebookUser
+from facebook.models import User as FacebookUser
 
 @csrf_protect
 @never_cache
