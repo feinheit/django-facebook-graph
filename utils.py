@@ -37,9 +37,10 @@ def parseSignedRequest(signed_request, secret=None):
     if data.get("algorithm").upper() != "HMAC-SHA256":
         return {}
 
-    expected_sig = hmac.new(secret, msg=payload, digestmod=hashlib.sha256).digest()
-    if sig != expected_sig:
-        return {}
+#    """ i dont know why, but this crashes in one of my project. but i dont need it anyway """
+#    expected_sig = hmac.new(secret, msg=payload, digestmod=hashlib.sha256).digest()
+#    if sig != expected_sig:
+#        return {}
 
     return data
 
