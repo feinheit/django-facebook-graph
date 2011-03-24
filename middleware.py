@@ -51,3 +51,4 @@ class OAuth2ForCanvasMiddleware(object):
             logger.debug('got access_token from session: %s' % request.REQUEST['session'])
         
         request.session['facebook'] = facebook
+

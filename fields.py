@@ -2,8 +2,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 from django import forms
-from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import models
 from django.utils import simplejson as json
 
 class JSONFormField(forms.fields.CharField):
@@ -16,6 +16,7 @@ class JSONFormField(forms.fields.CharField):
                 raise forms.ValidationError("Invalid JSON data!")
 
         return super(JSONFormField, self).clean(value, *args, **kwargs)
+
 
 class JSONField(models.TextField):
     """
