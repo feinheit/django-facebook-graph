@@ -48,9 +48,9 @@ class Base(models.Model):
                 self.save()
             return None
     
-    def save_from_facebook(self, json):
+    def save_from_facebook(self, response):
         self._graph = json.dumps(response, cls=DjangoJSONEncoder)
-        for prop, (val) in json.items():
+        for prop, (val) in response.items():
             if prop != 'id' and hasattr(self, '_%s' % prop):
                 setattr(self, '_%s' % prop, val)
             if prop == 'from' and hasattr(self, '_%s_id' % prop):
