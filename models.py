@@ -30,6 +30,11 @@ class Base(models.Model):
     
     class Meta:
         abstract = True
+    
+    @property
+    def _id(self):
+        """ the facebook object id for inherited functions """
+        return self.id
         
     def get_from_facebook(self, save=False, request=None, access_token=None, \
              client_secret=None, client_id=None):
@@ -122,11 +127,6 @@ class User(Base):
     friends = models.ManyToManyField('self')
     
     @property
-    def _id(self):
-        """ the facebook object id for inherited functions """
-        return self.id
-    
-    @property
     def name(self):
         return self._name
     
@@ -162,6 +162,7 @@ class User(Base):
         self.save()
         return friends
 
+
 class Photo(Base):
     fb_id = models.BigIntegerField(unique=True, null=True, blank=True)
     image = models.ImageField(upload_to='uploads/')
@@ -170,11 +171,6 @@ class Photo(Base):
     _likes = models.ManyToManyField(User, related_name='photo_likes')
     _like_count = models.PositiveIntegerField(blank=True, null=True)
     _from_id = models.BigIntegerField(null=True, blank=True)
-    
-    @property
-    def _id(self):
-        """ the facebook object id for inherited functions """
-        return self.fb_id
     
     @property
     def like_count(self):
@@ -202,3 +198,38 @@ class Photo(Base):
             self.fb_id = response['id']
             self.save()
         return response['id']
+
+
+class Page(Base):
+    id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook page ID'))
+    slug = models.SlugField(unique=True, blank=True, null=True)
+    
+    _name = models.CharField(max_length=255, blank=True, null=True, help_text=_('Cached name of the page'))
+    _picture = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, help_text=_('Cached picture of the page'))
+    _fan_count = models.IntegerField(blank=True, null=True, help_text=_('Cached fancount of the page'))
+    
+    @property
+    def name(self):
+        return self._name
+    
+    @property
+    def picture(self):
+        return self._picture
+    
+    @property
+    def fan_count(self):
+        return self._fan_count
+    
+    def __unicode__(self):
+        return '%s (%s)' % (self._name, self.id)
+    
+    #@models.permalink
+    #def get_absolute_url(self):
+    #    return ('page', (), {'portal' : self.portal.slug, 'page' : self.slug})
+
+
+class Application(Page):
+    """ The Application inherits the Page, because every application has a Page """
+    api_key = models.CharField(max_length=32, help_text=_('The applications API Key'))
+    secret = models.CharField(max_length=32, help_text=_('The applications Secret'))
+    
