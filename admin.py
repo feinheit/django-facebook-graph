@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from models import User, Photo, Page, Application
+from models import User, Photo, Page, Application, Event
 
 class AdminBase(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
@@ -36,3 +36,10 @@ class ApplicationAdmin(AdminBase):
     list_display = ('id', 'slug', 'name', 'picture', 'fan_count','api_key', 'secret')
     readonly_fields = ('_name', '_picture', '_fan_count', '_graph')
 admin.site.register(Application, ApplicationAdmin)
+
+
+class EventAdmin(AdminBase):
+    pass
+    list_display = ('id', '_owner', '_name', '_description', '_start_time', '_end_time', '_location', '_venue', '_privacy')
+    readonly_fields = ('_graph', '_owner', '_name', '_description', '_start_time', '_end_time', '_location', '_venue', '_privacy', '_updated_time')
+admin.site.register(Event, EventAdmin)

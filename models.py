@@ -1,7 +1,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django import forms
 from django.db import models
@@ -19,11 +19,7 @@ from utils import get_graph, post_image
 
 class Base(models.Model):
     """ Last Lookup JSON """
-    _graph = models.TextField(blank=True, null=True)
-    
-    @property
-    def graph(self):
-        return json.loads(self._graph)
+    _graph = JSONField(blank=True, null=True)
     
     created = models.DateTimeField(editable=False, default=datetime.now)
     updated = models.DateTimeField(editable=False, default=datetime.now)
@@ -56,8 +52,14 @@ class Base(models.Model):
     def save_from_facebook(self, response):
         self._graph = json.dumps(response, cls=DjangoJSONEncoder)
         for prop, (val) in response.items():
-            if prop != 'id' and hasattr(self, '_%s' % prop):
-                setattr(self, '_%s' % prop, val)
+            field = '_%s' % prop
+            if prop != 'id' and hasattr(self, field):
+                if isinstance(self._meta.get_field(field), models.DateTimeField):
+                    # reading the facebook datetime string. assuming where in MET Timezone
+                    # TODO: work with real timezones
+                    setattr(self, field, datetime.strptime(val[:-5], "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7) )
+                else:
+                    setattr(self, field, val)
             if prop == 'from' and hasattr(self, '_%s_id' % prop):
                 setattr(self, '_%s_id' % prop, val['id'])
         self.save()
@@ -106,6 +108,14 @@ class Base(models.Model):
                    self._graph = json.dumps(json.loads(self._graph), cls=DjangoJSONEncoder)
                except ValueError:
                    raise forms.ValidationError(_('Invalid JSON Data'))
+    
+    """
+    def __getattr__(self, name):
+        if hasattr(self, '_%s' % name):
+            return getattr(self, '_%s' % name)
+        else:
+            raise AttributeError('%s nor _%s are defined' % (name, name))
+    """
 
 
 class User(Base):
@@ -125,14 +135,6 @@ class User(Base):
     _locale = models.CharField(max_length=6, blank=True, null=True)
     
     friends = models.ManyToManyField('self')
-    
-    @property
-    def name(self):
-        return self._name
-    
-    @property
-    def gender(self):
-        return self._gender
     
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
@@ -232,4 +234,18 @@ class Application(Page):
     """ The Application inherits the Page, because every application has a Page """
     api_key = models.CharField(max_length=32, help_text=_('The applications API Key'))
     secret = models.CharField(max_length=32, help_text=_('The applications Secret'))
+
+
+class Event(Base):
+    id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook event ID'))
     
+    _owner = JSONField(blank=True, null=True)
+    _name = models.CharField(max_length=200, blank=True, null=True)
+    _description = models.TextField(blank=True, null=True)
+    _start_time = models.DateTimeField(blank=True, null=True)
+    _end_time = models.DateTimeField(blank=True, null=True)
+    _location = models.CharField(max_length=200, blank=True, null=True)
+    _venue = JSONField(blank=True, null=True)
+    _privacy = models.CharField(max_length=10, blank=True, null=True, choices=(('OPEN', 'OPEN'), ('CLOSED', 'CLOSED'), ('SECRET', 'SECRET')))
+    _updated_time = models.DateTimeField(blank=True, null=True)
+
