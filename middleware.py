@@ -54,6 +54,7 @@ class OAuth2ForCanvasMiddleware(object):
             
             if parsed.get('access_token', None):
                 facebook['access_token'] = parsed["access_token"][-1]
+                request.session.modified = True
                 logger.debug('got access_token from facebook callback: %s' % facebook['access_token'])
             else:
                 logger.warning('facebook did not respond an accesstoken: %s' % raw)
