@@ -15,7 +15,7 @@ from utils import parseSignedRequest
 class OAuth2ForCanvasMiddleware(object):
     def process_request(self, request):
         """
-        Writes in the Session the signed_request
+        Writes the signed_request into the Session 
         """
         facebook = request.session.get('facebook', dict())
         
