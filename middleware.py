@@ -18,15 +18,28 @@ class OAuth2ForCanvasMiddleware(object):
         Writes the signed_request into the Session 
         """
         facebook = request.session.get('facebook', dict())
+        app_secret = settings.FACEBOOK_APP_SECRET
+        application = None
         
-        if request.REQUEST.get('signed_request', None):
-            facebook['signed_request'] = parseSignedRequest(request.REQUEST['signed_request'])
+        # if feincms is installed, try to get the application from the page
+        try:
+            from facebook.feincms.utils import get_application_from_request
+            application = get_application_from_request(request)
+            if application:
+                app_secret = application.secret
+        except ImportError:
+            logger.debug('FeinCMS not installed')
+        
+        # default POST/GET request from facebook with a signed request
+        if 'signed_request' in request.REQUEST:
+            facebook['signed_request'] = parseSignedRequest(request.REQUEST['signed_request'], app_secret)
             logger.debug('got signed_request from facebook: %s' % facebook['signed_request'])
             
             if facebook['signed_request'].get('oauth_token', None):
                 facebook['access_token'] = facebook['signed_request']['oauth_token']
         
-        if request.REQUEST.get('code', None):
+        # auth via callback from facebook
+        if 'code' in request.REQUEST:
             args = dict(client_id=settings.FACEBOOK_APP_ID,
                         client_secret=settings.FACEBOOK_APP_SECRET,
                         code=request.GET['code'],
@@ -45,7 +58,8 @@ class OAuth2ForCanvasMiddleware(object):
             else:
                 logger.warning('facebook did not respond an accesstoken: %s' % raw)
         
-        if request.REQUEST.get('session'):
+        # old (?) method where facebook serves the accestoken unencrypted in 'session' parameter
+        if 'session' in request.REQUEST:
             session = _parse_json(request.REQUEST['session'])
             facebook['access_token'] = session.get('access_token')
             logger.debug('got access_token from session: %s' % request.REQUEST['session'])
