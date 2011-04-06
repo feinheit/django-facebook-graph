@@ -30,13 +30,13 @@ admin.site.register(Photo, PhotoAdmin)
 
 class PageAdmin(AdminBase):
     list_display = ('id', 'slug', 'name', 'picture', 'fan_count')
-    readonly_fields = ('_name', '_picture', '_fan_count', '_graph')
+    readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link')
 admin.site.register(Page, PageAdmin)
 
 
 class ApplicationAdmin(AdminBase):
     list_display = ('id', 'slug', 'name', 'picture', 'fan_count','api_key', 'secret')
-    readonly_fields = ('_name', '_picture', '_fan_count', '_graph')
+    readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link')
 admin.site.register(Application, ApplicationAdmin)
 
 

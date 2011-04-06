@@ -122,11 +122,12 @@ class Base(models.Model):
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
 
-    def __getattr__(self, name):
-        """ the cached fields (starting with "_") should be accessible by get-method """
-        if hasattr(self, '_%s' % name):
-            return getattr(self, '_%s' % name)
-        return super(Base, self).__getattr_(name)
+# it crashes my python instance on mac os x without proper error message, so may we shoudn't use that handy shortcut
+#    def __getattr__(self, name):
+#        """ the cached fields (starting with "_") should be accessible by get-method """
+#        if hasattr(self, '_%s' % name):
+#            return getattr(self, '_%s' % name)
+#        return super(Base, self).__getattr_(name)
 
 
 class User(Base):
@@ -228,7 +229,7 @@ class Page(Base):
     # Cached Facebook Graph fields for db lookup
     _name = models.CharField(max_length=255, blank=True, null=True, help_text=_('Cached name of the page'))
     _picture = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, help_text=_('Cached picture of the page'))
-    _fan_count = models.IntegerField(blank=True, null=True, help_text=_('Cached fancount of the page'))
+    _likes = models.IntegerField(blank=True, null=True, help_text=_('Cached fancount of the page'))
     _link = models.CharField(max_length=255, blank=True, null=True)
 
     @property
@@ -241,7 +242,7 @@ class Page(Base):
 
     @property
     def fan_count(self):
-        return self._fan_count
+        return self._likes
 
     @property
     def facebook_link(self):
