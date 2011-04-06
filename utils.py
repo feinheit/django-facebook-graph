@@ -74,7 +74,7 @@ def get_FQL(fql):
     
     return response
 
-def get_graph(request=None, access_token=None, client_secret=None, client_id=None):
+def get_graph(request=None, access_token=None, client_secret=None, client_id=None, code=None):
     """ Tries to get a facebook graph by different methods.
     
     * via access_token: that one is simple
@@ -127,10 +127,11 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
                     logger.debug('could not use the accesstoken from session: %s' % e.message)
     
     # get token by application
+    access_dict = {'type' : 'client_cred', 'client_secret' : client_secret, 'client_id' : client_id}
+    if code:
+        access_dict.update({'code': code })
     file = urllib.urlopen('https://graph.facebook.com/oauth/access_token?%s' 
-                          % urllib.urlencode({'type' : 'client_cred',
-                                              'client_secret' : client_secret,
-                                              'client_id' : client_id}))
+                          % urllib.urlencode(access_dict))
     raw = file.read()
     
     try:
@@ -141,9 +142,12 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
         else:
             raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned json (%s), expected access_token' % response)
     except:
-        # if the response ist not json, it is
+        # if the response ist not json, it is the access token. Write it back to the session.
         if raw.find('=') > -1:
             access_token = raw.split('=')[1]
+            cookie = request.session.get('facebook', dict())  
+            cookie['access_token'] = access_token
+            request.session['facebook'] = cookie             
         else:
             raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected access_token' % response)
     finally:
