@@ -1,5 +1,4 @@
-from django.http import HttpResponse
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django.conf import settings
 from facebook.utils import get_graph
 import functools, sys, logging
@@ -81,36 +80,39 @@ def redirect_to_page(view):
         request = args[0]
         # if this is already the callback, do not wrap.
         if getattr(request, 'avoid_redirect', False):
-            del request.avoid_redirect
+            logger.debug('entered calback. View: %s, kwargs: %s' %(view, kwargs))
             return view(*args, **kwargs)
         
         session = request.session.get('facebook', dict())
         try:
             signed_request = session['signed_request']
         except KeyError:
-            logger.info('No signed_request in current session. Returning View.')
+            logger.debug('No signed_request in current session. Returning View.')
             return view(*args, **kwargs)
             
         logger.debug('signed_request: %s' %signed_request)
         
-        app_data = signed_request.get(u'app_data', None)
-        if app_data:
+        if 'app_data' in signed_request:
+            app_data = signed_request['app_data']
+            del request.session['facebook']['signed_request']['app_data']
+            request.session.modified = True
             logger.debug('found app_data url: %s' %app_data)
+            #return HttpResponseRedirect(app_data)
             try:
                 original_view = resolve(app_data)
             except Resolver404:
-                logger.info('Did not find view for %s.' %app_data)
+                logger.debug('Did not find view for %s.' %app_data)
                 url = u'%s?sk=app_%s' % (redirect_url, app_id)
                 return render_to_response('redirecter.html', {'destination': url }, RequestContext(request)) 
                 
             logger.debug('found original view url: %s' %original_view)
-            request.avoid_redirect = True
+            setattr(request, 'avoid_redirect' ,  True)
             # call the view that was originally requested:
-            original_view.func(request, *original_view.args, **original_view.kwargs)
+            return original_view.func(request, *original_view.args, **original_view.kwargs)
         else:
             #check if the app is inside the specified page.
             try:
-                page = int(signed_request['page']['id'])
+                page = signed_request['page']['id']
             except KeyError:
                 page = None
             if page <> page_id and not runserver:

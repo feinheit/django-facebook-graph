@@ -1,7 +1,9 @@
 import logging
+from urllib import urlencode
 logger = logging.getLogger(__name__)
 
 from datetime import datetime, timedelta
+from django.conf import settings
 
 from django import forms
 from django.db import models
@@ -38,6 +40,15 @@ class Base(models.Model):
     @property
     def graph_url(self):
         return 'http://graph.facebook.com/%s' % self._id
+    
+    def get_facebook_url(self):
+        app_id = getattr(settings, 'FACEBOOK_APP_ID', '')
+        path = self.get_absolute_url()
+        if getattr(settings, 'FACEBOOK_REDIRECT_PAGE_URL', False):
+            url = '%s?sk=app_%s&app_data=%s' % (settings.FACEBOOK_REDIRECT_PAGE_URL, app_id, urlencode(path))
+            return url
+        else:
+            return path
 
     def get_from_facebook(self, save=False, request=None, access_token=None, \
              client_secret=None, client_id=None):
