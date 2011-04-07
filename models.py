@@ -73,16 +73,28 @@ class Base(models.Model):
             return None
 
     def save_from_facebook(self, response, update_slug=False):
-        """ update the local model with the response (JSON) from facebook """
+        """ update the local model with the response (JSON) from facebook 
+        big magic in here: it tries to convert the data from facebook in appropriate django fields inclusive foreign keys"""
 
         self._graph = json.dumps(response, cls=DjangoJSONEncoder)
         for prop, (val) in response.items():
             field = '_%s' % prop
             if prop != 'id' and hasattr(self, field):
-                if isinstance(self._meta.get_field(field), models.DateTimeField):
+                fieldclass = self._meta.get_field(field)
+                if isinstance(fieldclass, models.DateTimeField):
                     # reading the facebook datetime string. assuming we're in MET Timezone
                     # TODO: work with real timezones
                     setattr(self, field, datetime.strptime(val[:-5], "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7) )
+                    
+                elif isinstance(self._meta.get_field(field), models.ForeignKey):
+                    # trying to build the ForeignKey and if the foreign Object doesnt exists, create it.
+                    # todo: check if the related model is a facebook model (not sure if there are other possible relations ...) 
+                    related_modelclass = fieldclass.related.parent_model
+                    obj, created = related_modelclass.objects.get_or_create(id=val['id'])
+                    setattr(self, field, obj)
+                    if created:
+                        obj.get_from_facebook(save=True)
+                    
                 else:
                     setattr(self, field, val)
             if prop == 'from' and hasattr(self, '_%s_id' % prop):
@@ -136,9 +148,13 @@ class Base(models.Model):
        self.updated = datetime.now()
 
     def __unicode__(self):
-        return '%s (%s)' % (self._name, self.id)
+        if hasattr(self, '_name'):
+            return '%s (%s)' % (self._name, self.id)
+        else:
+            return str(self.id)
 
 # it crashes my python instance on mac os x without proper error message, so may we shoudn't use that handy shortcut
+# maybe its only, that the admin should'nt use these computed fields
 #    def __getattr__(self, name):
 #        """ the cached fields (starting with "_") should be accessible by get-method """
 #        if hasattr(self, '_%s' % name):
@@ -295,4 +311,18 @@ class Event(Base):
     @property
     def facebook_link(self):
         return 'http://www.facebook.com/event.php?eid=%s' % self.id
+    
+    class Meta:
+        ordering = ('_start_time',)
 
+
+class Request(Base):
+    id = models.BigIntegerField(primary_key=True, unique=True)
+    
+    # Cached Facebook Graph fields for db lookup
+    _application = models.ForeignKey(Application, blank=True, null=True)
+    _to = models.ForeignKey(User, blank=True, null=True, related_name='request_to_set')
+    _from = models.ForeignKey(User, blank=True, null=True, related_name='request_from_set')
+    _data = models.TextField(blank=True, null=True)
+    _message = models.TextField(blank=True, null=True)
+    _created_time = models.DateTimeField(blank=True, null=True)
