@@ -82,6 +82,7 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
     * via application -> make an accesstoken for an application
     
     """
+    # TODO: Catch request timeout
     
     # if no application is specified, get default from settings
     if not client_secret: client_secret = settings.FACEBOOK_APP_SECRET

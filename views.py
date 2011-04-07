@@ -2,9 +2,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseBadRequest
 from django.conf import settings
 from facebook.utils import get_graph
-import functools
-
-import logging
+import functools, sys, logging
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from django.template.defaultfilters import urlencode
@@ -13,6 +11,8 @@ from django.core.urlresolvers import resolve, Resolver404
 logger = logging.getLogger(__name__)
 
 from models import User
+
+runserver = ('runserver' in sys.argv)
 
 def input(request, action):
     """ method to save a graph-object query, that is retrieved client side """
@@ -74,13 +74,14 @@ except AttributeError:
 
 def redirect_to_page(view):   
     """ Decorator that redirects a canvas URL to a page using the path that is in app_data.path """
+    """ Decorate the views where you have links to the app page. """
     
     @functools.wraps(view)
     def wrapper(*args, **kwargs):
         request = args[0]
         # if this is already the callback, do not wrap.
-        if kwargs.get('avoid_redirect', False):
-            kwargs.pop('avoid_redirect')
+        if getattr(request, 'avoid_redirect', False):
+            del request.avoid_redirect
             return view(*args, **kwargs)
         
         session = request.session.get('facebook', dict())
@@ -103,17 +104,19 @@ def redirect_to_page(view):
                 return render_to_response('redirecter.html', {'destination': url }, RequestContext(request)) 
                 
             logger.debug('found original view url: %s' %original_view)
-            original_view.func(request, avoid_redirect=True, *original_view.args, **original_view.kwargs)
-        
-        #check if the app is inside the specified page.
-        try:
-            page = int(signed_request['page']['id'])
-        except KeyError:
-            page = None
-        if page <> page_id and settings.DEBUG == False:
-            logger.debug('Tab is not in original Page. Redirecting...')
-            url = u'%s?sk=app_%s&app_data=%s' % (redirect_url, app_id, urlencode(request.path))
-            return render_to_response('redirecter.html', {'destination': url }, RequestContext(request))        
+            request.avoid_redirect = True
+            # call the view that was originally requested:
+            original_view.func(request, *original_view.args, **original_view.kwargs)
+        else:
+            #check if the app is inside the specified page.
+            try:
+                page = int(signed_request['page']['id'])
+            except KeyError:
+                page = None
+            if page <> page_id and not runserver:
+                logger.debug('Tab is not in original Page. Redirecting...')
+                url = u'%s?sk=app_%s&app_data=%s' % (redirect_url, app_id, urlencode(request.path))
+                return render_to_response('redirecter.html', {'destination': url }, RequestContext(request))        
             
         return view(*args, **kwargs)
     
