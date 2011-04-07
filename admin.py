@@ -29,7 +29,7 @@ admin.site.register(Photo, PhotoAdmin)
 
 
 class PageAdmin(AdminBase):
-    list_display = ('id', 'slug', 'name', 'picture', 'fan_count')
+    list_display = ('id', 'profile_link', 'slug', 'name', 'picture', 'fan_count')
     readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link')
 admin.site.register(Page, PageAdmin)
 

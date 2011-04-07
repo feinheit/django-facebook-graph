@@ -38,6 +38,10 @@ class Base(models.Model):
     @property
     def graph_url(self):
         return 'http://graph.facebook.com/%s' % self._id
+    
+    @property
+    def graph(self):
+        return self._graph
 
     def get_from_facebook(self, save=False, request=None, access_token=None, \
              client_secret=None, client_id=None):
@@ -48,7 +52,10 @@ class Base(models.Model):
             response = graph.request(str(self._id))
             if response and save:
                 self.save_from_facebook(response)
-            if response:
+            elif save:
+                self._graph = {'django-facebook-error' : 'The query returned nothing. Maybe the object is not published, accessible?'}
+                self.save()
+            else:
                 return response
         except GraphAPIError:
             logger.warning('Error in GraphAPI')
