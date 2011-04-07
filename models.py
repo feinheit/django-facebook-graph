@@ -42,6 +42,15 @@ class Base(models.Model):
     @property
     def graph(self):
         return self._graph
+    
+    @property
+    def refreshed_graph(self):
+        """ updates the object from facebook and returns then the retrieved graph.
+        bullet proof to use in templates: if the request times out or the answer is bad, the old graph is returned"""
+        response = self.get_from_facebook()
+        if response:
+            self.save_from_facebook(response)
+        return self._graph
 
     def get_from_facebook(self, save=False, request=None, access_token=None, \
              client_secret=None, client_id=None):
