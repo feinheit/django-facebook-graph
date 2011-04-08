@@ -20,8 +20,8 @@ def get_tab_url_from_request(request):
     except Page.DoesNotExist:
         return None
     
-    fb_page = getattr(page, 'facebook_application', None)
-    fb_app = getattr(page, 'facebook_page', None)
+    fb_app = getattr(page, 'facebook_application', None)
+    fb_page = getattr(page, 'facebook_page', None)
 
     if fb_page and fb_app:
         if '?' in fb_page.facebook_link:
