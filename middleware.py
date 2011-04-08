@@ -5,6 +5,7 @@ import cgi
 import urllib
 
 from django.conf import settings
+from django.shortcuts import redirect
 from django.utils import simplejson
 
 _parse_json = lambda s: simplejson.loads(s)
@@ -65,4 +66,23 @@ class OAuth2ForCanvasMiddleware(object):
             logger.debug('got access_token from session: %s' % request.REQUEST['session'])
         
         request.session['facebook'] = facebook
+
+
+class Redirect2AppDataMiddleware(object):
+    """ If app_data is specified, this middleware assumes that app_data is the deep link and redirects to that page 
+    example: http://www.facebook.com/PAGENAME?sk=app_APP_ID&app_data=/foo/bar/ redirects to /foo/bar/
+    /
+    IMPLEMENTATION: this middleware should be placed after OAuth2ForCanvasMiddleware, because it needs session['facebook']
+    """
+    
+    def process_request(self, request):
+        try:
+            # only execute first time (Facebook will POST the tab with signed_request parameter)
+            if request.method == 'POST' and request.POST.has_key('signed_request'):
+                target_url = request.session['facebook']['signed_request']['app_data']
+                return redirect(target_url)
+            else:
+                return None
+        except KeyError:
+            return None
 
