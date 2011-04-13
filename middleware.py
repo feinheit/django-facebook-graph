@@ -103,9 +103,14 @@ class FakeSessionCookieMiddleware(object):
         if isinstance(response, (HttpResponseRedirect, HttpResponsePermanentRedirect)) and \
                 request.COOKIES.has_key(cookie_name):
             location = response._headers['location'][1]
-            separator = '&' if '?' in location else '?'
-            response._headers['location'] = ('Location' , '%s%s%s=%s' % (location, 
-                        separator, cookie_name, 
-                        request.COOKIES.get(cookie_name, '')))
+            
+            # only append session id if the redirection stays inside (local)
+            if not location.find('http') == 0:
+                separator = '&' if '?' in location else '?'
+                response._headers['location'] = ('Location' , '%s%s%s=%s' % (location, 
+                            separator, cookie_name, 
+                            request.COOKIES.get(cookie_name, '')))
+            
+                logger.debug('FakeSessionCookieMiddleware: changed redirect location from "%s" to "%s" ' % (location, response._headers['location'][1]) )
         return response
 
