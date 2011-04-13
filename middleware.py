@@ -105,7 +105,7 @@ class FakeSessionCookieMiddleware(object):
             location = response._headers['location'][1]
             
             # only append session id if the redirection stays inside (local)
-            if not location.find('http') == 0:
+            if not location.find('http') == 0 and not location.find('/admin/') == 0:
                 separator = '&' if '?' in location else '?'
                 response._headers['location'] = ('Location' , '%s%s%s=%s' % (location, 
                             separator, cookie_name, 
