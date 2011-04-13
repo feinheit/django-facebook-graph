@@ -16,4 +16,4 @@ def session_without_cookies(request):
     
     return {'session_GET' : '%s=%s' %(cookie_name, session_key),
             'session_id'  : session_key,
-            'session_hidden_field' : '<div style="display:none"><input type="hidden" name="%s" value="%s" /></div>' %(cookie_name, request.COOKIES.get(cookie_name, ''))}
+            'session_hidden_field' : '<div style="display:none"><input type="hidden" name="%s" value="%s" /></div>' %(cookie_name, session_key)}

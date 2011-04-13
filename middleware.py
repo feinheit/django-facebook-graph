@@ -5,6 +5,7 @@ import cgi
 import urllib
 
 from django.conf import settings
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import redirect
 from django.utils import simplejson
 
