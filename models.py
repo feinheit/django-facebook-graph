@@ -95,7 +95,12 @@ class Base(models.Model):
                 if isinstance(fieldclass, models.DateTimeField):
                     # reading the facebook datetime string. assuming we're in MET Timezone
                     # TODO: work with real timezones
-                    setattr(self, field, datetime.strptime(val[:-5], "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7) )
+                    logger.info('feld: %s, val: %s' %(prop, val))
+                    logger.info('feld: %s, val: %s' %(prop, val[:-5]))
+                    try:
+                        setattr(self, field, datetime.strptime(val[:-5], "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7))
+                    except ValueError:
+                        setattr(self, field, datetime.strptime(val, "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7))
                     
                 elif isinstance(self._meta.get_field(field), models.ForeignKey):
                     # trying to build the ForeignKey and if the foreign Object doesnt exists, create it.
