@@ -2,12 +2,11 @@ import logging
 from urllib import urlencode
 logger = logging.getLogger(__name__)
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from django.conf import settings
-
 from django import forms
-from django.db import models
-from django.db import transaction
+from django.db import models, transaction
+from django.db.models import Q
 from django.contrib.auth.models import User as DjangoUser
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import simplejson as json
@@ -310,7 +309,28 @@ class Application(Page):
     secret = models.CharField(max_length=32, help_text=_('The applications Secret'))
 
 
+class EventManager(models.Manager):
+    def active(self):
+        return self.filter(active=True)
+    
+    def upcoming(self):
+        """ returns all upcoming and ongoing events """
+        today = date.today()
+        if datetime.now().hour < 6:
+            today = today-timedelta(days=1)
+        
+        return self.active().filter(Q(_start_time__gte=today) | Q(_end_time__gte=today))
+    
+    def past(self):
+        """ returns all past events """
+        today = date.today()
+        if datetime.now().hour < 6:
+            today = today-timedelta(days=1)
+        
+        return self.active().filter(Q(_start_time__lt=today) & Q(_end_time__lt=today))
+
 class Event(Base):
+    active = models.BooleanField(_('Active'), default=True, blank=True)
     id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook event ID'))
 
     # Cached Facebook Graph fields for db lookup
@@ -324,9 +344,17 @@ class Event(Base):
     _privacy = models.CharField(max_length=10, blank=True, null=True, choices=(('OPEN', 'OPEN'), ('CLOSED', 'CLOSED'), ('SECRET', 'SECRET')))
     _updated_time = models.DateTimeField(blank=True, null=True)
 
+    objects = EventManager()
+
     @property
     def facebook_link(self):
         return 'http://www.facebook.com/event.php?eid=%s' % self.id
+    
+    def get_description(self):
+        return self._description
+    
+    def get_name(self):
+        return self._name
     
     class Meta:
         ordering = ('_start_time',)

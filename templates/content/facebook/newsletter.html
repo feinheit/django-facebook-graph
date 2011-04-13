@@ -1,5 +1,12 @@
-<fb:registration 
-  fields="name,location,email" 
-  redirect-uri="http://developers.facebook.com/tools/echo/"
-  width="530">
-</fb:registration>
+{% load i18n %}
+{% if not registered %}
+<div class="content">
+    {% blocktrans %}
+    Bleibe per Email am Ball und erfahre die neusten entwicklungen unserer Bewegung. Bleibe aktiv und informiere dich. Es lohnt sich.
+    Der Newsletter wird alle zwei Wochen versendet.
+    {% endblocktrans %}
+    <a id="btn-register-newsletter" class="iframe fb-button" href="/fb/register/">{% trans 'Register for our Newsletter' %}</a>
+</div>
+{% else %}
+
+{% endif %}

@@ -1,7 +1,8 @@
 #coding=utf-8
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from facebook.utils import get_graph
+from facebook.utils import get_graph, get_FQL
+from facebook.models import Event
 from django.conf import settings
 from feinheit.translations import short_language_code
 
@@ -9,6 +10,11 @@ import logging
 from django.template.loader import render_to_string
 from django import forms
 from akw.cleverreach import insert_new_user
+from django.template.defaultfilters import urlencode
+from django.shortcuts import render_to_response
+from django.template.context import RequestContext
+from django.template.base import TemplateSyntaxError
+from django.http import Http404
 logger = logging.getLogger(__name__)
 
 FACEBOOK_LOCALES = {
@@ -22,14 +28,19 @@ FACEBOOK_LOCALES = {
 
 AVAILABLE_PLUGINS = (('Likebutton', _('Like Button')),
                      ('Likebox', _('Like Box')),
-                     ('Registration', _('Registration')),
+                     ('Newsletter', _('Newsletter')),
                      ('Addtab', _('Add to page')),
+                     ('Events', _('Upcoming Events')),
 )
 
 class PluginBase(object):
     def __init__(self, parent):
         self.context = {}
         self.parent = parent
+    
+    #Raise an exception if the class is not overwritten:
+    def get_context(self, *args, **kwargs):
+        raise NotImplementedError, 'You need to define a get_context function in your class\n which returns the extended context.'
         
         
 class Likebox(PluginBase):
@@ -41,7 +52,10 @@ class Likebox(PluginBase):
         graph = get_graph(request)
         pagegraph = graph.get_object(page)
         logger.info('graph: %s' %pagegraph)
-        url = pagegraph['link']
+        try:
+            url = pagegraph['link']
+        except TemplateSyntaxError:
+            raise Http404, 'session expired.'
         self.context.update({'url' : url })
         return self.context
     
@@ -67,7 +81,8 @@ class Newsletter(PluginBase):
     
     def subscribe(self, registration):
          group_id = groups['nl_de'] if short_language_code() == 'de' else groups['nl_fr']
-         insert_new_user(registration, group_id, activated=True, sendmail=False)
+         status = insert_new_user(registration, group_id, activated=True, sendmail=False)
+         logger.info('Cleverreach response: %s' %status)
     
     def get_context(self, signed_request, *args, **kwargs):
         if getattr(signed_request, 'registration', None):
@@ -76,8 +91,36 @@ class Newsletter(PluginBase):
             result = self.subscribe(registration)
             self.context.update({'registered': True})
         else: 
-            context.update({'registered': False})
-        return context
+            self.context.update({'registered': False})
+        return self.context
+    
+    def add_media(self, media):
+        media.add_js(('lib/fancybox/jquery.fancybox-1.3.1.pack.js',))
+        media.add_css({'all':('lib/fancybox/jquery.fancybox-1.3.1.css', )})
+
+def register(request):
+    context = {'app_id': settings.FACEBOOK_APP_ID,
+               'redirect_uri': urlencode(settings.FACEBOOK_REDIRECT_PAGE_URL)}
+    return render_to_response('content/facebook/register.txt', context, 
+                              RequestContext(request))
+
+
+class Events(PluginBase):
+    def get_context(self, request, *args, **kwargs):
+        upcoming = Event.objects.upcoming()
+        graph = get_graph(request)
+        if graph.user:
+            me = graph.user
+            query = """SELECT eid, uid, rsvp_status FROM event_member WHERE uid = %s""" % me
+            rsvp_events = get_FQL(query, graph.access_token)
+            self.context.update({ 'rsvp_events' : rsvp_events })
+        logger.debug('rsvp_events: %s' %rsvp_events)
+        self.context.update({'events': upcoming, 'access_token': graph.access_token })
+        return self.context
+    
+    def add_media(self, media):
+        media.add_js(('/static/facebook/events.js',))
+        media.add_css({'all':('/static/facebook/events.css', )})
 
 class SocialPluginContent(models.Model):
     """ A Facebook Social Plugin that connects to the page where the tab is shown. """
@@ -91,24 +134,24 @@ class SocialPluginContent(models.Model):
             logger.info('social_context %s' %self.social_context)
     
     @classmethod
-    def initialize_type(cls, DIMENSION_CHOICES=None, use_parent_page=True):
+    def initialize_type(cls, DIMENSION_CHOICES=None):
         if DIMENSION_CHOICES is not None:
             cls.add_to_class('dimension', models.CharField(_('dimension'),
                 max_length=10, blank=True, null=True, choices=DIMENSION_CHOICES,
                 default=DIMENSION_CHOICES[0][0]))
-        if not use_parent_page:
-            cls.add_to_class('url', models.URLField(_('url'), blank=True, null=True, 
-                                    help_text=_('URL to like/recommend. If you want the current URL, leave it blank. For the Like Box, give the correct URL to the Facebook Page'))
-            )
+
             
     def SocialContext(self, className, *args, **kwargs):
-        aClass = getattr(__import__(__name__, fromlist=['contents']), className)
+        aClass = getattr(__import__(__name__, fromlist=['contents']), className.capitalize())
         return aClass (*args)                      
             
     def clean(self):
         super(SocialPluginContent, self).clean()
-        if getattr(self.social_context, 'clean', None):
-            self.social_context.clean()
+        try:
+            if getattr(self.social_context, 'clean', None):
+                self.social_context.clean()
+        except AttributeError:
+            pass
         
  
     class Meta:
@@ -119,7 +162,11 @@ class SocialPluginContent(models.Model):
     @property
     def media(self):
         media = forms.Media()
-        media.add_js(('http://connect.facebook.net/%s/all.js#xfbml=1' % FACEBOOK_LOCALES.get(short_language_code()),))
+        #media.add_js(('http://connect.facebook.net/%s/all.js#xfbml=1' % FACEBOOK_LOCALES.get(short_language_code()),))
+        try:
+            self.social_context.add_media(media)
+        except AttributeError:
+            pass
         return media
     
     def render(self, request, context, **kwargs):
@@ -134,5 +181,6 @@ class SocialPluginContent(models.Model):
        
         if self.dimension:
             context.update({'dimensions' : self.dimension.split('x')})
-        return render_to_string('content/facebook/%s.html' % self.type, context)
+        template = 'content/facebook/%s.html' % self.type
+        return render_to_string(template.lower() , context)
     

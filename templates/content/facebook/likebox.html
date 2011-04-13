@@ -1,11 +1,13 @@
-<fb:like-box href="{{ url }}" 
-    {% if dimensions %}
-        width="{{ dimensions.0 }}"
-        height="{{ dimensions.1 }}"
-    {% else %}
-        width="230"
-    {% endif %} 
-    show_faces="true" 
-    stream="true" 
-    header="true">
-</fb:like-box>
+<div class="content" id="fb-likebox">
+    <fb:like-box href="{{ url }}" 
+        {% if dimensions %}
+            width="{{ dimensions.0 }}"
+            height="{{ dimensions.1 }}"
+        {% else %}
+            width="230"
+        {% endif %} 
+        show_faces="true" 
+        stream="true" 
+        header="false">
+    </fb:like-box>
+</div>

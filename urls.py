@@ -10,5 +10,6 @@ go_to_template = csrf_exempt(direct_to_template)
 
 
 urlpatterns = patterns('',
+    url(r'^register/$', 'facebook.contents.register'),
     url(r'^(?P<action>[a-z-]+)/$', input, name="input"),
 )
