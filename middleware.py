@@ -5,6 +5,7 @@ import cgi
 import urllib
 
 from django.conf import settings
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import redirect
 from django.utils import simplejson
 
@@ -85,4 +86,26 @@ class Redirect2AppDataMiddleware(object):
                 return None
         except KeyError:
             return None
+
+class FakeSessionCookieMiddleware(object):
+    # from http://djangosnippets.org/snippets/460/
+    def process_request(self, request):
+        """ tries to get the session variable via HTTP GET if there is no cookie """
+        if not request.COOKIES.has_key(settings.SESSION_COOKIE_NAME) \
+            and request.REQUEST.has_key(settings.SESSION_COOKIE_NAME):
+            request.COOKIES[settings.SESSION_COOKIE_NAME] = \
+              request.REQUEST[settings.SESSION_COOKIE_NAME]
+            request.COOKIES['fakesession'] = True
+    
+    def process_response(self, request, response):
+        cookie_name = settings.SESSION_COOKIE_NAME
+        
+        if isinstance(response, (HttpResponseRedirect, HttpResponsePermanentRedirect)) and \
+                request.COOKIES.has_key(cookie_name):
+            location = response._headers['location'][1]
+            separator = '&' if '?' in location else '?'
+            response._headers['location'] = ('Location' , '%s%s%s=%s' % (location, 
+                        separator, cookie_name, 
+                        request.COOKIES.get(cookie_name, '')))
+        return response
 

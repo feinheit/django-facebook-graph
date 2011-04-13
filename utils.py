@@ -14,6 +14,7 @@ import urllib2
 import facebook
 
 from django.conf import settings
+from django.shortcuts import redirect
 from django.utils import simplejson
 from django.utils.http import urlquote
 
@@ -254,3 +255,18 @@ class MultiPartForm(object):
         flattened.append('--' + self.boundary + '--')
         flattened.append('')
         return '\r\n'.join(flattened)
+
+
+def redirect_GET_session(to, request, permanent=False):
+    response = redirect(to, permanent)
+    cookie_name = settings.SESSION_COOKIE_NAME
+    
+    if request.COOKIES.has_key(cookie_name):
+        location = response._headers['location'][1]
+        separator = '&' if '?' in location else '?'
+        response._headers['location'] = ('Location' , '%s%s%s=%s' % (location, 
+                        separator, cookie_name, 
+                        request.COOKIES.get(cookie_name, '')))
+        return response
+    else:
+        return response
