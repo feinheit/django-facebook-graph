@@ -109,12 +109,14 @@ class Events(PluginBase):
     def get_context(self, request, *args, **kwargs):
         upcoming = Event.objects.upcoming()
         graph = get_graph(request)
-        if graph.user:
+        try:
             me = graph.user
             query = """SELECT eid, uid, rsvp_status FROM event_member WHERE uid = %s""" % me
             rsvp_events = get_FQL(query, graph.access_token)
             self.context.update({ 'rsvp_events' : rsvp_events })
-        logger.debug('rsvp_events: %s' %rsvp_events)
+            logger.debug('rsvp_events: %s' %rsvp_events)
+        except AttributeError:
+            pass
         self.context.update({'events': upcoming, 'access_token': graph.access_token })
         return self.context
     
