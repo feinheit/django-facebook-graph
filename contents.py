@@ -9,7 +9,6 @@ from feinheit.translations import short_language_code
 import logging
 from django.template.loader import render_to_string
 from django import forms
-from akw.cleverreach import insert_new_user
 from django.template.defaultfilters import urlencode
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
@@ -79,16 +78,9 @@ class Addtab(PluginBase):
 
 class Newsletter(PluginBase):       
     
-    def subscribe(self, registration):
-         group_id = groups['nl_de'] if short_language_code() == 'de' else groups['nl_fr']
-         status = insert_new_user(registration, group_id, activated=True, sendmail=False)
-         logger.info('Cleverreach response: %s' %status)
-    
     def get_context(self, signed_request, *args, **kwargs):
         if getattr(signed_request, 'registration', None):
             registration = signed_request['registration']
-            registration.update({'facebook_id': signed_request['user_id']})
-            result = self.subscribe(registration)
             self.context.update({'registered': True})
         else: 
             self.context.update({'registered': False})
@@ -98,23 +90,25 @@ class Newsletter(PluginBase):
         media.add_js(('lib/fancybox/jquery.fancybox-1.3.1.pack.js',))
         media.add_css({'all':('lib/fancybox/jquery.fancybox-1.3.1.css', )})
 
-def register(request):
-    context = {'app_id': settings.FACEBOOK_APP_ID,
-               'redirect_uri': urlencode(settings.FACEBOOK_REDIRECT_PAGE_URL)}
-    return render_to_response('content/facebook/register.txt', context, 
-                              RequestContext(request))
-
 
 class Events(PluginBase):
     def get_context(self, request, *args, **kwargs):
         upcoming = Event.objects.upcoming()
         graph = get_graph(request)
-        if graph.user:
+        # TODO: this:
+        """
+        try:
             me = graph.user
-            query = """SELECT eid, uid, rsvp_status FROM event_member WHERE uid = %s""" % me
+            query = "SELECT eid, rsvp_status FROM event_member WHERE uid = %s" % me
             rsvp_events = get_FQL(query, graph.access_token)
-            self.context.update({ 'rsvp_events' : rsvp_events })
-        logger.debug('rsvp_events: %s' %rsvp_events)
+            events = {}
+            for e in rsvp_events:
+                events.update({e['eid'].encode('utf-8'): e['rsvp_status'].encode('utf-8')})
+            self.context.update({ 'rsvp_events' : events })
+            logger.debug('rsvp_events: %s' %rsvp_events)
+        except AttributeError:
+            pass
+        """
         self.context.update({'events': upcoming, 'access_token': graph.access_token })
         return self.context
     
