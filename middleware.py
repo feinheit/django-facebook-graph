@@ -40,11 +40,13 @@ class OAuth2ForCanvasMiddleware(object):
             # rewrite important data
             if 'oauth_token' in facebook['signed_request']:
                 facebook['access_token'] = facebook['signed_request']['oauth_token']
-            if 'access_token' in facebook['signed_request']:
-                facebook['access_token'] = facebook['signed_request']['access_token']
+            else:
+                if 'access_token' in facebook: facebook.pop('access_token')
+                
             if 'user_id' in facebook['signed_request']:
                 facebook['user_id'] = facebook['signed_request']['user_id']
-                
+            else:
+                if 'user_id' in facebook: facebook.pop('user_id')
         
         # auth via callback from facebook
         if 'code' in request.REQUEST:
