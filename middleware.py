@@ -11,8 +11,6 @@ from django.utils import simplejson
 
 _parse_json = lambda s: simplejson.loads(s)
 
-import facebook
-
 from utils import parseSignedRequest
 
 
@@ -75,12 +73,6 @@ class OAuth2ForCanvasMiddleware(object):
             session = _parse_json(request.REQUEST['session'])
             facebook['access_token'] = session.get('access_token')
             logger.debug('got access_token from session: %s' % request.REQUEST['session'])
-        
-        # if there is a facebook cookie, include that information too
-        cookie = facebook.get_user_from_cookie(request.COOKIES, client_id, client_secret)
-        if cookie != None:
-            facebook['access_token'] = cookie["access_token"]
-            facebook['user_id'] = cookie['uid']
         
         request.session['facebook'] = facebook
 
