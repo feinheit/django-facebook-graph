@@ -5,6 +5,7 @@ import cgi
 import urllib
 
 from django.conf import settings
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import redirect
 from django.utils import simplejson
 
@@ -36,8 +37,14 @@ class OAuth2ForCanvasMiddleware(object):
             facebook['signed_request'] = parseSignedRequest(request.REQUEST['signed_request'], app_secret)
             logger.debug('got signed_request from facebook: %s' % facebook['signed_request'])
             
-            if facebook['signed_request'].get('oauth_token', None):
+            # rewrite important data
+            if 'oauth_token' in facebook['signed_request']:
                 facebook['access_token'] = facebook['signed_request']['oauth_token']
+            if 'access_token' in facebook['signed_request']:
+                facebook['access_token'] = facebook['signed_request']['access_token']
+            if 'user_id' in facebook['signed_request']:
+                facebook['user_id'] = facebook['signed_request']['user_id']
+                
         
         # auth via callback from facebook
         if 'code' in request.REQUEST:
@@ -86,4 +93,31 @@ class Redirect2AppDataMiddleware(object):
                 return None
         except KeyError:
             return None
+
+
+class FakeSessionCookieMiddleware(object):
+    # from http://djangosnippets.org/snippets/460/
+    def process_request(self, request):
+        """ tries to get the session variable via HTTP GET if there is no cookie """
+        if not request.COOKIES.has_key(settings.SESSION_COOKIE_NAME) \
+            and request.REQUEST.has_key(settings.SESSION_COOKIE_NAME):
+            request.COOKIES[settings.SESSION_COOKIE_NAME] = \
+              request.REQUEST[settings.SESSION_COOKIE_NAME]
+            request.COOKIES['fakesession'] = True
+    
+    def process_response(self, request, response):
+        cookie_name = settings.SESSION_COOKIE_NAME
+        
+        if isinstance(response, (HttpResponseRedirect, HttpResponsePermanentRedirect)):
+            location = response._headers['location'][1]
+            
+            # only append session id if the redirection stays inside (local)
+            if not location.find('http') == 0 and not location.find('/admin/') == 0:
+                separator = '&' if '?' in location else '?'
+                response._headers['location'] = ('Location' , '%s%s%s=%s' % (location, 
+                            separator, cookie_name, 
+                            request.session._get_session_key()))
+            
+                logger.debug('FakeSessionCookieMiddleware: changed redirect location from "%s" to "%s" ' % (location, response._headers['location'][1]))
+        return response
 
