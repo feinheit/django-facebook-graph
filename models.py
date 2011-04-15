@@ -2,12 +2,11 @@ import logging
 from urllib import urlencode
 logger = logging.getLogger(__name__)
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from django.conf import settings
-
 from django import forms
-from django.db import models
-from django.db import transaction
+from django.db import models, transaction
+from django.db.models import Q
 from django.contrib.auth.models import User as DjangoUser
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import simplejson as json
@@ -50,6 +49,19 @@ class Base(models.Model):
         else:
             return path
 
+    @property
+    def graph(self):
+        return self._graph
+    
+    @property
+    def refreshed_graph(self):
+        """ updates the object from facebook and returns then the retrieved graph.
+        bullet proof to use in templates: if the request times out or the answer is bad, the old graph is returned"""
+        response = self.get_from_facebook()
+        if response:
+            self.save_from_facebook(response)
+        return self._graph
+
     def get_from_facebook(self, save=False, request=None, access_token=None, \
              client_secret=None, client_id=None):
 
@@ -59,7 +71,10 @@ class Base(models.Model):
             response = graph.request(str(self._id))
             if response and save:
                 self.save_from_facebook(response)
-            if response:
+            elif save:
+                self._graph = {'django-facebook-error' : 'The query returned nothing. Maybe the object is not published, accessible?'}
+                self.save()
+            else:
                 return response
         except GraphAPIError:
             logger.warning('Error in GraphAPI')
@@ -68,16 +83,33 @@ class Base(models.Model):
             return None
 
     def save_from_facebook(self, response, update_slug=False):
-        """ update the local model with the response (JSON) from facebook """
+        """ update the local model with the response (JSON) from facebook 
+        big magic in here: it tries to convert the data from facebook in appropriate django fields inclusive foreign keys"""
 
         self._graph = json.dumps(response, cls=DjangoJSONEncoder)
         for prop, (val) in response.items():
             field = '_%s' % prop
             if prop != 'id' and hasattr(self, field):
-                if isinstance(self._meta.get_field(field), models.DateTimeField):
+                fieldclass = self._meta.get_field(field)
+                if isinstance(fieldclass, models.DateTimeField):
                     # reading the facebook datetime string. assuming we're in MET Timezone
                     # TODO: work with real timezones
-                    setattr(self, field, datetime.strptime(val[:-5], "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7) )
+                    logger.info('feld: %s, val: %s' %(prop, val))
+                    logger.info('feld: %s, val: %s' %(prop, val[:-5]))
+                    try:
+                        setattr(self, field, datetime.strptime(val[:-5], "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7))
+                    except ValueError:
+                        setattr(self, field, datetime.strptime(val, "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7))
+                    
+                elif isinstance(self._meta.get_field(field), models.ForeignKey):
+                    # trying to build the ForeignKey and if the foreign Object doesnt exists, create it.
+                    # todo: check if the related model is a facebook model (not sure if there are other possible relations ...) 
+                    related_modelclass = fieldclass.related.parent_model
+                    obj, created = related_modelclass.objects.get_or_create(id=val['id'])
+                    setattr(self, field, obj)
+                    if created:
+                        obj.get_from_facebook(save=True)
+                    
                 else:
                     setattr(self, field, val)
             if prop == 'from' and hasattr(self, '_%s_id' % prop):
@@ -131,9 +163,13 @@ class Base(models.Model):
        self.updated = datetime.now()
 
     def __unicode__(self):
-        return '%s (%s)' % (self._name, self.id)
+        if hasattr(self, '_name'):
+            return '%s (%s)' % (self._name, self.id)
+        else:
+            return str(self.id)
 
 # it crashes my python instance on mac os x without proper error message, so may we shoudn't use that handy shortcut
+# maybe its only, that the admin should'nt use these computed fields
 #    def __getattr__(self, name):
 #        """ the cached fields (starting with "_") should be accessible by get-method """
 #        if hasattr(self, '_%s' % name):
@@ -273,7 +309,28 @@ class Application(Page):
     secret = models.CharField(max_length=32, help_text=_('The applications Secret'))
 
 
+class EventManager(models.Manager):
+    def active(self):
+        return self.filter(active=True)
+    
+    def upcoming(self):
+        """ returns all upcoming and ongoing events """
+        today = date.today()
+        if datetime.now().hour < 6:
+            today = today-timedelta(days=1)
+        
+        return self.active().filter(Q(_start_time__gte=today) | Q(_end_time__gte=today))
+    
+    def past(self):
+        """ returns all past events """
+        today = date.today()
+        if datetime.now().hour < 6:
+            today = today-timedelta(days=1)
+        
+        return self.active().filter(Q(_start_time__lt=today) & Q(_end_time__lt=today))
+
 class Event(Base):
+    active = models.BooleanField(_('Active'), default=True, blank=True)
     id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook event ID'))
 
     # Cached Facebook Graph fields for db lookup
@@ -287,7 +344,29 @@ class Event(Base):
     _privacy = models.CharField(max_length=10, blank=True, null=True, choices=(('OPEN', 'OPEN'), ('CLOSED', 'CLOSED'), ('SECRET', 'SECRET')))
     _updated_time = models.DateTimeField(blank=True, null=True)
 
+    objects = EventManager()
+
     @property
     def facebook_link(self):
         return 'http://www.facebook.com/event.php?eid=%s' % self.id
+    
+    def get_description(self):
+        return self._description
+    
+    def get_name(self):
+        return self._name
+    
+    class Meta:
+        ordering = ('_start_time',)
 
+
+class Request(Base):
+    id = models.BigIntegerField(primary_key=True, unique=True)
+    
+    # Cached Facebook Graph fields for db lookup
+    _application = models.ForeignKey(Application, blank=True, null=True)
+    _to = models.ForeignKey(User, blank=True, null=True, related_name='request_to_set')
+    _from = models.ForeignKey(User, blank=True, null=True, related_name='request_from_set')
+    _data = models.TextField(blank=True, null=True)
+    _message = models.TextField(blank=True, null=True)
+    _created_time = models.DateTimeField(blank=True, null=True)

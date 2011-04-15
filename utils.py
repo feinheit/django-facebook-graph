@@ -60,9 +60,15 @@ def get_REST(method, params):
     
     return response
 
-def get_FQL(fql):
+def get_FQL(fql, access_token=None):
     query = 'https://api.facebook.com/method/fql.query?format=json'
-    file = urllib.urlopen(query, urllib.urlencode({'query' : fql}))
+    
+    params = {'query' : fql}
+    
+    if access_token:
+        params.update({'access_token' : access_token})
+    
+    file = urllib.urlopen(query, urllib.urlencode(params))
     raw = file.read()
     
     logger.debug('facebook FQL response raw: %s, query: %s, FQL: %s' % (raw, query, fql))
@@ -146,9 +152,10 @@ def get_graph(request=None, access_token=None, client_secret=None, client_id=Non
         # if the response ist not json, it is the access token. Write it back to the session.
         if raw.find('=') > -1:
             access_token = raw.split('=')[1]
-            cookie = request.session.get('facebook', dict())  
-            cookie['access_token'] = access_token
-            request.session['facebook'] = cookie             
+            if request:
+                cookie = request.session.get('facebook', dict())  
+                cookie['access_token'] = access_token
+                request.session.modified = True      
         else:
             raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected access_token' % response)
     finally:

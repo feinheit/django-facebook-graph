@@ -1,0 +1,11 @@
+<iframe src="http://www.facebook.com/plugins/registration.php?
+             client_id={{ app_id }}&
+             redirect_uri={{ redirect_uri }}&
+             fields=name,first_name,last_name,gender,location,email"
+        scrolling="no"
+        frameborder="no"
+        style="border:none"
+        allowTransparency="true"
+        width="464"
+        height="390">
+</iframe>
