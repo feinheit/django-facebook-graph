@@ -57,7 +57,7 @@ class OAuth2ForCanvasMiddleware(object):
                 request.session.modified = True
                 logger.debug('got access_token from facebook callback: %s' % facebook['access_token'])
             else:
-                logger.warning('facebook did not respond an accesstoken: %s' % raw)
+                logger.debug('facebook did not respond an accesstoken: %s' % raw)
         
         # old (?) method where facebook serves the accestoken unencrypted in 'session' parameter
         if 'session' in request.REQUEST:
