@@ -117,7 +117,28 @@ class Base(models.Model):
             except:
                 self.slug = self.id
         self.save()
-
+    
+    
+    def save_to_facebook(self, target, graph=None):
+        if not graph: graph=get_graph()
+        
+        args = {}
+        cached_fields = [cached for cached in self._meta.get_all_field_names() if cached.find('_') == 0]
+        for fieldname in cached_fields:
+            fieldclass = self._meta.get_field(fieldname)
+            field = getattr(self, fieldname)
+            
+            if field:
+                if isinstance(fieldclass, models.DateField):
+                    args[fieldname[1:]] = field.isoformat()
+                elif isinstance(fieldclass, JSONField):
+                    args[fieldname[1:]] = json.dumps(field)
+                else:
+                    args[fieldname[1:]] = field
+        
+        response = graph.put_object(str(target), self.Facebook.publish, **args)
+        return response
+    
     def get_connections(self, connection_name, graph, save=False):
         response = graph.request('%s/%s' % (self._id, connection_name))
         connections = response['data']
@@ -354,8 +375,9 @@ class Event(Base):
                        'declined' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'declined'}},
                        'noreply' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'not_replied'}},
                        'invited' : {'field' : 'invited', 'extra_fields' : ['rsvp_status',]},}
+        publish = 'events'
     
-    def update_rsvp_status(self, user_id, status):
+    def save_rsvp_status(self, user_id, status):
         user, created = User.objects.get_or_create(id=user_id)
         if created:
             user.save()
@@ -364,18 +386,19 @@ class Event(Base):
         connection.save()
         return connection
     
-    def get_rsvp_status(self, user_id, access_token=get_graph().access_token):
+    def update_rsvp_status(self, user_id, access_token=None):
+        if not access_token: access_token=get_graph().access_token
         response = get_FQL('SELECT rsvp_status FROM event_member WHERE uid=%s AND eid=%s' % (user_id, self.id),
                            access_token=access_token)
         if len(response):
-            self.update_rsvp_status(user_id, response[0]['rsvp_status'])
+            self.save_rsvp_status(user_id, response[0]['rsvp_status'])
             return response[0]['rsvp_status']
         else:
             return 'not invited'
-        
+    
     def respond(self, graph, status='attending'):
         fb_response = graph.put_object(str(self.id), status)
-        self.update_rsvp_status(graph.user, status)
+        self.save_rsvp_status(graph.user, status)
         return fb_response
 
 
