@@ -16,7 +16,7 @@ from django.template.defaultfilters import slugify
 from facebook import GraphAPIError
 
 from fields import JSONField
-from utils import get_graph, post_image
+from utils import get_graph, post_image, get_FQL
 
 
 class Base(models.Model):
@@ -353,16 +353,30 @@ class Event(Base):
                        'maybe' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'unsure'}},
                        'declined' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'declined'}},
                        'noreply' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'not_replied'}},
-                       'invited' : {'field' : 'invited', 'extra_fields' : ['rsvp_status',]},} 
-        
-    def attend(self, graph, status='attending'):
-        user, created = User.objects.get_or_create(id=graph.user)
+                       'invited' : {'field' : 'invited', 'extra_fields' : ['rsvp_status',]},}
+    
+    def update_rsvp_status(self, user_id, status):
+        user, created = User.objects.get_or_create(id=user_id)
         if created:
             user.save()
         connection, created = self.invited.through.objects.get_or_create(user=user, event=self)
-        connection.status = 'attending'
+        connection.status = status
         connection.save()
-        return graph.put_object(str(self.id), status)
+        return connection
+    
+    def get_rsvp_status(self, user_id, access_token=get_graph().access_token):
+        response = get_FQL('SELECT rsvp_status FROM event_member WHERE uid=%s AND eid=%s' % (user_id, self.id),
+                           access_token=access_token)
+        if len(response):
+            self.update_rsvp_status(user_id, response[0]['rsvp_status'])
+            return response[0]['rsvp_status']
+        else:
+            return 'not invited'
+        
+    def respond(self, graph, status='attending'):
+        fb_response = graph.put_object(str(self.id), status)
+        self.update_rsvp_status(graph.user, status)
+        return fb_response
 
 
 class EventUser(models.Model):
