@@ -48,6 +48,15 @@ class Base(models.Model):
             return url
         else:
             return path
+    
+    def get_tab_deeplink(self):
+        app_id = settings.FACEBOOK_APP_ID
+        path = self.get_absolute_url()
+        if getattr(settings, 'FACEBOOK_PAGE_URL', False):
+            url = '%s?sk=app_%s&app_data=%s' % (settings.FACEBOOK_PAGE_URL, app_id, urlencode(path))
+            return url
+        else:
+            return path
 
     @property
     def graph(self):
