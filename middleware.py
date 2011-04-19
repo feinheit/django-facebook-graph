@@ -6,7 +6,7 @@ import urllib
 
 from django.conf import settings
 from django.shortcuts import redirect
-from django.utils import simplejson
+from django.utils import simplejson, translation
 
 _parse_json = lambda s: simplejson.loads(s)
 
@@ -35,6 +35,10 @@ class OAuth2ForCanvasMiddleware(object):
         if 'signed_request' in request.REQUEST:
             facebook['signed_request'] = parseSignedRequest(request.REQUEST['signed_request'], app_secret)
             logger.debug('got signed_request from facebook: %s' % facebook['signed_request'])
+            language = facebook['signed_request']['user']['locale']
+            logger.debug('language: %s' %language)
+            request.LANGUAGE_CODE = language
+            translation.activate(language)
             
             if facebook['signed_request'].get('oauth_token', None):
                 facebook['access_token'] = facebook['signed_request']['oauth_token']
