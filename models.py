@@ -48,10 +48,28 @@ class Base(models.Model):
             return url
         else:
             return path
+    
+    def get_tab_deeplink(self):
+        app_id = settings.FACEBOOK_APP_ID
+        path = self.get_absolute_url()
+        if getattr(settings, 'FACEBOOK_PAGE_URL', False):
+            url = '%s?sk=app_%s&app_data=%s' % (settings.FACEBOOK_PAGE_URL, app_id, urlencode(path))
+            return url
+        else:
+            return path
 
     @property
     def graph(self):
         return self._graph
+    
+    @property
+    def cached(self):
+        cached_fields = {}
+        fieldnames = self._meta.get_all_field_names()
+        for field in fieldnames:
+            if field.find('_') == 0:
+                cached_fields.update({field[1:] : getattr(self, field)})
+        return cached_fields
     
     @property
     def refreshed_graph(self):
@@ -370,3 +388,12 @@ class Request(Base):
     _data = models.TextField(blank=True, null=True)
     _message = models.TextField(blank=True, null=True)
     _created_time = models.DateTimeField(blank=True, null=True)
+    
+    def delete(self, facebook=True, graph=None, *args, **kwargs):
+        if facebook:
+            if not graph: graph = get_graph()
+            try:
+                graph.delete_object(str(self.id))
+            except GraphAPIError, e:
+                logger.warning('DELETE Request failed: %s' % e)
+        super(Request, self).delete(*args, **kwargs)
