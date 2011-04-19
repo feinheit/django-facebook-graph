@@ -1,10 +1,8 @@
 {% load i18n %}
 {% if not registered %}
-<div class="content">
-    {% blocktrans %}
-    Bleibe per Email am Ball und erfahre die neusten entwicklungen unserer Bewegung. Bleibe aktiv und informiere dich. Es lohnt sich.
-    Der Newsletter wird alle zwei Wochen versendet.
-    {% endblocktrans %}
+<div class="content {{ content.type }}">
+    <h2>{{ content.title }}</h2>
+    <p>{{ content.description }}</p>
     <a id="btn-register-newsletter" class="iframe fb-button" href="/fb/newsletter/register/">{% trans 'Register for our Newsletter' %}</a>
 </div>
 {% else %}

@@ -120,6 +120,9 @@ class SocialPluginContent(models.Model):
     """ A Facebook Social Plugin that connects to the page where the tab is shown. """
     
     type = models.CharField(_('Plugin'), max_length=16, choices=AVAILABLE_PLUGINS)
+    title = models.CharField(_('Title'), max_length=30, blank=True)
+    description = models.TextField(_('Description'), blank=True)
+    
     
     def __init__(self, *args, **kwargs):
         super(SocialPluginContent, self).__init__(*args, **kwargs)
@@ -170,11 +173,13 @@ class SocialPluginContent(models.Model):
         except KeyError:
             logger.debug('No signed_request in current session.')
             signed_request = {}
-        context = {}
+        context = {'content': self}
         context.update(self.social_context.get_context(request=request, signed_request=signed_request))
        
         if self.dimension:
             context.update({'dimensions' : self.dimension.split('x')})
         template = 'content/facebook/%s.html' % self.type
         return render_to_string(template.lower() , context)
+
+
     

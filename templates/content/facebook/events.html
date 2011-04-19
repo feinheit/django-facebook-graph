@@ -1,5 +1,6 @@
 {% load i18n %}
-<div class="content" id="fb-events">
+<div class="content {{ content.type }}" id="fb-events">
+    <h2>{{ content.title }}</h2>
     {% for event in events %}
     <div class="fb-event relative">
         <div class="fb-event-teaser  clearfix">

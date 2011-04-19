@@ -1,4 +1,5 @@
-<div class="content" id="fb-likebox">
+<div class="content {{ content.type }}" id="fb-likebox">
+    <h2>{{ content.title }}</h2>
     <fb:like-box href="{{ url }}" 
         {% if dimensions %}
             width="{{ dimensions.0 }}"
