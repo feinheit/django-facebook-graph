@@ -50,12 +50,12 @@ class Likebox(PluginBase):
             page = None
         graph = get_graph(request)
         pagegraph = graph.get_object(page)
-        logger.info('graph: %s' %pagegraph)
+        logger.debug('graph: %s' %pagegraph)
         try:
             url = pagegraph['link']
         except TemplateSyntaxError:
             raise Http404, 'session expired.'
-        self.context.update({'url' : url })
+        self.context.update({'url' : url , 'page' : page })
         return self.context
     
     def clean(self):
@@ -95,6 +95,7 @@ class Events(PluginBase):
     def get_context(self, request, *args, **kwargs):
         upcoming = Event.objects.upcoming()
         graph = get_graph(request)
+
         # TODO: this:
         """
         try:
@@ -128,7 +129,7 @@ class SocialPluginContent(models.Model):
         super(SocialPluginContent, self).__init__(*args, **kwargs)
         if self.type:
             self.social_context = self.SocialContext(self.type, self)
-            logger.info('social_context %s' %self.social_context)
+            logger.debug('social_context %s' %self.social_context)
     
     @classmethod
     def initialize_type(cls, DIMENSION_CHOICES=None):

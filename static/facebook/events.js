@@ -1,6 +1,6 @@
 
 $(function(){
-
+    /*
     function rsvp(session){
          $('.fb-event').each(function(){
             if($.inArray($(this).data('id'), user_events) != -1){
@@ -9,7 +9,7 @@ $(function(){
             
          });
     }    
-
+    */
 
     function login(button){
         FB.login(function(response) {
@@ -25,11 +25,6 @@ $(function(){
         }, {perms:'rsvp_event, user_events'});
     }
 
-
-
-    function attend(event_id){
-       log('attending'); 
-    }
    
     $('.fb-event-rsvp button').click(function(evt){
        var event_id = $(this).parent('div').data('id');
