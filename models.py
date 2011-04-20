@@ -113,7 +113,7 @@ class Base(models.Model):
         # try to generate a slug, but only the first time (because the slug should be more persistent)
         if not self.slug or update_slug:
             try:
-                self.slug = slugify(self.name)[:50]
+                self.slug = slugify(self._name)[:50]
             except:
                 self.slug = self.id
         self.save()
