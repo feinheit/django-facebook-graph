@@ -435,3 +435,6 @@ class Request(Base):
                 logger.warning('DELETE Request failed: %s' % e)
         super(Request, self).delete(*args, **kwargs)
     
+    def __unicode__(self):
+        return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)
+    
