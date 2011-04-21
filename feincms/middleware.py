@@ -13,9 +13,9 @@ class PreventForeignApp(object):
             facebook_page = get_page_from_request(request)
             signed_request = request.session['facebook']['signed_request']
             
-            if not facebook_page:
+            if not facebook_page or not 'page' in signed_request:
                 return None
 
-            if not 'page' in signed_request or signed_request['page']['id'] != str(facebook_page.id):
+            if signed_request['page']['id'] != str(facebook_page.id):
                 destination = '%s&app_data=%s' % (get_tab_url_from_request(request), request.path_info)
                 return render_to_response('redirecter.html', {'destination' : destination})
