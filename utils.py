@@ -81,91 +81,117 @@ def get_FQL(fql, access_token=None):
     
     return response
 
-def get_graph(request=None, access_token=None, client_secret=None, client_id=None, code=None):
-    """ Tries to get a facebook graph by different methods.
-    
+class Graph(facebook.GraphAPI):
+    """ The Base Class for a Facebook Graph. Inherits from the Facebook SDK Class. """
+    """ Tries to get a facebook graph using different methods.
     * via access_token: that one is simple
     * via request cookie (access token)
-    * via application -> make an accesstoken for an application
-    
+    * via application -> create an accesstoken for an application if requested.
+    Needs OAuth2ForCanvasMiddleware to deal with the signed Request and Authentication code.
     """
-    # TODO: Catch request timeout
+    def __init__(self, request, access_token=None, app_secret=settings.FACEBOOK_APP_SECRET,
+                 app_id=settings.FACEBOOK_APP_ID, code=None, request_token=True):
+        super(Graph, self).__init__(access_token)
+        self.HttpRequest = request
+        self.get_fb_sesison(request)
+        self._me, self._user = None, None
+        self.app_id, self.app_secret = app_id, app_secret
+        self.via = 'No token requested'
+        self.app_is_authenticated = self.fb_session['app_is_authenticated'] \
+                                    if self.fb_session.get('app_is_authenticated', False) else True #Assuming True.                              
+        if access_token:
+            self.via = 'access_token'
+        elif self.fb_session.get('access_token', None):
+            self.get_token_from_session()
+        
+        #Clientseitige Authentication schreibt das Token ueber die Middleware ins Cookie.    
+        elif request.COOKIES.get('fbs_%i' % app_id, None): 
+            self.get_token_from_cookie()
+            
+        elif request_token: #get the app graph
+            self.get_token_from_app()
     
-    # if no application is specified, get default from settings
-    if not client_secret: client_secret = settings.FACEBOOK_APP_SECRET
-    if not client_id: client_id = settings.FACEBOOK_APP_ID
+    def get_token_from_session(self):
+        self.access_token = self.fb_session.get('access_token')
+        self._user = self.fb_session.get('user_id', None)
+        if not self._user: 
+            self.fb_session['app_is_authenticated'] = False
+            self.HttpRequest.session.modified = True
+        self.via = 'session'
     
-    if access_token:
+    def get_token_from_cookie(self):
+        cookie = self.get_user_from_cookie(self.HttpRequest.COOKIES, self.app_id, self.app_secret)
+        self.access_token = cookie['access_token']
+        self._user = cookie['uid']
+        self.fb_session.update({'access_token': self.access_token, 'user_id': self._user })
+        self.HttpRequest.session.modified = True
+        self.via = 'cookie'
+        
+    def get_token_from_app(self):
+        access_dict = {'type' : 'client_cred', 'client_secret' : self.client_secret, 'client_id' : self.client_id}
+        file = urllib.urlopen('https://graph.facebook.com/oauth/access_token?%s' 
+                              % urllib.urlencode(access_dict))
+        raw = file.read()
         try:
-            graph = facebook.GraphAPI(access_token)
-            graph.via = 'access_token'
-            graph.me = graph.request('me')
-            graph.user = graph.me['id']
-            logger.debug('got graph via access_token: %s' % graph.access_token)
-            return graph
-        except facebook.GraphAPIError, e:
-            logger.debug('could not use the accesstoken: %s' % e.message)
-    
-    if request:
-        cookie = facebook.get_user_from_cookie(request.COOKIES, client_id, client_secret)
+            response = _parse_json(raw)
+            if response.get("error"):
+                raise facebook.GraphAPIError(response["error"]["type"],
+                                             response["error"]["message"])
+            else:
+                raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned json (%s), expected access_token' % response)
+        except:
+            # if the response ist not json, it is the access token. Write it back to the session.
+            if raw.find('=') > -1:
+                self.fb_session['access_token'] = access_token
+                self.HttpRequest.session.modified = True
+            else:
+                raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected access_token' % response)
+        finally:
+            file.close()
+        self.via = 'application'
         
-        if cookie != None:
+        
+    def get_fb_session(self, request):
+        fb = request.session.get('facebook', None)
+        if not fb:
+            request.session.update({'facebook': {'app_is_authenticated': True }})
+            fb = request.session['facebook']
+        self.fb_session = fb   
+         
+    def _get_me(self):
+        if not self.access_token or not self.fb_session['app_is_authenticated']:
+            return None
+        else:
             try:
-                graph = facebook.GraphAPI(cookie["access_token"])
-                graph.user = cookie['uid']
-                graph.via = 'cookie'
-                graph.me = graph.request('me')
-                logger.debug('got graph via cookie. access_token: %s' % graph.access_token) 
-                return graph
-            except facebook.GraphAPIError, e:
-                logger.debug('could not use the accesstoken from cookie: %s' % e.message)
+                self._me = self.request('me')
+                self._user = self._me['id']
+                self.fb_session.update({'user_id': self._user, 'access_token': self.access_token })
+                self.HttpRequest.session.modified = True
+            except facebook.GraphAPIError as e:
+                logger.debug('could not use the accesstoken via %s: %s' %(self.via, e.message))
+                self.fb_session['app_is_authenticated'] = False
+            return self._me
+            
+    @property
+    def me(self): #Is now a lazy property.
+        if self._me:
+            return self._me
         else:
-            logger.debug('could not get graph via cookie. cookies: %s' % request.COOKIES)
-        
-        if request.session.get('facebook', None):
-            if request.session['facebook'].get('access_token', None):
-                try:
-                    graph = facebook.GraphAPI(request.session['facebook']['access_token'])
-                    graph.via = 'session'
-                    graph.me = graph.request('me')
-                    graph.user = graph.me['id']
-                    logger.debug('got graph via session. access_token: %s' % graph.access_token)
-                    return graph
-                except facebook.GraphAPIError, e:
-                    logger.debug('could not use the accesstoken from session: %s' % e.message)
+            self._get_me()
     
-    # get token by application
-    access_dict = {'type' : 'client_cred', 'client_secret' : client_secret, 'client_id' : client_id}
-    if code:
-        access_dict.update({'code': code })
-    file = urllib.urlopen('https://graph.facebook.com/oauth/access_token?%s' 
-                          % urllib.urlencode(access_dict))
-    raw = file.read()
-    
-    try:
-        response = _parse_json(raw)
-        if response.get("error"):
-            raise facebook.GraphAPIError(response["error"]["type"],
-                                         response["error"]["message"])
+    @property        
+    def user(self):
+        if self._user:
+            return self._user
         else:
-            raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned json (%s), expected access_token' % response)
-    except:
-        # if the response ist not json, it is the access token. Write it back to the session.
-        if raw.find('=') > -1:
-            access_token = raw.split('=')[1]
-            if request:
-                cookie = request.session.get('facebook', dict())  
-                cookie['access_token'] = access_token
-                request.session.modified = True      
-        else:
-            raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected access_token' % response)
-    finally:
-        file.close()
-    
-    graph = facebook.GraphAPI(access_token)
-    graph.via = 'application'
-    logger.debug('got graph via application: %s. access_token: %s' %(client_id, graph.access_token)) 
-    return graph
+            return self.me.get('id', None)
+            
+            
+
+def get_graph(request=None, *args, **kwargs):
+    if not request: 
+        raise facebook.GraphAPIError('GET_GRAPH', 'get_graph requires the request as its first argument.')
+    return Graph(request, *args, **kwargs)
     
 
 def post_image(access_token, image, message, object='me'):
