@@ -131,7 +131,7 @@ def redirect_to_page(view):
 def newsletter(request):
 
     def subscribe(registration):
-        logger.info('registration: %s' %registration)
+        logger.debug('registration: %s' %registration)
         subscriber, created = Subscription.objects.get_or_create(email=registration['email'])
         subscriber.salutation = 'f' if registration['gender'] == 'female' else 'm'
         subscriber.first_name, subscriber.last_name = registration['first_name'], registration['last_name']
@@ -154,11 +154,11 @@ def newsletter(request):
             groups = getattr(settings, 'CLEVERREACH_GROUPS')
             group_id = groups['nl_%s' %short_language_code()]
             status = insert_new_user(registration, group_id, activated=True, sendmail=False, form_id=form_id)
-            logger.info('Cleverreach response: %s' %status)
+            logger.debug('Cleverreach response: %s' %status)
     
     if request.method == 'POST' and request.POST.get('signed_request', None):
         signed_request = parseSignedRequest(request.POST.get('signed_request'))
-        logger.info('newsletter signed_request: %s' %signed_request)
+        logger.debug('newsletter signed_request: %s' %signed_request)
         signed_request['registration'].update({'facebook_id': signed_request['user_id']})
         subscribe(signed_request['registration'])
         return redirect('newsletter_thanks')

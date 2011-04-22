@@ -25,7 +25,8 @@ FACEBOOK_LOCALES = {
     'pt' : 'pt_PT',
 }
 
-AVAILABLE_PLUGINS = (('Likebutton', _('Like Button')),
+AVAILABLE_PLUGINS = (
+                     #('Likebutton', _('Like Button')),
                      ('Likebox', _('Like Box')),
                      ('Newsletter', _('Newsletter')),
                      ('Addtab', _('Add to page')),
@@ -49,13 +50,14 @@ class Likebox(PluginBase):
         except KeyError:
             page = None
         graph = get_graph(request)
-        pagegraph = graph.get_object(page)
-        logger.debug('graph: %s' %pagegraph)
-        try:
-            url = pagegraph['link']
-        except TemplateSyntaxError:
-            raise Http404, 'session expired.'
-        self.context.update({'url' : url , 'page' : page })
+        if page:
+            pagegraph = graph.get_object(page)
+            logger.debug('graph: %s' %pagegraph)
+            try:
+                url = pagegraph['link']
+            except TemplateSyntaxError:
+                raise Http404, 'session expired.'
+            self.context.update({'url' : url , 'page' : page })
         return self.context
     
     def clean(self):
@@ -65,8 +67,13 @@ class Likebox(PluginBase):
                 raise ValidationError(_('If you want to add a "Like Box", you have to specify the URL of the Facebook Page to like.'))
         except AttributeError:
             pass
-          
-          
+       
+
+class Likebutton(PluginBase):
+    def get_context(self):
+        pass
+
+
 class Addtab(PluginBase):
     
     def get_context(self, *args, **kwargs):
