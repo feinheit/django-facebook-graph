@@ -97,7 +97,7 @@ class Graph(facebook.GraphAPI):
     """
     def __init__(self, request, access_token=None, app_secret=settings.FACEBOOK_APP_SECRET,
                  app_id=settings.FACEBOOK_APP_ID, code=None, request_token=True):
-        super(Graph, self).__init__(access_token)
+        super(Graph, self).__init__(access_token)  # self.access_token = access_token
         self.HttpRequest = request
         self.get_fb_session(request)
         self._me, self._user = None, None
@@ -105,15 +105,16 @@ class Graph(facebook.GraphAPI):
         self.via = 'No token requested'
         self.app_is_authenticated = self.fb_session['app_is_authenticated'] \
                                     if self.fb_session.get('app_is_authenticated', False) else True  # Assuming True.
+        if request_token == False:
+            return
         if access_token:
             self.via = 'access_token'
         elif self.get_token_from_session():
             self.via = 'session'
         elif self.get_token_from_cookie():
             self.via = 'cookie'
-        elif request_token:  # get the app graph
-            if self.get_token_from_app():
-                self.via = 'application'
+        elif self.get_token_from_app():
+             self.via = 'application'
 
     def get_token_from_session(self):
         if not self.fb_session.get('access_token', None):
