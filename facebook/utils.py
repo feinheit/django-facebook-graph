@@ -35,7 +35,6 @@ def parseSignedRequest(signed_request, secret=None):
         secret = settings.FACEBOOK_APP_SECRET
 
     (encoded_sig, payload) = signed_request.split(".", 2)
-
     sig = base64_url_decode(encoded_sig)
     data = simplejson.loads(base64_url_decode(payload))
 
