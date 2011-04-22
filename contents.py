@@ -121,7 +121,7 @@ class SocialPluginContent(models.Model):
     """ A Facebook Social Plugin that connects to the page where the tab is shown. """
     
     type = models.CharField(_('Plugin'), max_length=16, choices=AVAILABLE_PLUGINS)
-    title = models.CharField(_('Title'), max_length=30, blank=True)
+    title = models.CharField(_('Title'), max_length=40, blank=True)
     description = models.TextField(_('Description'), blank=True)
     
     

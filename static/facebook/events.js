@@ -24,7 +24,14 @@ $(function(){
           } 
         }, {perms:'rsvp_event, user_events'});
     }
-
+    
+    if(!fb.user){
+        $('fb-event-rsvp').hide();
+        $('fb-event-login').show();
+    } else {
+        $('fb-event-rsvp').show();
+        $('fb-event-login').hide();  
+    }
    
     $('.fb-event-rsvp button').click(function(evt){
        var event_id = $(this).parent('div').data('id');

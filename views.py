@@ -148,7 +148,7 @@ def newsletter(request):
                 cleverreach = __import__('%s.cleverreach' %settings.APP_MODULE)
                 from cleverreach import insert_new_user, deactivate_user
             except ImportError:
-                from feinheit.cleverreach import insert_new_user, deactivate_user          
+                from akw.cleverreach import insert_new_user, deactivate_user  # TODO: Check this        
             forms = getattr(settings, 'CLEVERREACH_FORMS', None)
             form_id = forms[short_language_code()] if forms else None    
             groups = getattr(settings, 'CLEVERREACH_GROUPS')
