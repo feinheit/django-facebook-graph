@@ -94,7 +94,9 @@ class Base(models.Model):
                 if isinstance(fieldclass, models.DateTimeField):
                     # reading the facebook datetime string. assuming we're in MET Timezone
                     # TODO: work with real timezones
-                    setattr(self, field, datetime.strptime(val[:-5], "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7) )
+                    if '+0000' in val: # sometimes there are the milliseconds, sometimes not. we dont need milliseconds anyway.
+                        val = val[:-5]
+                    setattr(self, field, datetime.strptime(val, "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7) )
                     
                 elif isinstance(self._meta.get_field(field), models.ForeignKey):
                     # trying to build the ForeignKey and if the foreign Object doesnt exists, create it.
@@ -355,7 +357,7 @@ class Event(Base):
     _description = models.TextField(blank=True, null=True)
     _start_time = models.DateTimeField(blank=True, null=True)
     _end_time = models.DateTimeField(blank=True, null=True)
-    _location = models.CharField(max_length=200, blank=True, null=True)
+    _location = models.CharField(max_length=500, blank=True, null=True)
     _venue = JSONField(blank=True, null=True)
     _privacy = models.CharField(max_length=10, blank=True, null=True, choices=(('OPEN', 'OPEN'), ('CLOSED', 'CLOSED'), ('SECRET', 'SECRET')))
     _updated_time = models.DateTimeField(blank=True, null=True)
