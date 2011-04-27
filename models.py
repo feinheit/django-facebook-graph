@@ -94,7 +94,7 @@ class Base(models.Model):
                 if isinstance(fieldclass, models.DateTimeField):
                     # reading the facebook datetime string. assuming we're in MET Timezone
                     # TODO: work with real timezones
-                    if '+0000' in val: # sometimes there are the milliseconds, sometimes not. we dont need milliseconds anyway.
+                    if '+' in val: # sometimes there are the milliseconds, sometimes not. we dont need milliseconds anyway.
                         val = val[:-5]
                     setattr(self, field, datetime.strptime(val, "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7) )
                     
