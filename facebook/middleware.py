@@ -7,7 +7,7 @@ import urllib
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import redirect
-from django.utils import simplejson
+from django.utils import simplejson, translation
 
 _parse_json = lambda s: simplejson.loads(s)
 
@@ -17,9 +17,9 @@ from utils import parseSignedRequest
 class OAuth2ForCanvasMiddleware(object):
     def process_request(self, request):
         """
-        Writes in the Session the signed_request
+        Writes the signed_request into the Session 
         """
-        facebook = request.session.get('facebook', dict())
+        fb = request.session.get('facebook', dict())
         app_secret = settings.FACEBOOK_APP_SECRET
         application = None
         
@@ -34,22 +34,26 @@ class OAuth2ForCanvasMiddleware(object):
         
         # default POST/GET request from facebook with a signed request
         if 'signed_request' in request.REQUEST:
-            facebook['signed_request'] = parseSignedRequest(request.REQUEST['signed_request'], app_secret)
-            logger.debug('got signed_request from facebook: %s' % facebook['signed_request'])
+            fb['signed_request'] = parseSignedRequest(request.REQUEST['signed_request'], app_secret)
+            logger.debug('got signed_request from facebook: %s' % fb['signed_request'])
+            language = fb['signed_request']['user']['locale']
+            logger.debug('language: %s' %language)
+            request.LANGUAGE_CODE = language
+            translation.activate(language)
             
             # rewrite important data
-            if 'oauth_token' in facebook['signed_request']:
-                facebook['access_token'] = facebook['signed_request']['oauth_token']
-            else:
-                if 'access_token' in facebook: facebook.pop('access_token')
-                
-            if 'user_id' in facebook['signed_request']:
-                facebook['user_id'] = facebook['signed_request']['user_id']
-            else:
-                if 'user_id' in facebook: facebook.pop('user_id')
-        
+            if 'oauth_token' in fb['signed_request']:
+                fb['access_token'] = fb['signed_request']['oauth_token']
+            if 'access_token' in fb['signed_request']:
+                fb['access_token'] = fb['signed_request']['access_token']
+            if 'user_id' in fb['signed_request']:
+                fb['user_id'] = fb['signed_request']['user_id']
+                fb['app_is_authenticated'] = True
+            request.session['facebook'] = fb
+            request.session.modified = True
+
         # auth via callback from facebook
-        if 'code' in request.REQUEST:
+        elif 'code' in request.REQUEST:
             args = dict(client_id=settings.FACEBOOK_APP_ID,
                         client_secret=settings.FACEBOOK_APP_SECRET,
                         code=request.GET['code'],
@@ -63,20 +67,20 @@ class OAuth2ForCanvasMiddleware(object):
             parsed = cgi.parse_qs(raw)
             
             if parsed.get('access_token', None):
-                facebook['access_token'] = parsed["access_token"][-1]
-                logger.debug('got access_token from facebook callback: %s' % facebook['access_token'])
+                fb['access_token'] = parsed["access_token"][-1]
+                logger.debug('got access_token from facebook callback: %s' % fb['access_token'])
             else:
-                logger.warning('facebook did not respond an accesstoken: %s' % raw)
-        
+                logger.debug('facebook did not respond an accesstoken: %s' % raw)
+            request.session['facebook'] = fb
+            request.session.modified = True
         # old (?) method where facebook serves the accestoken unencrypted in 'session' parameter
-        if 'session' in request.REQUEST:
+        elif 'session' in request.REQUEST:
             session = _parse_json(request.REQUEST['session'])
-            facebook['access_token'] = session.get('access_token')
+            fb['access_token'] = session.get('access_token')
             logger.debug('got access_token from session: %s' % request.REQUEST['session'])
-        
-        request.session['facebook'] = facebook
-    
-    
+            request.session['facebook'] = fb
+            request.session.modified = True
+            
     def process_response(self,request, response):
         """ p3p headers for allowing cookies in Internet Explorer. 
         more infos: http://adamyoung.net/IE-Blocking-iFrame-Cookies

@@ -1,0 +1,181 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-04-15 11:30+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1)\n"
+
+#: contents.py:28
+msgid "Like Button"
+msgstr ""
+
+#: contents.py:29
+msgid "Like Box"
+msgstr ""
+
+#: contents.py:30
+msgid "Newsletter"
+msgstr ""
+
+#: contents.py:31
+msgid "Add to page"
+msgstr ""
+
+#: contents.py:32
+msgid "Upcoming Events"
+msgstr ""
+
+#: contents.py:65
+msgid ""
+"If you want to add a \"Like Box\", you have to specify the URL of the "
+"Facebook Page to like."
+msgstr ""
+
+#: contents.py:123
+msgid "Plugin"
+msgstr ""
+
+#: contents.py:134
+msgid "dimension"
+msgstr ""
+
+#: contents.py:154
+msgid "Facebook Social Plugin"
+msgstr ""
+
+#: contents.py:155
+msgid "Facebook Social Plugins"
+msgstr ""
+
+#: models.py:274
+msgid "The ID is the facebook page ID"
+msgstr ""
+
+#: models.py:277
+msgid "Cached name of the page"
+msgstr ""
+
+#: models.py:278
+msgid "Cached picture of the page"
+msgstr ""
+
+#: models.py:279
+msgid "Cached fancount of the page"
+msgstr ""
+
+#: models.py:308
+msgid "The applications API Key"
+msgstr ""
+
+#: models.py:309
+msgid "The applications Secret"
+msgstr ""
+
+#: models.py:333
+msgid "Active"
+msgstr ""
+
+#: models.py:334
+msgid "The ID is the facebook event ID"
+msgstr ""
+
+#: feincms/extensions.py:8
+msgid ""
+"Link this page to a facebook app. Used for Facebook Tabs, to determine the "
+"underlaying FB App"
+msgstr ""
+
+#: feincms/extensions.py:9
+msgid ""
+"Link this page to a facebook page. Used for Facebook Tabs, to determine the "
+"underlaying FB Page and prevent the Tab to be added to a random foreign page"
+msgstr ""
+
+#: feincms/extensions.py:11
+msgid "Facebook Application"
+msgstr ""
+
+#: feincms/extensions.py:25
+msgid "both"
+msgstr ""
+
+#: feincms/extensions.py:26
+msgid "true"
+msgstr ""
+
+#: feincms/extensions.py:27
+msgid "false"
+msgstr ""
+
+#: feincms/extensions.py:33
+msgid "render like"
+msgstr ""
+
+#: feincms/extensions.py:33
+msgid "Render this content only, if requesting user likes the page."
+msgstr ""
+
+#: feincms/extensions.py:34
+msgid "app installed"
+msgstr ""
+
+#: feincms/extensions.py:34
+msgid ""
+"Render this content only, if requesting user has installed the corresponding "
+"app."
+msgstr ""
+
+#: templates/content/facebook/Addtab.html:3
+#: templates/content/facebook/addtab.html:4
+msgid "Binde diesen Tab auf deiner FB-Page ein"
+msgstr ""
+
+#: templates/content/facebook/events.html:12
+msgid "I'm attending"
+msgstr ""
+
+#: templates/content/facebook/events.html:13
+msgid "Maybe"
+msgstr ""
+
+#: templates/content/facebook/events.html:14
+msgid "No"
+msgstr ""
+
+#: templates/content/facebook/events.html:17
+msgid "Event URL:"
+msgstr ""
+
+#: templates/content/facebook/events.html:18
+msgid "Share"
+msgstr ""
+
+#: templates/content/facebook/newsletter.html:4
+msgid ""
+"\n"
+"    Bleibe per Email am Ball und erfahre die neusten entwicklungen unserer "
+"Bewegung. Bleibe aktiv und informiere dich. Es lohnt sich.\n"
+"    Der Newsletter wird alle zwei Wochen versendet.\n"
+"    "
+msgstr ""
+
+#: templates/content/facebook/newsletter.html:8
+msgid "Register for our Newsletter"
+msgstr ""
+
+#: templates/content/facebook/thanks.html:21
+msgid "Back"
+msgstr ""

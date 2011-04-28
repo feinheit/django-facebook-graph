@@ -1,11 +1,12 @@
 import logging
+from urllib import urlencode
 logger = logging.getLogger(__name__)
 
-from datetime import datetime, timedelta
-
+from datetime import datetime, timedelta, date
+from django.conf import settings
 from django import forms
-from django.db import models
-from django.db import transaction
+from django.db import models, transaction
+from django.db.models import Q
 from django.contrib.auth.models import User as DjangoUser
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
@@ -40,6 +41,24 @@ class Base(models.Model):
     def graph_url(self):
         return 'http://graph.facebook.com/%s' % self._id
     
+    def get_facebook_url(self):
+        app_id = getattr(settings, 'FACEBOOK_APP_ID', '')
+        path = self.get_absolute_url()
+        if getattr(settings, 'FACEBOOK_REDIRECT_PAGE_URL', False):
+            url = '%s?sk=app_%s&app_data=%s' % (settings.FACEBOOK_REDIRECT_PAGE_URL, app_id, urlencode(path))
+            return url
+        else:
+            return path
+    
+    def get_tab_deeplink(self):
+        app_id = settings.FACEBOOK_APP_ID
+        path = self.get_absolute_url()
+        if getattr(settings, 'FACEBOOK_PAGE_URL', False):
+            url = '%s?sk=app_%s&app_data=%s' % (settings.FACEBOOK_PAGE_URL, app_id, urlencode(path))
+            return url
+        else:
+            return path
+
     @property
     def graph(self):
         return self._graph
@@ -348,7 +367,28 @@ class Application(Page):
     secret = models.CharField(max_length=32, help_text=_('The applications Secret'))
 
 
+class EventManager(models.Manager):
+    def active(self):
+        return self.filter(active=True)
+    
+    def upcoming(self):
+        """ returns all upcoming and ongoing events """
+        today = date.today()
+        if datetime.now().hour < 6:
+            today = today-timedelta(days=1)
+        
+        return self.active().filter(Q(_start_time__gte=today) | Q(_end_time__gte=today))
+    
+    def past(self):
+        """ returns all past events """
+        today = date.today()
+        if datetime.now().hour < 6:
+            today = today-timedelta(days=1)
+        
+        return self.active().filter(Q(_start_time__lt=today) & Q(_end_time__lt=today))
+
 class Event(Base):
+    active = models.BooleanField(_('Active'), default=True, blank=True)
     id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook event ID'))
 
     # Cached Facebook Graph fields for db lookup
@@ -363,10 +403,18 @@ class Event(Base):
     _updated_time = models.DateTimeField(blank=True, null=True)
     
     invited = models.ManyToManyField(User, through='EventUser')
-    
+
+    objects = EventManager()
+
     @property
     def facebook_link(self):
         return 'http://www.facebook.com/event.php?eid=%s' % self.id
+    
+    def get_description(self):
+        return self._description
+    
+    def get_name(self):
+        return self._name
     
     class Meta:
         ordering = ('_start_time',)
