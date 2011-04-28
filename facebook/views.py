@@ -148,18 +148,18 @@ def newsletter(request):
                 cleverreach = __import__('%s.cleverreach' %settings.APP_MODULE)
                 from cleverreach import insert_new_user, deactivate_user
             except ImportError:
-                from feinheit.cleverreach import insert_new_user, deactivate_user          
+                from akw.cleverreach import insert_new_user, deactivate_user  # TODO: Check this        
             forms = getattr(settings, 'CLEVERREACH_FORMS', None)
             form_id = forms[short_language_code()] if forms else None    
             groups = getattr(settings, 'CLEVERREACH_GROUPS')
             group_id = groups['nl_%s' %short_language_code()]
             logger.info('sending: %s' %registration)
             status = insert_new_user(registration, group_id, activated=True, sendmail=False, form_id=form_id)
-            logger.info('Cleverreach response: %s' %status)
+            logger.debug('Cleverreach response: %s' %status)
     
     if request.method == 'POST' and request.POST.get('signed_request', None):
         signed_request = parseSignedRequest(request.POST.get('signed_request'))
-        logger.info('newsletter signed_request: %s' %signed_request)
+        logger.debug('newsletter signed_request: %s' %signed_request)
         signed_request['registration'].update({'facebook_id': signed_request['user_id']})
         subscribe(signed_request['registration'])
         return redirect('newsletter_thanks')
