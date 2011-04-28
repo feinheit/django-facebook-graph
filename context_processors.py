@@ -7,7 +7,8 @@ def application_settings(request):
              'FACEBOOK_CANVAS_URL' : getattr(settings, 'FACEBOOK_CANVAS_URL', ''),}
     
 def facebook_config(request):
-    return {'facebook' : request.session['facebook']}
+    if 'facebook' in request.session:
+        return {'facebook' : request.session['facebook']}
 
 def session_without_cookies(request):
     """ simple helper to use sessions without cookies """

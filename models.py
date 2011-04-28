@@ -19,11 +19,30 @@ from fields import JSONField
 from utils import get_graph, post_image, get_FQL
 
 
+class BaseManager(models.Manager):
+    def multi_update_or_create_from_facebook(self, data, update_slug=False):
+        if 'data' in data:
+            data = data['data']
+        if type(data) == dict:
+            self.create_or_update_from_facebook(data, update_slug)
+        else:
+            for item in data:
+                yield self.create_or_update_from_facebook(item, update_slug)
+        
+    def create_or_update_from_facebook(self, data, update_slug=False):
+        if 'id' in data:
+            object, created = self.get_or_create(id=data['id'])
+            object.save_from_facebook(data, update_slug)
+            return object
+
+
 class Base(models.Model):
     # Last Lookup JSON
     _graph = JSONField(blank=True, null=True)
 
     slug = models.SlugField(unique=True, blank=True, null=True)
+    
+    objects = BaseManager()
 
     created = models.DateTimeField(editable=False, default=datetime.now)
     updated = models.DateTimeField(editable=False, default=datetime.now)
@@ -237,31 +256,6 @@ class User(Base):
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
 
-    def get_friends(self, save=False, request=None, access_token=None, \
-             client_secret=None, client_id=None):
-
-        graph = get_graph(request=request, access_token=access_token, \
-                          client_secret=client_secret, client_id=client_id)
-        response = graph.request('%s/friends' % self.id)
-        friends = response['data']
-
-        if save:
-            self.save_friends(friends)
-
-        return friends
-
-    def save_friends(self, friends):
-        for jsonfriend in friends:
-            friend, created = User.objects.get_or_create(id=jsonfriend['id'])
-            if created:
-                friend._name = jsonfriend['name']
-                friend.save()
-            all_friends = list(self.friends.all().values_list('id'));
-            if not friend in all_friends:
-                self.friends.add(friend)
-        self.save()
-        return friends
-
     @property
     def facebook_link(self):
         return self._link
@@ -422,8 +416,8 @@ class Request(Base):
     
     # Cached Facebook Graph fields for db lookup
     _application = models.ForeignKey(Application, blank=True, null=True)
-    _to = models.ForeignKey(User, blank=True, null=True, related_name='request_to_set')
-    _from = models.ForeignKey(User, blank=True, null=True, related_name='request_from_set')
+    _to = models.ForeignKey(User, blank=True, null=True, related_name='apprequest_to_set')
+    _from = models.ForeignKey(User, blank=True, null=True, related_name='apprequest_from_set')
     _data = models.TextField(blank=True, null=True)
     _message = models.TextField(blank=True, null=True)
     _created_time = models.DateTimeField(blank=True, null=True)
