@@ -99,7 +99,7 @@ class Graph(facebook.GraphAPI):
                  app_id=settings.FACEBOOK_APP_ID, code=None, request_token=True):
         super(Graph, self).__init__(access_token)  # self.access_token = access_token
         self.http_request = request
-        self.get_fb_session(request)
+        self.fb_session = self.get_fb_session(request)
         self._me, self._user = None, None
         self.app_id, self.app_secret = app_id, app_secret
         self.via = 'No token requested'
@@ -167,7 +167,7 @@ class Graph(facebook.GraphAPI):
         if not fb:
             request.session.update({'facebook': {'app_is_authenticated': True}})
             fb = request.session['facebook']
-        self.fb_session = fb
+        return fb
 
     def set_access_token(self, access_token, user_id=None):
         user_id = user_id if user_id else self.user_id 
