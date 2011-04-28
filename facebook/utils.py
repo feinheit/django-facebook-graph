@@ -98,6 +98,8 @@ class Graph(facebook.GraphAPI):
     def __init__(self, request, access_token=None, app_secret=settings.FACEBOOK_APP_SECRET,
                  app_id=settings.FACEBOOK_APP_ID, code=None, request_token=True):
         super(Graph, self).__init__(access_token)  # self.access_token = access_token
+        logger.info('app_secret: %s' %app_secret)
+        logger.info('app_id: %s' %app_id)
         self.HttpRequest = request
         self.get_fb_session(request)
         self._me, self._user = None, None
@@ -208,7 +210,20 @@ class Graph(facebook.GraphAPI):
 def get_graph(request=None, *args, **kwargs):
     if not request:
         raise facebook.GraphAPIError('GET_GRAPH', 'get_graph requires the request as its first argument.')
-    return Graph(request, *args, **kwargs)
+    # Temporary fix until we have decided a better naming and scope.
+    if 'client_secret' in kwargs.keys():
+        app_secret = kwargs.pop('client_secret')
+        if not app_secret:
+            app_secret = settings.FACEBOOK_APP_SECRET
+    else:
+        app_secret = kwargs.get('app_secret', settings.FACEBOOK_APP_SECRET)
+    if 'client_id' in kwargs.keys():
+        app_id = kwargs.pop('client_id')
+        if not app_id:
+            app_id = settings.FACEBOOK_APP_ID
+    else:
+        app_id = kwargs.get('app_id', settings.FACEBOOK_APP_ID)
+    return Graph(request, app_secret=app_secret, app_id=app_id, *args, **kwargs)
 
 
 def post_image(access_token, image, message, object='me'):

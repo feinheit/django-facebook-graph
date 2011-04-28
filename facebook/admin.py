@@ -5,7 +5,7 @@ from models import User, Photo, Page, Application, Event, Request
 
 class AdminBase(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
-        obj.get_from_facebook(save=True)
+        obj.get_from_facebook(save=True, request=request)
     
     def profile_link(self, obj):
         if obj.facebook_link:
