@@ -79,8 +79,15 @@ class OAuth2ForCanvasMiddleware(object):
             logger.debug('got access_token from session: %s' % request.REQUEST['session'])
             request.session['facebook'] = fb
             request.session.modified = True
+
+    def process_response(self, request, response):
+        """ p3p headers for allowing cookies in Internet Explorer. 
+        more infos: http://adamyoung.net/IE-Blocking-iFrame-Cookies
+        thanks to frog32 for the hint """
         
-        
+        response['p3p'] = 'CP="IDC DSP COR ADM DEVi TAIi PSA PSD IVAi IVDi CONi HIS OUR IND CNT"'
+        return response
+
 
 
 class Redirect2AppDataMiddleware(object):

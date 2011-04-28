@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from facebook.utils import get_graph, get_FQL
 from facebook.models import Event
+from facebook import GraphAPIError
 from django.conf import settings
 from feinheit.translations import short_language_code
 
@@ -51,7 +52,10 @@ class Likebox(PluginBase):
             page = None
         graph = get_graph(request)
         if page:
-            pagegraph = graph.get_object(page)
+            try:
+                pagegraph = graph.get_object(page)
+            except GraphAPIError:
+                return self.context
             logger.debug('graph: %s' %pagegraph)
             try:
                 url = pagegraph['link']

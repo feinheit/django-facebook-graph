@@ -94,9 +94,12 @@ class Graph(facebook.GraphAPI):
     * via request cookie (access token)
     * via application -> create an accesstoken for an application if requested.
     Needs OAuth2ForCanvasMiddleware to deal with the signed Request and Authentication code.
+    Put any graph.get_... calls in a try except structure. An Access Token might be invalid.
+    In that case a GraphAPIError is raised.
+    
     """
     def __init__(self, request, access_token=None, app_secret=settings.FACEBOOK_APP_SECRET,
-                 app_id=settings.FACEBOOK_APP_ID, code=None, request_token=True):
+                 app_id=settings.FACEBOOK_APP_ID, code=None, request_token=True, force_refresh=False):
         super(Graph, self).__init__(access_token)  # self.access_token = access_token
         logger.info('app_secret: %s' %app_secret)
         logger.info('app_id: %s' %app_id)
@@ -111,9 +114,9 @@ class Graph(facebook.GraphAPI):
             return
         if access_token:
             self.via = 'access_token'
-        elif self.get_token_from_session():
+        elif not force_refresh and self.get_token_from_session():
             self.via = 'session'
-        elif self.get_token_from_cookie():
+        elif not force_refresh and self.get_token_from_cookie():
             self.via = 'cookie'
         elif self.get_token_from_app():
              self.via = 'application'
