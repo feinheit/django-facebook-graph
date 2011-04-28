@@ -1,7 +1,3 @@
 {% load i18n %}
-<div id="addtab" class="content {{ content.type }}">
-    <h2>{{ content.title }}</h2>
-    <p>{{ content.description }}</p>
-    <a id="addtab-link" class="fb-button" href="http://www.facebook.com/add.php?api_key={{ api_key }}&pages=1&next={{ FACEBOOK_REDIRECT_PAGE_URL }}" target="_parent">
-    {% trans 'Binde diesen Tab auf deiner FB-Page ein' %}</a>
-</div>
+<a href="http://www.facebook.com/add.php?api_key={{ api_key }}&pages=1&next={{ FACEBOOK_REDIRECT_PAGE_URL }}" target="_parent">
+{% trans 'Binde diesen Tab auf deiner FB-Page ein' %}</a>

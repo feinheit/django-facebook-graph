@@ -1,3 +1,4 @@
+#coding=utf-8
 import logging
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,12 @@ from django.utils.http import urlquote
 _parse_json = lambda s: simplejson.loads(s)
 
 def base64_url_decode(s):
-    return base64.urlsafe_b64decode(s.encode("utf-8") + '=' * (4 - len(s) % 4))
+    data = base64.urlsafe_b64decode(s.encode("utf-8") + '=' * (4 - len(s) % 4))
+    logger.info( 'base64 data: %s' %data)
+    #unicode_data = unicode(data, 'utf-8')
+    #logger.info(u'unicode-data: %s' %unicode_data)
+    return data
+
 
 def parseSignedRequest(signed_request, secret=None):
     """
@@ -33,7 +39,9 @@ def parseSignedRequest(signed_request, secret=None):
     (encoded_sig, payload) = signed_request.split(".", 2)
 
     sig = base64_url_decode(encoded_sig)
-    data = simplejson.loads(base64_url_decode(payload))
+    data = simplejson.loads(base64_url_decode(payload), encoding='utf-8')
+    
+    logger.info(u'simplejson data: %s' %data)
 
     if data.get("algorithm").upper() != "HMAC-SHA256":
         return {}
@@ -80,6 +88,7 @@ def get_FQL(fql, access_token=None):
         file.close()
     
     return response
+       
 
 def get_graph(request=None, access_token=None, client_secret=None, client_id=None, code=None):
     """ Tries to get a facebook graph by different methods.

@@ -112,8 +112,8 @@ class Base(models.Model):
                 if isinstance(fieldclass, models.DateTimeField):
                     # reading the facebook datetime string. assuming we're in MET Timezone
                     # TODO: work with real timezones
-                    logger.info('feld: %s, val: %s' %(prop, val))
-                    logger.info('feld: %s, val: %s' %(prop, val[:-5]))
+                    logger.debug('feld: %s, val: %s' %(prop, val))
+                    logger.debug('feld: %s, val: %s' %(prop, val[:-5]))
                     try:
                         setattr(self, field, datetime.strptime(val[:-5], "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7))
                     except ValueError:

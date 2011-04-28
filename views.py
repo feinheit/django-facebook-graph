@@ -131,7 +131,7 @@ def redirect_to_page(view):
 def newsletter(request):
 
     def subscribe(registration):
-        logger.info('registration: %s' %registration)
+        logger.debug('registration: %s' %registration)
         subscriber, created = Subscription.objects.get_or_create(email=registration['email'])
         subscriber.salutation = 'f' if registration['gender'] == 'female' else 'm'
         subscriber.first_name, subscriber.last_name = registration['first_name'], registration['last_name']
@@ -153,6 +153,7 @@ def newsletter(request):
             form_id = forms[short_language_code()] if forms else None    
             groups = getattr(settings, 'CLEVERREACH_GROUPS')
             group_id = groups['nl_%s' %short_language_code()]
+            logger.info('sending: %s' %registration)
             status = insert_new_user(registration, group_id, activated=True, sendmail=False, form_id=form_id)
             logger.info('Cleverreach response: %s' %status)
     
