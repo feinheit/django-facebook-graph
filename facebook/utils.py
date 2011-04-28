@@ -98,7 +98,7 @@ class Graph(facebook.GraphAPI):
     def __init__(self, request, access_token=None, app_secret=settings.FACEBOOK_APP_SECRET,
                  app_id=settings.FACEBOOK_APP_ID, code=None, request_token=True):
         super(Graph, self).__init__(access_token)  # self.access_token = access_token
-        self.HttpRequest = request
+        self.http_request = request
         self.get_fb_session(request)
         self._me, self._user = None, None
         self.app_id, self.app_secret = app_id, app_secret
@@ -123,18 +123,18 @@ class Graph(facebook.GraphAPI):
         self._user = self.fb_session.get('user_id', None)
         if not self._user:
             self.fb_session['app_is_authenticated'] = False
-            self.HttpRequest.session.modified = True
+            self.http_request.session.modified = True
         return self.access_token
 
     def get_token_from_cookie(self):
         #Clientseitige Authentication schreibt das Token ueber die Middleware ins Cookie.
-        if not self.HttpRequest.COOKIES.get('fbs_%i' % int(self.app_id), None):
+        if not self.http_request.COOKIES.get('fbs_%i' % int(self.app_id), None):
             return None
-        cookie = self.get_user_from_cookie(self.HttpRequest.COOKIES, self.app_id, self.app_secret)
+        cookie = self.get_user_from_cookie(self.http_request.COOKIES, self.app_id, self.app_secret)
         self.access_token = cookie['access_token']
         self._user = cookie['uid']
         self.fb_session.update({'access_token': self.access_token, 'user_id': self._user})
-        self.HttpRequest.session.modified = True
+        self.http_request.session.modified = True
         return self.access_token
 
     def get_token_from_app(self):
@@ -155,7 +155,7 @@ class Graph(facebook.GraphAPI):
             if raw.find('=') > -1:
                 access_token = raw.split('=')[1]
                 self.fb_session['access_token'] = access_token
-                self.HttpRequest.session.modified = True
+                self.http_request.session.modified = True
             else:
                 raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected access_token' % response)
         finally:
@@ -172,9 +172,9 @@ class Graph(facebook.GraphAPI):
     def set_access_token(self, access_token, user_id=None):
         user_id = user_id if user_id else self.user_id 
         self.access_token = access_token
-        fb = self.HttpRequest.session.get('facebook', None)
+        fb = self.http_request.session.get('facebook', None)
         fb.update({'acess_token': access_token, 'user_id': user_id})
-        self.HttpRequest.session.modified = True
+        self.http_request.session.modified = True
 
     def _get_me(self):
         if not self.access_token or not self.fb_session['app_is_authenticated']:
@@ -184,7 +184,7 @@ class Graph(facebook.GraphAPI):
                 self._me = self.request('me')
                 self._user = self._me['id']
                 self.fb_session.update({'user_id': self._user, 'access_token': self.access_token})
-                self.HttpRequest.session.modified = True
+                self.http_request.session.modified = True
             except facebook.GraphAPIError as e:
                 logger.debug('could not use the accesstoken via %s: %s' % (self.via, e.message))
                 self.fb_session['app_is_authenticated'] = False
