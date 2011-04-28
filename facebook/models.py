@@ -368,16 +368,13 @@ class Application(Page):
 
 
 class EventManager(models.Manager):
-    def active(self):
-        return self.filter(active=True)
-    
     def upcoming(self):
         """ returns all upcoming and ongoing events """
         today = date.today()
         if datetime.now().hour < 6:
             today = today-timedelta(days=1)
         
-        return self.active().filter(Q(_start_time__gte=today) | Q(_end_time__gte=today))
+        return self.filter(Q(_start_time__gte=today) | Q(_end_time__gte=today))
     
     def past(self):
         """ returns all past events """
@@ -385,10 +382,9 @@ class EventManager(models.Manager):
         if datetime.now().hour < 6:
             today = today-timedelta(days=1)
         
-        return self.active().filter(Q(_start_time__lt=today) & Q(_end_time__lt=today))
+        return self.filter(Q(_start_time__lt=today) & Q(_end_time__lt=today))
 
 class Event(Base):
-    active = models.BooleanField(_('Active'), default=True, blank=True)
     id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook event ID'))
 
     # Cached Facebook Graph fields for db lookup
