@@ -135,12 +135,12 @@ class Graph(facebook.GraphAPI):
         #Clientseitige Authentication schreibt das Token ueber die Middleware ins Cookie.
         if not self.HttpRequest.COOKIES.get('fbs_%i' % int(self.app_id), None):
             return None
-        cookie = self.get_user_from_cookie(self.HttpRequest.COOKIES, self.app_id, self.app_secret)
-        self.access_token = cookie['access_token']
-        self._user = cookie['uid']
-        self.fb_session.update({'access_token': self.access_token, 'user_id': self._user})
-        self.HttpRequest.session.modified = True
+        cookie = facebook.get_user_from_cookie(self.HttpRequest.COOKIES, self.app_id, self.app_secret)
+        access_token = cookie['access_token']
+        if self._get_me():
+            self.set_access_token(access_token, cookie['uid'])
         return self.access_token
+
 
     def get_token_from_app(self):
         access_token = None
@@ -181,9 +181,10 @@ class Graph(facebook.GraphAPI):
         fb.update({'acess_token': access_token, 'user_id': user_id})
         self.HttpRequest.session.modified = True
 
-    def _get_me(self):
-        if not self.access_token or not self.fb_session['app_is_authenticated']:
-            return None
+    def _get_me(self, access_token=False):
+        if not access_token:
+            if not self.access_token or not self.fb_session['app_is_authenticated']:
+                return None
         else:
             try:
                 self._me = self.request('me')

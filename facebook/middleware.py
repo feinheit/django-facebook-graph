@@ -46,9 +46,17 @@ class OAuth2ForCanvasMiddleware(object):
                 fb['access_token'] = fb['signed_request']['oauth_token']
             if 'access_token' in fb['signed_request']:
                 fb['access_token'] = fb['signed_request']['access_token']
+            else:
+                if 'access_token' in fb: fb.pop('access_token')
+                fb['app_is_authenticated'] = False
+            
             if 'user_id' in fb['signed_request']:
                 fb['user_id'] = fb['signed_request']['user_id']
                 fb['app_is_authenticated'] = True
+            else:
+                if 'user_id' in fb: fb.pop('user_id')
+                fb['app_is_authenticated'] = False
+
             request.session['facebook'] = fb
             request.session.modified = True
         # auth via callback from facebook

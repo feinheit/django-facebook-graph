@@ -1,23 +1,35 @@
 {% load i18n %}
-<div class="content {{ content.type }}" id="fb-events">
+<div class="content grey {{ content.type }}" id="fb-events">
     <h2>{{ content.title }}</h2>
     {% for event in events %}
-    <div class="fb-event relative">
-        <div class="fb-event-teaser  clearfix">
-            <div class="fb-event-image left" style="background:url(https://graph.facebook.com/{{ event.id }}/picture?type=large&access_token={{ access_token }}) center center no-repeat;">
+    <div class="fb-event relative" data-id="{{ event.id }}">
+        <div class="fb-event-teaser clearfix">
+            <div class="fb-event-image left" style="background:url(https://graph.facebook.com/{{ event.id }}/picture?type=large{% if access_token %}&access_token={{ access_token }}{% endif %}) center center no-repeat;">
             </div>
-            <div class="fb-event-description left"><h4>{{ event.get_name }}</h4><p>{{ event.get_description|safe|truncatewords_html:50 }}</p>
+            <div class="fb-event-description left"><h4>{{ event.get_name }}</h4><p>{{ event.get_description|safe|truncatewords_html:30 }}</p>
             </div>
         </div>
-        <div class="fb-event-rsvp">
-            <button class="fb-button slide attend"><span class="slide">{% trans "I'm attending" %}</span></button>
-            <button class="fb-button slide maybe-attend"><span class="slide">{% trans 'Maybe' %}</span></button>
-            <button class="fb-button slide no-attend"><span class="slide">{% trans 'No' %}</span></button>
+        <div class="fb-event-rsvp" data-id="{{ event.id }}">
+            <button class="fb-button slide attend" rel="attending"><span class="slide">{% trans "I'm attending" %}</span></button>
+            <button class="fb-button slide maybe-attend" rel="maybe"><span class="slide">{% trans 'Maybe' %}</span></button>
+            <button class="fb-button slide no-attend" rel="declined"><span class="slide">{% trans 'No' %}</span></button>
         </div>
+        <div class="fb-event-login" data-id="{{ event.id }}">
+            {% trans 'Log dich ein, um dich beim Event anzumelden' %}
+           <fb:login-button show-faces="false" width="200" max-rows="0" perms="rsvp_event, user_events"></fb:login-button>
+        </div>
+        <br />
         <div class="fb-event-direct">
-            {% trans 'Event URL:' %} <a href="http://www.facebook.com/event.php?eid={{ event.id }}" class="fb-event-link">http://www.facebook.com/event.php?eid={{ event.id }}</a>
-            <button class="fb-button slide shareit" onclick="FB.ui({method:'stream.share', u:'http://www.facebook.com/event.php?eid={{ event.id }}'});"><span class="slide">{% trans 'Share' %}</span></button>       
+            {% trans 'Event URL:' %} <a href="http://www.facebook.com/event.php?eid={{ event.id }}" target="_blank" class="fb-event-link">http://www.facebook.com/event.php?eid={{ event.id }}</a><br />
+            <button class="fb-button slide shareit" onclick="FB.ui({method:'stream.share', u:'http://www.facebook.com/event.php?eid={{ event.id }}'});"><span class="slide">{% trans 'Share' %}</span></button>
         </div>
     </div>
     {% endfor %}
 </div>
+<script type="text/javascript">
+/*
+var user_events = {% if rsvp_events %} {{ rsvp_events|escapejs }} {% else %} {}{% endif %};
+*/
+var access_token = "{{ access_token|safe }}";
+
+</script>
