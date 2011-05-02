@@ -1,4 +1,5 @@
 import logging
+from django.utils.datetime_safe import datetime
 logger = logging.getLogger(__name__)
 
 import base64
@@ -86,6 +87,94 @@ def get_FQL(fql, access_token=None):
 
     return response
 
+class FBSession(object):
+    """ This class uses Properties and setter. Requires Python 2.6. """
+    def __init__(self, request):
+        self.fb_session = self.get_fb_session(request)
+        self.request = request
+    
+    @property
+    def modified(self):
+        self.request.session.modified = True
+        
+    def get_fb_session(self, request):
+        fb = request.session.get('facebook', None)
+        if not fb:
+            request.session.update({'facebook': {'app_is_authenticated': True}})
+            self.modified
+            fb = request.session['facebook']
+        return fb
+    
+    @property
+    def app_is_authenticated(self):
+        """This is a cached value to store if the app is authenticated. """
+        return self.fb_session['app_is_authenticated'] \
+               if self.fb_session.get('app_is_authenticated', False) else True  # Assuming True.
+    
+    @app_is_authenticated.setter
+    def app_is_authenticated(self, status):
+        if status in [True, False]:
+            self.fb_session['app_is_authenticated'] = status
+        else:
+            raise TypeError('FBSESSION', 'Authenticated takes True or False, not %s.' %status)
+        
+    @property
+    def access_token(self):
+        if self.token_expires and self.token_expires < datetime.now:  # TODO: Check if this is executed on every request.
+            self._clear_token()
+            return None
+        else:
+            return self.fb_session.get('access_token', None)
+    
+    @access_token.setter
+    def access_token(self, token):
+        self.fb_session['access_token'] = token
+        self.modified
+    
+    @property
+    def token_expires(self):
+        return self.fb_session.get('access_token_expires', None)
+    
+    # TODO: Check if the expires time is LT or UTC
+    @token_expires.setter
+    def token_expires(self, expires):
+        if isinstance(expires, datetime):
+            self.fb_session['access_token_expires'] = expires
+            self.modified
+        else:
+            raise TypeError('Token Expires requires a datetime instance. Got %s instead.' %type(expires))        
+    
+    def store_token(self, token, expires=None):
+        self.access_token = token
+        if expires:
+            self.token_expires = expires
+    
+    def _clear_token(self):
+        self.access_token = None
+        self.user_id = None
+        self.app_is_authenticated = False
+        self.modified        
+    
+    @property
+    def user_id(self):
+        return self.fb_session.get('user_id', None)
+    
+    @user_id.setter
+    def user_id(self, id):
+        self.fb_session['user_id'] = id
+        self.app_is_authenticated = True
+        self.modified
+    
+    @property
+    def me(self):
+        return self.fb_session.get('me', None)
+    
+    @me.setter
+    def me(self, value):
+        self.fb_session['me'] = value
+        self.app_is_authenticated = True
+        self.modified
+    
 
 class Graph(facebook.GraphAPI):
     """ The Base Class for a Facebook Graph. Inherits from the Facebook SDK Class. """
@@ -98,49 +187,45 @@ class Graph(facebook.GraphAPI):
     In that case a GraphAPIError is raised.
     
     """
-    def __init__(self, request, access_token=None, app_secret=settings.FACEBOOK_APP_SECRET,
+    def __init__(self, request=None, access_token=None, app_secret=settings.FACEBOOK_APP_SECRET,
                  app_id=settings.FACEBOOK_APP_ID, code=None, request_token=True, force_refresh=False):
         super(Graph, self).__init__(access_token)  # self.access_token = access_token
         logger.info('app_secret: %s' %app_secret)
         logger.info('app_id: %s' %app_id)
         self.HttpRequest = request
-        self.get_fb_session(request)
         self._me, self._user = None, None
         self.app_id, self.app_secret = app_id, app_secret
         self.via = 'No token requested'
-        self.app_is_authenticated = self.fb_session['app_is_authenticated'] \
-                                    if self.fb_session.get('app_is_authenticated', False) else True  # Assuming True.
+        if request:
+            self.fb_session = FBSession(request)
         if request_token == False:
             return
         if access_token:
             self.via = 'access_token'
-        elif not force_refresh and self.get_token_from_session():
+        elif request and not force_refresh and self.get_token_from_session():
             self.via = 'session'
-        elif not force_refresh and self.get_token_from_cookie():
+        elif request and not force_refresh and self.get_token_from_cookie():
             self.via = 'cookie'
         elif self.get_token_from_app():
-             self.via = 'application'
+            self.via = 'application'
 
     def get_token_from_session(self):
-        if not self.fb_session.get('access_token', None):
+        if not self.fb_session.access_token:
             return None
-        self.access_token = self.fb_session.get('access_token')
-        self._user = self.fb_session.get('user_id', None)
-        if not self._user:
-            self.fb_session['app_is_authenticated'] = False
-            self.HttpRequest.session.modified = True
+        self.access_token = self.fb_session.access_token
+        self._user = self.fb_session.user_id
         return self.access_token
 
     def get_token_from_cookie(self):
-        #Clientseitige Authentication schreibt das Token ueber die Middleware ins Cookie.
+        #Client-side authentification writes the access token into the cookie.
         if not self.HttpRequest.COOKIES.get('fbs_%i' % int(self.app_id), None):
             return None
         cookie = facebook.get_user_from_cookie(self.HttpRequest.COOKIES, self.app_id, self.app_secret)
         access_token = cookie['access_token']
+        self.fb_session.store_token(access_token)  # TODO: Set expires
         if self._get_me():
-            self.set_access_token(access_token, cookie['uid'])
+            self.fb_session.user_id = cookie['uid']
         return self.access_token
-
 
     def get_token_from_app(self):
         access_token = None
@@ -159,41 +244,25 @@ class Graph(facebook.GraphAPI):
             # if the response ist not json, it is the access token. Write it back to the session.
             if raw.find('=') > -1:
                 access_token = raw.split('=')[1]
-                self.fb_session['access_token'] = access_token
-                self.HttpRequest.session.modified = True
+                self.fb_session.access_token = access_token
             else:
                 raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected access_token' % response)
         finally:
             file.close()
         return access_token
 
-    def get_fb_session(self, request):
-        fb = request.session.get('facebook', None)
-        if not fb:
-            request.session.update({'facebook': {'app_is_authenticated': True}})
-            fb = request.session['facebook']
-        self.fb_session = fb
-
-    def set_access_token(self, access_token, user_id=None):
-        user_id = user_id if user_id else self.user_id 
-        self.access_token = access_token
-        fb = self.HttpRequest.session.get('facebook', None)
-        fb.update({'acess_token': access_token, 'user_id': user_id})
-        self.HttpRequest.session.modified = True
-
     def _get_me(self, access_token=False):
         if not access_token:
-            if not self.access_token or not self.fb_session['app_is_authenticated']:
+            if not self.access_token or not self.fb_session.app_is_authenticated:
                 return None
         else:
             try:
                 self._me = self.request('me')
                 self._user = self._me['id']
-                self.fb_session.update({'user_id': self._user, 'access_token': self.access_token})
-                self.HttpRequest.session.modified = True
+                self.fb_session.me = self._me
             except facebook.GraphAPIError as e:
                 logger.debug('could not use the accesstoken via %s: %s' % (self.via, e.message))
-                self.fb_session['app_is_authenticated'] = False
+                self.fb_session.app_is_authenticated = False
             return self._me
 
     @property
@@ -212,9 +281,7 @@ class Graph(facebook.GraphAPI):
 
 
 def get_graph(request=None, *args, **kwargs):
-    if not request:
-        raise facebook.GraphAPIError('GET_GRAPH', 'get_graph requires the request as its first argument.')
-    # Temporary fix until we have decided a better naming and scope.
+    # TODO: Temporary fix until we have decided a better naming and scope.
     if 'client_secret' in kwargs.keys():
         app_secret = kwargs.pop('client_secret')
         if not app_secret:
