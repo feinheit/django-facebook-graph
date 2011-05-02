@@ -41,9 +41,11 @@ $(function(){
            FB.api('/'+ event_id + '/' + status, 'post', function(response) {
            if (!response || response.error) {
                 alert('Error occured');
-                log(response);
+                //log(response);
               } else {
                 button.addClass('selected');
+                var track = ['_trackEvent', 'Events', event_id, status ];
+                _gaq.push(track);
               }
            });
        } else {
