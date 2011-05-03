@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from models import User, Photo, Page, Application, Event, Request
+from models import User, Photo, Page, Event, Request
 
 
 class AdminBase(admin.ModelAdmin):
@@ -33,12 +33,12 @@ class PageAdmin(AdminBase):
     readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link')
 admin.site.register(Page, PageAdmin)
 
-
+"""
 class ApplicationAdmin(AdminBase):
     list_display = ('id', 'profile_link', 'slug', '_name', '_picture', '_likes','api_key', 'secret')
     readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link')
 admin.site.register(Application, ApplicationAdmin)
-
+"""
 
 class EventAdmin(AdminBase):
     list_display = ('active', 'id', 'profile_link', '_owner', '_name', '_description', '_start_time', '_end_time', '_location', '_venue', '_privacy')

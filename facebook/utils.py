@@ -21,6 +21,22 @@ from django.utils.http import urlquote
 
 _parse_json = lambda s: simplejson.loads(s)
 
+"""
+Example App Settings Entry:
+
+FACEBOOK_APPS = {
+    'My great App' : {
+            'ID': '155XXXXXXXXXXX',
+            'API-KEY': '6fXXXXXXXXXXXXXXXXXXX1c',
+            'SECRET': 'cbXXXXXXXXXXXXXXXXXXXXXd8',
+            'CANVAS-PAGE': 'http://apps.facebook.com/mygreatapp/',
+            'CANVAS-URL': 'http://localhost.local/',
+            'SECURE-CANVAS-URL': '',
+            'REDIRECT-URL': 'http://apps.facebook.com/mygreatapp/',
+    }
+}
+
+"""
 
 def base64_url_decode(s):
     return base64.urlsafe_b64decode(s.encode("utf-8") + '=' * (4 - len(s) % 4))
@@ -90,6 +106,8 @@ def get_FQL(fql, access_token=None):
 class FBSession(object):
     """ This class uses Properties and setter. Requires Python 2.6. """
     def __init__(self, request):
+        if request == None:
+            raise AttributeError('Need Request to Access the Session.')
         self.fb_session = self.get_fb_session(request)
         self.request = request
     
@@ -187,14 +205,14 @@ class Graph(facebook.GraphAPI):
     In that case a GraphAPIError is raised.
     
     """
-    def __init__(self, request=None, access_token=None, app_secret=settings.FACEBOOK_APP_SECRET,
-                 app_id=settings.FACEBOOK_APP_ID, code=None, request_token=True, force_refresh=False):
+    def __init__(self, application, request=None, access_token=None, 
+                 code=None, request_token=True, force_refresh=False):
         super(Graph, self).__init__(access_token)  # self.access_token = access_token
-        logger.info('app_secret: %s' %app_secret)
-        logger.info('app_id: %s' %app_id)
+        logger.debug('app_secret: %s' %application['SECRET'])
+        logger.debug('app_id: %s' %application['ID'])
         self.HttpRequest = request
         self._me, self._user = None, None
-        self.app_id, self.app_secret = app_id, app_secret
+        self.app_id, self.app_secret = application['ID'], application['SECRET']
         self.via = 'No token requested'
         if request:
             self.fb_session = FBSession(request)
@@ -280,22 +298,15 @@ class Graph(facebook.GraphAPI):
             return self.me.get('id', None)
 
 
-def get_graph(request=None, *args, **kwargs):
-    # TODO: Temporary fix until we have decided a better naming and scope.
-    if 'client_secret' in kwargs.keys():
-        app_secret = kwargs.pop('client_secret')
-        if not app_secret:
-            app_secret = settings.FACEBOOK_APP_SECRET
-    else:
-        app_secret = kwargs.get('app_secret', settings.FACEBOOK_APP_SECRET)
-    if 'client_id' in kwargs.keys():
-        app_id = kwargs.pop('client_id')
-        if not app_id:
-            app_id = settings.FACEBOOK_APP_ID
-    else:
-        app_id = kwargs.get('app_id', settings.FACEBOOK_APP_ID)
-    return Graph(request, app_secret=app_secret, app_id=app_id, *args, **kwargs)
+def get_graph(application=None, request=None, *args, **kwargs):
+    """ application is the config dict. """
+    if not application:
+        application = settings.FACEBOOK_APPS.values()[0]
+    return Graph(application, request, *args, **kwargs)
 
+def get_app_graph(application=None):
+    """ Explicityl avoid request and user. """
+    return get_graph(application, request_token=False)
 
 def post_image(access_token, image, message, object='me'):
     form = MultiPartForm()

@@ -18,6 +18,7 @@ from facebook import GraphAPIError
 from fields import JSONField
 from utils import get_graph, post_image
 
+FACEBOOK_APPS_CHOICE = tuple((a, unicode(a)) for a in settings.FACEBOOK_APPS.iteritems())
 
 class Base(models.Model):
     # Last Lookup JSON
@@ -40,24 +41,6 @@ class Base(models.Model):
     def graph_url(self):
         return 'http://graph.facebook.com/%s' % self._id
     
-    def get_facebook_url(self):
-        app_id = getattr(settings, 'FACEBOOK_APP_ID', '')
-        path = self.get_absolute_url()
-        if getattr(settings, 'FACEBOOK_REDIRECT_PAGE_URL', False):
-            url = '%s?sk=app_%s&app_data=%s' % (settings.FACEBOOK_REDIRECT_PAGE_URL, app_id, urlencode(path))
-            return url
-        else:
-            return path
-    
-    def get_tab_deeplink(self):
-        app_id = settings.FACEBOOK_APP_ID
-        path = self.get_absolute_url()
-        if getattr(settings, 'FACEBOOK_PAGE_URL', False):
-            url = '%s?sk=app_%s&app_data=%s' % (settings.FACEBOOK_PAGE_URL, app_id, urlencode(path))
-            return url
-        else:
-            return path
-
     @property
     def graph(self):
         return self._graph
@@ -81,10 +64,10 @@ class Base(models.Model):
         return self._graph
 
     def get_from_facebook(self, save=False, request=None, access_token=None, \
-             client_secret=None, client_id=None):
+             application=None):
 
         graph = get_graph(request=request, access_token=access_token, \
-                          client_secret=client_secret, client_id=client_id)
+                          application=application)
         try:
             response = graph.request(str(self._id))
             if response and save:
@@ -142,10 +125,10 @@ class Base(models.Model):
         self.save()
 
     def get_connections(self, connection, save=False, request=None, \
-             access_token=None, client_secret=None, client_id=None):
+             access_token=None, application=None):
 
         graph = get_graph(request=request, access_token=access_token, \
-                          client_secret=client_secret, client_id=client_id)
+                          application=application)
 
         if connection == 'likes':
             response = graph.request('%s/likes' % self._id)
@@ -173,8 +156,7 @@ class Base(models.Model):
                 self.save()
             transaction.commit()
 
-    def clean(self, refresh=True, request=None, access_token=None, \
-            client_secret=None, client_id=None, *args, **kwargs):
+    def clean(self, refresh=True, *args, **kwargs):
        ''' On save, update timestamps '''
        if not self.id:
            self.created = datetime.now()
@@ -217,10 +199,10 @@ class User(Base):
         return '%s (%s)' % (self._name, self.id)
 
     def get_friends(self, save=False, request=None, access_token=None, \
-             client_secret=None, client_id=None):
+             application=None):
 
         graph = get_graph(request=request, access_token=access_token, \
-                          client_secret=client_secret, client_id=client_id)
+                          application=application)
         response = graph.request('%s/friends' % self.id)
         friends = response['data']
 
@@ -275,10 +257,10 @@ class Photo(Base):
         return 'http://www.facebook.com/photo.php?fbid=%s' % self.id
 
     def send_to_facebook(self, object='me', save=False, request=None, access_token=None, \
-             client_secret=None, client_id=None, message=''):
+             application=None, message=''):
 
         graph = get_graph(request=request, access_token=access_token, \
-                          client_secret=client_secret, client_id=client_id)
+                          application=application)
 
         response = post_image(graph.access_token, self.image.file, message, object=object)
 
@@ -320,12 +302,14 @@ class Page(Base):
     #def get_absolute_url(self):
     #    return ('page', (), {'portal' : self.portal.slug, 'page' : self.slug})
 
+"""
+Applications are by default stored in the settings.
 
 class Application(Page):
-    """ The Application inherits the Page, because every application has a Page """
+    # The Application inherits the Page, because every application has a Page
     api_key = models.CharField(max_length=32, help_text=_('The applications API Key'))
     secret = models.CharField(max_length=32, help_text=_('The applications Secret'))
-
+"""    
 
 class EventManager(models.Manager):
     def active(self):
@@ -382,7 +366,7 @@ class Request(Base):
     id = models.BigIntegerField(primary_key=True, unique=True)
     
     # Cached Facebook Graph fields for db lookup
-    _application = models.ForeignKey(Application, blank=True, null=True)
+    _application = models.CharField('Application', max_length=30, choices=FACEBOOK_APPS_CHOICE, blank=True, null=True)
     _to = models.ForeignKey(User, blank=True, null=True, related_name='request_to_set')
     _from = models.ForeignKey(User, blank=True, null=True, related_name='request_from_set')
     _data = models.TextField(blank=True, null=True)
