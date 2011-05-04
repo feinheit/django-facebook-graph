@@ -103,6 +103,16 @@ def get_FQL(fql, access_token=None):
 
     return response
 
+
+class FBSessionNoOp(object):
+    def __init__(self):
+        self.modified, self.app_is_authenticated, self.access_token = None, None, None
+        self.token_expires, self.user_id, self.me = datetime.now(), None, None
+    
+    def store_token(self, *args, **kwargs):
+        return False
+
+
 class FBSession(object):
     """ This class uses Properties and setter. Requires Python 2.6. """
     def __init__(self, request):
@@ -214,8 +224,7 @@ class Graph(facebook.GraphAPI):
         self._me, self._user = None, None
         self.app_id, self.app_secret = application['ID'], application['SECRET']
         self.via = 'No token requested'
-        if request:
-            self.fb_session = FBSession(request)
+        self.fb_session = FBSession(request) if request else FBSessionNoOp()
         if request_token == False:
             return
         if access_token:
@@ -304,9 +313,13 @@ def get_graph(application=None, request=None, *args, **kwargs):
         application = settings.FACEBOOK_APPS.values()[0]
     return Graph(application, request, *args, **kwargs)
 
-def get_app_graph(application=None):
+def get_static_graph(application=None):
     """ Explicityl avoid request and user. """
-    return get_graph(application, request_token=False)
+    return get_graph(application)
+
+def get_public_graph(application=None, request_token=False):
+    """ If you only access public information and don't need an access token. """
+    return get_graph(application, request_token)
 
 def post_image(access_token, image, message, object='me'):
     form = MultiPartForm()

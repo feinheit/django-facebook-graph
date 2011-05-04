@@ -1,10 +1,14 @@
 from django.conf import settings
-
+""" This context processor is depreciated.
+    It only works it if you only have one Facebook App. 
+    Use the facebook_tags instead.
+"""
 def application_settings(request):
-    return { 'FACEBOOK_API_KEY' : getattr(settings, 'FACEBOOK_API_KEY', ''),
-             'FACEBOOK_APP_ID' : getattr(settings, 'FACEBOOK_APP_ID', ''),
-             'FACEBOOK_CANVAS_PAGE' : getattr(settings, 'FACEBOOK_CANVAS_PAGE', ''),
-             'FACEBOOK_CANVAS_URL' : getattr(settings, 'FACEBOOK_CANVAS_URL', ''),}
+    firstapp = getattr(settings, 'FACEBOOK_APPS').values()[0]
+    return { 'FACEBOOK_API_KEY' : firstapp['API-KEY'],
+             'FACEBOOK_APP_ID' : firstapp['ID'],
+             'FACEBOOK_CANVAS_PAGE' : firstapp['CANVAS-PAGE'],
+             'FACEBOOK_CANVAS_URL' : firstapp['CANVAS-URL']}
     
 def facebook_config(request):
     return {'facebook' : request.session['facebook']}
