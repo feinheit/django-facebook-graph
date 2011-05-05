@@ -2,21 +2,21 @@ from feincms.module.page.models import Page
 
 def get_application_from_request(request):
     try:
-        page = Page.objects.best_match_for_path(request.path)
+        page = Page.objects.from_request(request, best_match=True)
         return getattr(page, 'facebook_application', None)
     except Page.DoesNotExist:
         return None
 
 def get_page_from_request(request):
     try:
-        page = Page.objects.best_match_for_path(request.path)
+        page = Page.objects.from_request(request, best_match=True)
         return getattr(page, 'facebook_page', None)
     except Page.DoesNotExist:
         return None
 
 def get_tab_url_from_request(request):
     try:
-        page = Page.objects.best_match_for_path(request.path)
+        page = Page.objects.from_request(request, best_match=True)
     except Page.DoesNotExist:
         return None
     

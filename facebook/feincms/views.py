@@ -12,7 +12,7 @@ def redirect_to_slug(request):
     except e:
         return '<!-- could not redirect to slug via facebook page signed request params: %s -->' % e
     
-    page = Page.objects.best_match_for_path(request.path)
+    page = Page.objects.from_request(request, best_match=True)
     if facebook_page['admin'] and facebook_page['liked']:
         try:
             return redirect(page.get_children().filter(slug='admin-liked')[0])

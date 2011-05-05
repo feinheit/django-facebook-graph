@@ -95,7 +95,6 @@ class OAuth2ForCanvasMiddleware(object):
         return response
 
 
-
 class Redirect2AppDataMiddleware(object):
     """ If app_data is specified, this middleware assumes that app_data is the deep link and redirects to that page 
     example: http://www.facebook.com/PAGENAME?sk=app_APP_ID&app_data=/foo/bar/ redirects to /foo/bar/

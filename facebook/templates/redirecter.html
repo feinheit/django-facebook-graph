@@ -1,0 +1,12 @@
+{% load i18n %}
+<!doctype html>
+<html>
+<head>
+    <script type="text/javascript">
+        top.location.href = '{{ destination|safe }}'
+    </script>
+</head>
+<body>
+    <a href="{{ destination|safe }}" target="_top">{% trans "You are redirected automatically. If it doesnt work, click me" %}</a>
+</body>
+</html>

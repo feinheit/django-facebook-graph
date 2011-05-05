@@ -9,6 +9,7 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.contrib.auth.models import User as DjangoUser
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import simplejson as json
 from django.utils.translation import ugettext_lazy as _
 from django.template.defaultfilters import slugify
@@ -16,7 +17,7 @@ from django.template.defaultfilters import slugify
 from facebook import GraphAPIError
 
 from fields import JSONField
-from utils import get_graph, post_image
+from utils import get_graph, post_image, get_FQL
 
 FACEBOOK_APPS_CHOICE = tuple((a, unicode(a)) for a in settings.FACEBOOK_APPS.iteritems())
 
@@ -95,12 +96,10 @@ class Base(models.Model):
                 if isinstance(fieldclass, models.DateTimeField):
                     # reading the facebook datetime string. assuming we're in MET Timezone
                     # TODO: work with real timezones
-                    logger.debug('feld: %s, val: %s' %(prop, val))
-                    logger.debug('feld: %s, val: %s' %(prop, val[:-5]))
-                    try:
-                        setattr(self, field, datetime.strptime(val[:-5], "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7))
-                    except ValueError:
-                        setattr(self, field, datetime.strptime(val, "%Y-%m-%dT%H:%M:%S") - timedelta(hours=7))
+                    if '+' in val: # ignore timezone for now ...
+                        val = val[:-5]
+                    setattr(self, field, datetime.strptime(val, "%Y-%m-%dT%H:%M:%S")) #  - timedelta(hours=7) 
+
                     
                 elif isinstance(self._meta.get_field(field), models.ForeignKey):
                     # trying to build the ForeignKey and if the foreign Object doesnt exists, create it.
@@ -119,42 +118,80 @@ class Base(models.Model):
         # try to generate a slug, but only the first time (because the slug should be more persistent)
         if not self.slug or update_slug:
             try:
-                self.slug = slugify(self.name)[:50]
+                self.slug = slugify(self._name)[:50]
             except:
                 self.slug = self.id
-        self.save()
-
-    def get_connections(self, connection, save=False, request=None, \
-             access_token=None, application=None):
-
-        graph = get_graph(request=request, access_token=access_token, \
-                          application=application)
-
-        if connection == 'likes':
-            response = graph.request('%s/likes' % self._id)
-
+        self.save() 
+    
+    def save_to_facebook(self, target, graph=None):
+        if not graph: graph=get_graph()
+        
+        args = {}
+        cached_fields = [cached for cached in self._meta.get_all_field_names() if cached.find('_') == 0]
+        for fieldname in cached_fields:
+            fieldclass = self._meta.get_field(fieldname)
+            field = getattr(self, fieldname)
+            
+            if field:
+                if isinstance(fieldclass, models.DateField):
+                    args[fieldname[1:]] = field.isoformat()
+                elif isinstance(fieldclass, JSONField):
+                    args[fieldname[1:]] = json.dumps(field)
+                else:
+                    args[fieldname[1:]] = field
+        
+        response = graph.put_object(str(target), self.Facebook.publish, **args)
+        return response
+    
+    def get_connections(self, connection_name, graph, save=False):
+        response = graph.request('%s/%s' % (self._id, connection_name))
         connections = response['data']
 
         if save:
-            self.save_connections(connection, connections)
+            self.save_connections(connection_name, connections)
         return connections
 
-    @transaction.commit_manually
-    def save_connections(self, connection, connections):
-        if connection == 'likes':
-            """ get all user ids """
-            user_ids = [ str(u[0]) for u in User.objects.all().values_list('id') ]
-            new_users = [liker for liker in connections if liker['id'] not in user_ids]
-            for new_user in new_users:
-                self._likes.create(id=new_user['id'], _name=new_user['name'])
-
-            likers = [ str(u[0]) for u in self._likes.all().values_list('id') ]
-            new_likers = [liker for liker in connections if liker['id'] not in likers]
-            for new_liker in new_likers:
-                user, created = User.objects.get_or_create(id=new_liker['id'])
-                self._likes.add(user)
-                self.save()
-            transaction.commit()
+    #@transaction.commit_manually
+    def save_connections(self, connection_name, connections):
+        model_connection_config = None
+        connection_config = None
+        if hasattr(self, 'Facebook') and hasattr(self.Facebook, 'connections'):
+            model_connection_config = self.Facebook.connections
+        
+        if connection_name in self._meta.get_all_field_names():
+            connecting_field_name = connection_name
+        elif connection_name in model_connection_config:
+            connection_config = model_connection_config[connection_name]
+            connecting_field_name = connection_config['field']
+        else:
+            raise ObjectDoesNotExist('The Facebook Model %s has no connection configured with the name "%s"' % (self.__class__, connection))
+    
+        connecting_field = getattr(self, connecting_field_name)
+        connected_model = self._meta.get_field(connecting_field_name).rel.to
+        connected_model_ids = connected_model.objects.all().values_list('id', flat=True)
+        
+        new_connected_model_jsons = [item for item in connections if item['id'] not in connected_model_ids]
+        for new_model_json in new_connected_model_jsons:
+            new_connected_object = connected_model(id=new_model_json['id'])
+            new_connected_object.save_from_facebook(new_model_json)
+        
+        connecting_model = connecting_field.through
+        for connection_json in connections:
+            
+            kwargs = {'%s_id' % connecting_field.source_field_name : self.id,
+                      '%s_id' % connecting_field.target_field_name : connection_json['id']}
+            connection_object, created = connecting_model.objects.get_or_create(**kwargs)
+            
+            if connection_config:
+                extra_fields = []
+                if 'filter' in connection_config:
+                    extra_fields.extend(connection_config['filter'].keys())
+                if 'extra_fields' in connection_config:
+                    extra_fields.extend(connection_config['extra_fields'])
+                for extra_field in extra_fields:
+                    setattr(connection_object, extra_field, connection_json[extra_field])
+            connection_object.save()
+        #transaction.commit()
 
     def clean(self, refresh=True, *args, **kwargs):
        ''' On save, update timestamps '''
@@ -194,6 +231,9 @@ class User(Base):
     _locale = models.CharField(max_length=6, blank=True, null=True)
 
     friends = models.ManyToManyField('self')
+    
+    class Facebook:
+        pass
 
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
@@ -312,16 +352,13 @@ class Application(Page):
 """    
 
 class EventManager(models.Manager):
-    def active(self):
-        return self.filter(active=True)
-    
     def upcoming(self):
         """ returns all upcoming and ongoing events """
         today = date.today()
         if datetime.now().hour < 6:
             today = today-timedelta(days=1)
         
-        return self.active().filter(Q(_start_time__gte=today) | Q(_end_time__gte=today))
+        return self.filter(Q(_start_time__gte=today) | Q(_end_time__gte=today))
     
     def past(self):
         """ returns all past events """
@@ -329,10 +366,9 @@ class EventManager(models.Manager):
         if datetime.now().hour < 6:
             today = today-timedelta(days=1)
         
-        return self.active().filter(Q(_start_time__lt=today) & Q(_end_time__lt=today))
+        return self.filter(Q(_start_time__lt=today) & Q(_end_time__lt=today))
 
 class Event(Base):
-    active = models.BooleanField(_('Active'), default=True, blank=True)
     id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook event ID'))
 
     # Cached Facebook Graph fields for db lookup
@@ -341,10 +377,12 @@ class Event(Base):
     _description = models.TextField(blank=True, null=True)
     _start_time = models.DateTimeField(blank=True, null=True)
     _end_time = models.DateTimeField(blank=True, null=True)
-    _location = models.CharField(max_length=200, blank=True, null=True)
+    _location = models.CharField(max_length=500, blank=True, null=True)
     _venue = JSONField(blank=True, null=True)
     _privacy = models.CharField(max_length=10, blank=True, null=True, choices=(('OPEN', 'OPEN'), ('CLOSED', 'CLOSED'), ('SECRET', 'SECRET')))
     _updated_time = models.DateTimeField(blank=True, null=True)
+    
+    invited = models.ManyToManyField(User, through='EventUser')
 
     objects = EventManager()
 
@@ -360,6 +398,51 @@ class Event(Base):
     
     class Meta:
         ordering = ('_start_time',)
+    
+    class Facebook:
+        connections = {'attending' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'attending'}},
+                       'maybe' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'unsure'}},
+                       'declined' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'declined'}},
+                       'noreply' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'not_replied'}},
+                       'invited' : {'field' : 'invited', 'extra_fields' : ['rsvp_status',]},}
+        publish = 'events'
+    
+    def save_rsvp_status(self, user_id, status):
+        user, created = User.objects.get_or_create(id=user_id)
+        if created:
+            user.save()
+        connection, created = self.invited.through.objects.get_or_create(user=user, event=self)
+        connection.status = status
+        connection.save()
+        return connection
+    
+    def update_rsvp_status(self, user_id, access_token=None):
+        if not access_token: access_token=get_graph().access_token
+        response = get_FQL('SELECT rsvp_status FROM event_member WHERE uid=%s AND eid=%s' % (user_id, self.id),
+                           access_token=access_token)
+        if len(response):
+            self.save_rsvp_status(user_id, response[0]['rsvp_status'])
+            return response[0]['rsvp_status']
+        else:
+            return 'not invited'
+    
+    def respond(self, graph, status='attending'):
+        fb_response = graph.put_object(str(self.id), status)
+        self.save_rsvp_status(graph.user, status)
+        return fb_response
+
+
+class EventUser(models.Model):
+    event = models.ForeignKey(Event)
+    user = models.ForeignKey(User)
+    rsvp_status = models.CharField(max_length=10, default="attending", 
+                              choices=(('attending', _('attending')),
+                                       ('unsure', _('unsure')),
+                                       ('declined', _('declined')),
+                                       ('not_replied', _('not_replied'))))
+    
+    class Meta:
+        unique_together = [('event', 'user'),]
 
 
 class Request(Base):
@@ -381,3 +464,7 @@ class Request(Base):
             except GraphAPIError, e:
                 logger.warning('DELETE Request failed: %s' % e)
         super(Request, self).delete(*args, **kwargs)
+    
+    def __unicode__(self):
+        return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)
+    
