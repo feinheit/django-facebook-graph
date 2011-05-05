@@ -50,14 +50,10 @@ class OAuth2ForCanvasMiddleware(object):
                 fb.store_token(parsed_request['access_token'], expires)
             else:
                 #The chance is good that there is already a valid token in the session.
-                if not fb.access_token:
-                    fb.store_token(None)
+                fb.store_token(None)
             
             if 'user_id' in parsed_request:
                 fb.user_id = parsed_request['user_id']
-            else:
-                pass
-                #fb.user_id = None
             
             if 'user' in parsed_request:
                 fb.user = parsed_request['user']

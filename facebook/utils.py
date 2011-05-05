@@ -176,7 +176,7 @@ class FBSession(SessionBase):
         if isinstance(expires, datetime) or isinstance(expires, type(None)):
             logger.debug('token expires: %s' % expires)
             self.fb_session['access_token_expires'] = expires
-            self.modified('token_expires setter')
+            self.modified('token_expires setter')  # Is usually used with token setter.
         else:
             raise TypeError('Token Expires requires a datetime instance or None. Got %s instead.' %type(expires))        
     
@@ -190,8 +190,7 @@ class FBSession(SessionBase):
     def _clear_token(self):
         self.access_token = None
         self.user_id = None
-        self.app_is_authenticated = False
-        self.modified('_clear token')        
+        self.app_is_authenticated = False      
     
     @property
     def user_id(self):
