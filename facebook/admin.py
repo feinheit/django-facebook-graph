@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.conf import settings
 
 from models import User, Photo, Page, Event, Request
 
@@ -21,6 +22,9 @@ class UserAdmin(AdminBase):
     
 admin.site.register(User, UserAdmin)
 
+if settings.DEBUG:
+    admin.site.register(TestUser, UserAdmin)
+    
 
 class PhotoAdmin(AdminBase):
     list_display = ('_id', '_name', 'like_count', '_from_id')

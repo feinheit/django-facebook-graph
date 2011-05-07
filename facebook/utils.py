@@ -136,7 +136,7 @@ class FBSession(SessionBase):
         fb = request.session.get('facebook', None)
         if not fb:
             request.session.update({'facebook': {'app_is_authenticated': True}})
-            self.modified('get_fb_session')
+            request.session.modified = True
             fb = request.session['facebook']
         return fb
     
@@ -244,17 +244,22 @@ class FBSession(SessionBase):
         self.modified('user.setter')
         #logger.debug('User age: %s' % self.fb_session['user']['age']['min'])
 
+
 class FBSessionNoOp(SessionBase):
     def __init__(self):
         super(FBSessionNoOp, self).__init__()
         logger.debug('Using Dummy Session Interface')
+        self._modified = False
     
-    def store_token(self, *args, **kwargs):
+    def store_token(self, token=None, expires=None):
+        self.access_token = token
+        self.token_expires = expires
+    
+    def modified(self, who='Unknown', *args, **kwargs):
+        self._modified = True
+        logger.debug('%s is trying to modify a dummy session.' % who )
         return False
     
-    def modified(self):
-        return False
-
 
 class Graph(facebook.GraphAPI):
     """ The Base Class for a Facebook Graph. Inherits from the Facebook SDK Class. """
@@ -303,6 +308,8 @@ class Graph(facebook.GraphAPI):
         cookie = facebook.get_user_from_cookie(self.HttpRequest.COOKIES, self.app_id, self.app_secret)
         access_token = cookie['access_token']
         self.fb_session.store_token(access_token)  # TODO: Set expires
+        if access_token:
+            self.access_token = access_token
         if self._get_me():
             self.fb_session.user_id = cookie['uid']
         return self.access_token
@@ -330,6 +337,8 @@ class Graph(facebook.GraphAPI):
                 raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected access_token' % response)
         finally:
             file.close()
+        if access_token:
+            self.access_token = access_token
         return access_token
 
     def _get_me(self, access_token=False):
@@ -369,19 +378,20 @@ def get_app_dict(application=None):
         application = settings.FACEBOOK_APPS[application]
     return application
 
-def get_graph(request=None, app_name=None, *args, **kwargs):
-    """ application is the config dict. """
-    application = get_app_dict(app_name)
+def get_graph(request=None, app_name=None, app_dict=None, *args, **kwargs):
+    if app_dict:
+        application = app_dict
+    else:
+        application = get_app_dict(app_name)
     return Graph(application=application, request=request, *args, **kwargs)
 
-def get_static_graph(app_name=None):
+def get_static_graph(app_name=None, app_dict=None, *args, **kwargs):
     """ Explicityl avoid request and user. """
-    application = get_app_dict(application)
-    return get_graph(application=application)
+    return get_graph(app_name=app_name, app_dict=app_dict, request=None)
 
-def get_public_graph(app_name=None, request_token=False):
+def get_public_graph(app_name=None, app_dict=None, *args, **kwargs):
     """ If you only access public information and don't need an access token. """
-    return get_graph(application=None, request_token=None)
+    return get_graph(app_name=app_name, app_dict=app_dict, request=None, request_token=False)
 
 def post_image(access_token, image, message, object='me'):
     form = MultiPartForm()

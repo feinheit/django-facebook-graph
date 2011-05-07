@@ -68,7 +68,7 @@ class Base(models.Model):
              application=None):
 
         graph = get_graph(request=request, access_token=access_token, \
-                          application=application)
+                          app_name=application)
         try:
             response = graph.request(str(self._id))
             if response and save:
@@ -242,7 +242,7 @@ class User(Base):
              application=None):
 
         graph = get_graph(request=request, access_token=access_token, \
-                          application=application)
+                          app_name=application)
         response = graph.request('%s/friends' % self.id)
         friends = response['data']
 
@@ -300,7 +300,7 @@ class Photo(Base):
              application=None, message=''):
 
         graph = get_graph(request=request, access_token=access_token, \
-                          application=application)
+                          app_name=application)
 
         response = post_image(graph.access_token, self.image.file, message, object=object)
 
@@ -467,4 +467,17 @@ class Request(Base):
     
     def __unicode__(self):
         return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)
+
+
+class TestUser(User):
+    login_url = models.URLField('Login URL', blank=True, max_length=100)
+    password = models.CharField('Password', max_length=30, blank=True)
     
+    def __unicode__(self):
+        return 'Testuser: %s (%s)' % (self._name, self.id)
+    
+    def set_password(self, graph, new_password):
+        if graph.request('%s' % self.id, None, {'password': new_password, 'access_token': graph.access_token }):
+            self.password = new_password
+            self.save()
+            

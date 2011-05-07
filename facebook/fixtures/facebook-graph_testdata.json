@@ -1,0 +1,57 @@
+[
+    {
+        "pk": 4, 
+        "model": "facebook.user", 
+        "fields": {
+            "updated": "2011-05-06 01:39:19", 
+            "_graph": "{\"username\": \"zuck\", \"first_name\": \"Mark\", \"last_name\": \"Zuckerberg\", \"name\": \"Mark Zuckerberg\", \"locale\": \"en_US\", \"gender\": \"male\", \"link\": \"http://www.facebook.com/zuck\", \"id\": \"4\"}", 
+            "created": "2011-05-06 01:39:19", 
+            "access_token": "", 
+            "friends": [], 
+            "_last_name": "Zuckerberg", 
+            "_locale": "en_US", 
+            "_link": "http://www.facebook.com/zuck", 
+            "_name": "Mark Zuckerberg", 
+            "_first_name": "Mark", 
+            "_email": null, 
+            "user": null, 
+            "_gender": "male", 
+            "_location": null, 
+            "slug": "mark-zuckerberg", 
+            "_birthday": null
+        }
+    }, 
+    {
+        "pk": 239846135569, 
+        "model": "facebook.page", 
+        "fields": {
+            "updated": "2011-05-06 01:42:38", 
+            "_graph": "{\"category\": \"Consulting/business services\", \"picture\": \"http://profile.ak.fbcdn.net/hprofile-ak-snc4/71159_239846135569_24789_s.jpg\", \"name\": \"FEINHEIT GmbH\", \"founded\": \"1. September 2006\", \"company_overview\": \"Impossible gibt es f\\u00fcr uns nicht. Wir bringen deine Idee ins weltweite Netz, verhelfen ihr zu Form und Farbe und spielen die Neuigkeit auf der Buschtrommel, bis auch Alaska mit Rauchzeichen antwortet!\\n\\n\\nSELBSTAUSBEUTER\\nMoritz Zumb\\u00fchl // Konzept & Gesch\\u00e4ftsleitung\\nMartin Prader // Konzept, Text & Kommunikation\\nBoris P\\u00e9risset // Konzept, Grafik & Illustration \\nThileeban Thanapalan // Grafik, Webdesign & Animation\\nMatthias Kestenholz // Konzept & Programmierung\\n\\nADMIN & BERATUNG\\nMarc Spahr // Konzept & Projektmanagement\\nPhilipp B\\u00fctikhofer // Marketing & Beratung\\nSara Wallimann // Marketing, Beratung & Konzept\\nSabrina M\\u00fcller // Administration\\n\\nGRAFIK & KREATION\\nCornelia Vecellio // Grafik & Webdesign\\nChristoph Angehrn // 3D Modeling Animation\\nFiona Sch\\u00e4r // Grafik & Illustration\\nJane Mumford // Illustration\\nFederico Dominguez // Praktikant Grafik\\n\\nNERDPOOL\\nSimon Sch\\u00fcrpf // Programmierung\\nSimon Schmid // Programmierung\\nStefan Reinhard // Programmierung\\nUrs Breton // Flash Programmierung\\nSimon B\\u00e4chler // Programmierung\\n\\n\\n.\", \"username\": \"FEINHEIT\", \"website\": \"www.feinheit.ch\", \"link\": \"http://www.facebook.com/FEINHEIT\", \"likes\": 1384, \"products\": \"Konzept & Beratung\\nWebdesign & CMS\\nOnline-Marketing\\nSocial Media Marketing\\nCrossmedia Marketing\\nNewsletter / SMS-Dienste\\nAnimation & Film\\nIllustration, Design & CI/CD\\nPrint-Produkte\\nAbstimmungen & Wahlen\\n\", \"checkins\": 10, \"id\": \"239846135569\", \"location\": {\"latitude\": 47.37690448, \"city\": \"Z\\u00fcrich\", \"longitude\": 8.52635437, \"country\": \"Switzerland\"}}", 
+            "created": "2011-05-06 01:42:34", 
+            "_likes": 1384, 
+            "_link": "http://www.facebook.com/FEINHEIT", 
+            "_name": "FEINHEIT GmbH", 
+            "_picture": "http://profile.ak.fbcdn.net/hprofile-ak-snc4/71159_239846135569_24789_s.jpg", 
+            "slug": "feinheit-gmbh"
+        }
+    }, 
+    {
+        "pk": 198178673550725, 
+        "model": "facebook.event", 
+        "fields": {
+            "updated": "2011-05-06 01:36:12", 
+            "_graph": "{\"description\": \"Er\\u00f6ffnung \\u201eKANTINE\\u201c an der L\\u00f6wenstrasse 68, 8001 Z\\u00fcrich\\n \\nZwischen dem leckeren asiatischen Restaurant und einem jungen Reiseb\\u00fcro macht sich ein neuer Delikatessen Laden breit. Ab 07. Mai 2011 gibt es an der L\\u00f6wenstrasse 68 einen neuen Bekleidungsshop namens \\u201eKantine\\u201c ganz nach dem Gusto der internationalen Modemetropole. \\n \\nDort wird gew\\u00fcrzt so wie es Herr und Frau Z\\u00fcrcher m\\u00f6gen \\u2013 urban, international und keine Massenware. Denn auf der Speisekarte steht eine Auswahl von Brands wie Supremebeing, Boxfresh, Dr.Denim, Insight, Skunkfunk, Iriedaily, Becks\\u00f6ndergaard, WESC, Orb, Obey, Ragwear, Havaianas uvm....also ein delizi\\u00f6ser Gaumenschmauss!\\n \\nAls \\u201eChef de Party\\u201c sorgen sich die Djs Fadeout, Ertu Denli & Pushking Noize f\\u00fcr die passenden Kl\\u00e4nge. Neben Trunk und Speis werden nur am Opening-Tag(es Menu) aus der KANTINE K\\u00fcche 10% Rabatt auf die gesamte Sommerkollektion serviert! \\n \\nNa dann, guten Appetit!\", \"privacy\": \"OPEN\", \"start_time\": \"2011-05-07T10:00:00\", \"venue\": {\"city\": \"Z\\u00fcrich\", \"country\": \"Switzerland\", \"longitude\": 8.55, \"state\": \"Zurich\", \"street\": \"L\\u00f6wenstrasse 68\", \"latitude\": 47.3667}, \"updated_time\": \"2011-04-25T18:53:31+0000\", \"end_time\": \"2011-05-07T20:00:00\", \"owner\": {\"name\": \"Okan Roxx\", \"id\": \"1142216549\"}, \"id\": \"198178673550725\", \"name\": \"Er\\u00f6ffnung KANTINE\"}", 
+            "created": "2011-05-06 01:36:12", 
+            "_description": "Er\u00f6ffnung \u201eKANTINE\u201c an der L\u00f6wenstrasse 68, 8001 Z\u00fcrich\n \nZwischen dem leckeren asiatischen Restaurant und einem jungen Reiseb\u00fcro macht sich ein neuer Delikatessen Laden breit. Ab 07. Mai 2011 gibt es an der L\u00f6wenstrasse 68 einen neuen Bekleidungsshop namens \u201eKantine\u201c ganz nach dem Gusto der internationalen Modemetropole. \n \nDort wird gew\u00fcrzt so wie es Herr und Frau Z\u00fcrcher m\u00f6gen \u2013 urban, international und keine Massenware. Denn auf der Speisekarte steht eine Auswahl von Brands wie Supremebeing, Boxfresh, Dr.Denim, Insight, Skunkfunk, Iriedaily, Becks\u00f6ndergaard, WESC, Orb, Obey, Ragwear, Havaianas uvm....also ein delizi\u00f6ser Gaumenschmauss!\n \nAls \u201eChef de Party\u201c sorgen sich die Djs Fadeout, Ertu Denli & Pushking Noize f\u00fcr die passenden Kl\u00e4nge. Neben Trunk und Speis werden nur am Opening-Tag(es Menu) aus der KANTINE K\u00fcche 10% Rabatt auf die gesamte Sommerkollektion serviert! \n \nNa dann, guten Appetit!", 
+            "_privacy": "OPEN", 
+            "_name": "Er\u00f6ffnung KANTINE", 
+            "_start_time": "2011-05-07 10:00:00", 
+            "_updated_time": "2011-04-25 18:53:31", 
+            "_owner": "{\"name\": \"Okan Roxx\", \"id\": \"1142216549\"}", 
+            "_location": null, 
+            "_end_time": "2011-05-07 20:00:00", 
+            "_venue": "{\"city\": \"Z\\u00fcrich\", \"country\": \"Switzerland\", \"longitude\": 8.55, \"state\": \"Zurich\", \"street\": \"L\\u00f6wenstrasse 68\", \"latitude\": 47.3667}", 
+            "slug": "eroffnung-kantine"
+        }
+    }
+]
