@@ -216,7 +216,7 @@ class Base(models.Model):
 
 class User(Base):
     id = models.BigIntegerField(primary_key=True, unique=True)
-    access_token = models.CharField(max_length=250, blank=True)
+    access_token = models.CharField(max_length=250, blank=True, null=True)
     user = models.OneToOneField(DjangoUser, blank=True, null=True)
 
     # Cached Facebook Graph fields for db lookup
@@ -267,6 +267,11 @@ class User(Base):
     def facebook_link(self):
         return self._link
 
+    def save_from_facebook(self, response, update_slug=False):
+        if 'access_token' in response.iterkeys():
+            self.access_token = response['access_token']
+        super(User, self).save_from_facebook(response, update_slug)
+        
 
 class Photo(Base):
     fb_id = models.BigIntegerField(unique=True, null=True, blank=True)
@@ -480,4 +485,9 @@ class TestUser(User):
         if graph.request('%s' % self.id, None, {'password': new_password, 'access_token': graph.access_token }):
             self.password = new_password
             self.save()
-            
+    
+    def save_from_facebook(self, response, update_slug=False):
+        self.login_url = response['login_url']
+        self.password = response['password']
+        self.id = response['id']
+        super(TestUser, self).save_from_facebook(response, update_slug)

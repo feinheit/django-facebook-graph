@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.conf import settings
 
-from models import User, Photo, Page, Event, Request
+from models import User, Photo, Page, Event, Request, TestUser
 
 
 class AdminBase(admin.ModelAdmin):

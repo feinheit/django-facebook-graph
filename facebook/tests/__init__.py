@@ -1,14 +1,14 @@
 from facebook.tests.utils import *
+from facebook.models import TestUser
 
 class TestUsers(object):
     def __init__(self, graph):
         self.graph = graph
 
-    def generate_new_test_user(installed=True, permissions=[]):
+    def generate_new_test_user(self, installed=True, permissions=[]):
         response = self.graph.request('%s/accounts/test-users' % self.graph.app_id, None, {'installed': installed, 'permissions': ', '.join(permissions) })
-        user = TestUser(login_url=response['login_url'], id=response['id'], access_token=response['access_token'],
-                        _email=response['email'], password=['password'])
-        user.save()
+        user = TestUser()
+        user.save_from_facebook(response)
         return user
 
     def get_test_users(self):
