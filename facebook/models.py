@@ -27,8 +27,8 @@ class Base(models.Model):
 
     slug = models.SlugField(unique=True, blank=True, null=True)
 
-    created = models.DateTimeField(editable=False, default=datetime.now)
-    updated = models.DateTimeField(editable=False, default=datetime.now)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.now)
+    updated = models.DateTimeField(auto_now=True, default=datetime.now)
 
     class Meta:
         abstract = True
@@ -115,12 +115,6 @@ class Base(models.Model):
             if prop == 'from' and hasattr(self, '_%s_id' % prop):
                 setattr(self, '_%s_id' % prop, val['id'])
 
-        # try to generate a slug, but only the first time (because the slug should be more persistent)
-        if not self.slug or update_slug:
-            try:
-                self.slug = slugify(self._name)[:50]
-            except:
-                self.slug = self.id
         self.save() 
     
     def save_to_facebook(self, target, graph=None):
@@ -142,6 +136,18 @@ class Base(models.Model):
         
         response = graph.put_object(str(target), self.Facebook.publish, **args)
         return response
+    
+    def save(self, *args, **kwargs):
+        # try to generate a slug, but only the first time (because the slug should be more persistent)
+        if not self.slug:
+            try:
+                if self._name:
+                    self.slug = slugify(self._name)[:50]
+                else:
+                    self.slug = slugify(self.id)
+            except:
+                self.slug = self.id
+        super(Base, self).save(*args, **kwargs)
     
     def get_connections(self, connection_name, graph, save=False):
         response = graph.request('%s/%s' % (self._id, connection_name))
@@ -477,17 +483,23 @@ class Request(Base):
 class TestUser(User):
     login_url = models.URLField('Login URL', blank=True, max_length=100)
     password = models.CharField('Password', max_length=30, blank=True)
+    belongs_to = models.BigIntegerField(_('Belongs to'), help_text=_('The app the testuser has been created with.'))
     
     def __unicode__(self):
-        return 'Testuser: %s (%s)' % (self._name, self.id)
+        return 'Testuser: %s (%s)' % (self._email, self.id)
     
     def set_password(self, graph, new_password):
         if graph.request('%s' % self.id, None, {'password': new_password, 'access_token': graph.access_token }):
             self.password = new_password
             self.save()
     
-    def save_from_facebook(self, response, update_slug=False):
+    def save_from_facebook(self, response, update_slug=False, app_id=None):
+        if app_id:
+            self.belongs_to = int(app_id)
         self.login_url = response['login_url']
-        self.password = response['password']
+        if 'password' in response.keys():
+            self.password = response['password']
+        if 'access_token' in response.keys():
+            self.access_token = response['access_token']
         self.id = response['id']
         super(TestUser, self).save_from_facebook(response, update_slug)
