@@ -64,11 +64,9 @@ class Base(models.Model):
             self.save_from_facebook(response)
         return self._graph
 
-    def get_from_facebook(self, save=False, request=None, access_token=None, \
-             application=None):
-
-        graph = get_graph(request=request, access_token=access_token, \
-                          app_name=application)
+    def get_from_facebook(self, graph=None, save=False):
+        if not graph:
+            graph = get_graph()
         try:
             response = graph.request(str(self._id))
             if response and save:
@@ -109,13 +107,14 @@ class Base(models.Model):
                     setattr(self, field, obj)
                     if created:
                         obj.get_from_facebook(save=True)
-                    
                 else:
                     setattr(self, field, val)
             if prop == 'from' and hasattr(self, '_%s_id' % prop):
                 setattr(self, '_%s_id' % prop, val['id'])
 
-        self.save() 
+        self.save()
+    save_from_facebook.alters_data = True
+     
     
     def save_to_facebook(self, target, graph=None):
         if not graph: graph=get_graph()
@@ -244,11 +243,7 @@ class User(Base):
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
 
-    def get_friends(self, save=False, request=None, access_token=None, \
-             application=None):
-
-        graph = get_graph(request=request, access_token=access_token, \
-                          app_name=application)
+    def get_friends(self, graph, save=False):
         response = graph.request('%s/friends' % self.id)
         friends = response['data']
 

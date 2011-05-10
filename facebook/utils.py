@@ -352,7 +352,7 @@ class Graph(facebook.GraphAPI):
                 self.fb_session.me = self._me
             except facebook.GraphAPIError as e:
                 logger.debug('could not use the accesstoken via %s: %s' % (self.via, e.message))
-                self.fb_session.app_is_authenticated = False
+                self.fb_session.store_token(None)
             return self._me
 
     @property

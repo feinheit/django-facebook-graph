@@ -1,7 +1,7 @@
 from django.conf import settings
 """ This context processor is depreciated.
     It only works it if you only have one Facebook App. 
-    Use the facebook_tags instead.
+    Use the fb_tags instead.
 """
 def application_settings(request):
     firstapp = getattr(settings, 'FACEBOOK_APPS').values()[0]
