@@ -1,8 +1,8 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django.conf import settings
-from facebook.utils import get_graph, parseSignedRequest
+from facebook.utils import get_graph, parseSignedRequest, get_app_dict
 import functools, sys, logging
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.context import RequestContext
 from django.template.defaultfilters import urlencode
 from django.core.urlresolvers import resolve, Resolver404, reverse
@@ -126,4 +126,20 @@ def redirect_to_page(view):
         return view(*args, **kwargs)
     
     return wrapper
-   
+
+# Deauthorize callback, signed request: {u'issued_at': 1305126336, u'user_id': u'xxxx', u'user': {u'locale': u'de_DE', u'country': u'ch'}, u'algorithm': u'HMAC-SHA256'}
+
+@csrf_exempt
+def deauthorize_and_delete(request):
+    """ Deletes a user on a deauthorize callback. """
+    if request.method == 'GET':
+        raise Http404
+    if 'signed_request' in request.POST:
+        application = get_app_dict()
+        parsed_request = parseSignedRequest(request.REQUEST['signed_request'], application['SECRET'])
+        user = get_object_or_404(User, id=parsed_request['user_id'])
+        #user.delete()
+        logger.info('Deleting User: %s' % user)
+        return HttpResponse('ok')
+    raise Http404
+
