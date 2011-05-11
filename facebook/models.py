@@ -243,6 +243,7 @@ class User(Base):
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
 
+
     def get_friends(self, graph, save=False):
         response = graph.request('%s/friends' % self.id)
         friends = response['data']

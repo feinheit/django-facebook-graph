@@ -34,10 +34,11 @@ class OAuth2ForCanvasMiddleware(object):
         if 'signed_request' in request.REQUEST:
             parsed_request = parseSignedRequest(request.REQUEST['signed_request'], application['SECRET'])
             logger.debug('got signed_request from facebook: %s' % parsed_request)
-            language = parsed_request['user']['locale']
-            logger.debug('language: %s' %language)
-            request.LANGUAGE_CODE = language
-            translation.activate(language)
+            if 'language' in parsed_request:
+                language = parsed_request['user']['locale']
+                logger.debug('language: %s' %language)
+                request.LANGUAGE_CODE = language
+                translation.activate(language)
             fb.signed_request = parsed_request
             logger.debug('stored signed_request')
             expires = None

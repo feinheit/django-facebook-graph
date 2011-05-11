@@ -18,22 +18,22 @@ def fb_app_settings(app_id=None):
         return mark_safe(link)
     
 @register.simple_tag
-def facebook_api_key(app_name=None):
+def fb_api_key(app_name=None):
     app = get_app_dict(app_name)
     return app['API-KEY']
 
 @register.simple_tag
-def facebook_app_id(app_name=None):
+def fb_app_id(app_name=None):
     app = get_app_dict(app_name)
     return app['ID']
 
 @register.simple_tag
-def facebook_canvas_page(app_name=None):
+def fb_canvas_page(app_name=None):
     app = get_app_dict(app_name)
     return app['CANVAS-PAGE']
 
 @register.simple_tag
-def facebook_canvas_url(request, app_name=None):
+def fb_canvas_url(request, app_name=None):
     app = get_app_dict(app_name)
     if request.is_secure:
         return app['SECURE-CANVAS-URL']
@@ -41,6 +41,6 @@ def facebook_canvas_url(request, app_name=None):
         return app['CANVAS-URL']
 
 @register.simple_tag
-def facebook_redirect_url(app_name=None):
+def fb_redirect_url(app_name=None):
     app = get_app_dict(app_name)
     return app['REDIRECT-URL']
