@@ -477,7 +477,7 @@ class Request(Base):
 
 
 class TestUser(User):
-    login_url = models.URLField('Login URL', blank=True, max_length=100)
+    login_url = models.URLField('Login URL', blank=True, max_length=160)
     password = models.CharField('Password', max_length=30, blank=True)
     belongs_to = models.BigIntegerField(_('Belongs to'), help_text=_('The app the testuser has been created with.'))
     
@@ -492,7 +492,8 @@ class TestUser(User):
     def save_from_facebook(self, response, update_slug=False, app_id=None):
         if app_id:
             self.belongs_to = int(app_id)
-        self.login_url = response['login_url']
+        if 'login_url' in response.keys():
+            self.login_url = response['login_url']
         if 'password' in response.keys():
             self.password = response['password']
         if 'access_token' in response.keys():

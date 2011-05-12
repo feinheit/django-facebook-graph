@@ -1,0 +1,22 @@
+{% load i18n %}
+<script type="text/javascript">
+function Go (select) {
+  var wert = select.options[select.options.selectedIndex].value;
+  if (wert == "none") {
+    select.form.reset();
+    return;
+  } else {
+     window.top.location.href = wert;
+  }
+}
+</script>
+<form action="#">
+    <select name="testusers" class="select-testusers" id="testusers-select" size="1" onchange="Go(this)" width="100">
+        <option value="none" selected="selected">{% trans 'choose a testuser' %}</option>
+        {% for user in users %}
+        <option value="{{ user.login_url }}">{{ user.id }} {{ user.cached.name }}</option>
+        {% empty %}
+        <option value="none">{% trans 'No testusers available' %}</option>
+        {% endfor %}
+    </select>
+</form>

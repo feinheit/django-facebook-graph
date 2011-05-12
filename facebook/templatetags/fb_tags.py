@@ -1,9 +1,10 @@
 #coding=utf-8
 from django import template
 from django.conf import settings
-from facebook.utils import get_app_dict
+from facebook.utils import get_app_dict, get_static_graph
 register = template.Library()
 from django.utils.safestring import mark_safe
+from facebook.testusers import TestUsers
 
 @register.simple_tag
 def fb_app_settings(app_id=None):
@@ -45,3 +46,10 @@ def fb_canvas_url(request, app_name=None):
 def fb_redirect_url(app_name=None):
     app = get_app_dict(app_name)
     return app['REDIRECT-URL']
+
+@register.inclusion_tag('facebook/includes/testuser_choice.html')
+def fb_testuser_menu(app_name=None):
+    graph = get_static_graph(app_name)
+    tu = TestUsers(graph)
+    testusers = tu.get_test_users()
+    return {'users': testusers}
