@@ -156,7 +156,7 @@ class FBSession(SessionBase):
     @property
     def access_token(self):
         if self.token_expires and self.token_expires < datetime.now():  # TODO: Check if this is executed on every request.
-            logger.debug('not returning expired access_token. %s' %self.fb_session.get('access_token'), 'no token in session')
+            logger.debug('not returning expired access_token. %s' % self.fb_session.get('access_token'))
             return None
         else:
             return self.fb_session.get('access_token', None)
@@ -292,7 +292,7 @@ class Graph(facebook.GraphAPI):
             self.via = 'cookie'
         elif self.get_token_from_app():
             self.via = 'application'
-        logger.debug('Got token via %s.' % self.via)
+        logger.debug('Got token via %s.\n%s' % (self.via, self.access_token))
 
     def get_token_from_session(self):
         if not self.fb_session.access_token:
