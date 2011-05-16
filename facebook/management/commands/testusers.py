@@ -9,9 +9,17 @@ class Command(BaseCommand):
     args = '[<App Name>], [<App Name>], ...'
     help = 'Update Testusers for your apps'
     can_import_settings = True
+    option_list = BaseCommand.option_list + (
+                            make_option('--update', '-u',
+                                action='store_true',
+                                dest='update',
+                                default=False,
+                                help='Update Login URL.'),
+                            )
     
     def handle(self, *args, **options):
         apps = []
+        update = options.get('update')  # Not implemented yet. Always update.
         if args:
             for arg in args:
                 try:
@@ -27,3 +35,6 @@ class Command(BaseCommand):
             testusers = TestUsers(graph)
             users = testusers.get_test_users()
             self.stdout.write(u' Testusers: %s\n' % users)
+            for user in users:
+                installed = '*' if getattr(user, 'access_token', False) else ''
+                self.stdout.write(u'%s\t%s %s\n' % (user.id, user.login_url, installed))

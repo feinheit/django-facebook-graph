@@ -14,7 +14,7 @@ FQ = {
 };
 var fb = {};
 fb['user'] = {}
-fb['perms'] = {};
+fb['perms'] = [];
 
   window.fbAsyncInit = function() {
     FB.init({appId: FACEBOOK_APP_ID, status: true, cookie: true,
@@ -24,12 +24,17 @@ fb['perms'] = {};
       log(response);
       if (response.session) {
         fb.user = response.session;
-        if (response.perms.extended) {
-            fb.perms = response.perms.extended;
-           }   
+        if (response.perms){
+            var perms = $.parseJSON(response.perms);
+            fb.perms = perms.extended;
+        } else {
+            FB.api('/me/permissions/', function(data){
+                for (var i in data['data'][0]) {fb.perms.push(i);}
+            });
+        }
       }
       FQ.run(); 
-    });
+    }, 'json');
   };
 (function() {
     var e = document.createElement('script'); e.async = true;

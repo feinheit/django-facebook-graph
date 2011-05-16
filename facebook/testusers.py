@@ -1,11 +1,16 @@
 #coding=utf-8
 from facebook.models import TestUser
+from facebook.api import GraphAPIError
 from django.utils import simplejson
 
 
 class TestUsers(object):
     def __init__(self, graph):
         self.graph = graph
+    
+    # Friend requests need user access token
+    def update_access_token(self, access_token):
+        self.graph.access_token = access_token
 
     def generate_new_test_user(self, installed=True, permissions=[]):
         response = self.graph.request('%s/accounts/test-users' % self.graph.app_id, None, 
@@ -35,7 +40,7 @@ class TestUsers(object):
             elif not user._name and user.access_token:
                 self.graph.access_token = user.access_token
                 response = user.get_from_facebook(graph=self.graph, save=True)
-        return users
+        return testusers
     
     def friend_request(self, user1, user2):
         graph = self.graph
@@ -43,7 +48,18 @@ class TestUsers(object):
         return graph.request('%s/friends/%s' % (user1.id, user2.id), None, {})
     
     def make_friends_with(self, user1, user2):
-        return make_friend_request(user1, user2) and make_friend_request(user2, user1)
+        response = []
+        self.update_access_token(user1.access_token)
+        try:
+            response.append(self.friend_request(user1, user2))
+        except GraphAPIError as error:  #No access token if the user is not authorized.
+            response.append(error)
+        self.update_access_token(user2.access_token)
+        try:
+            response.append(self.friend_request(user2, user1))
+        except GraphAPIError as error:
+            response.append(error)
+        return response
     
     def unfriend(self, user1, user2):
         pass
