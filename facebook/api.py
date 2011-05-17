@@ -37,6 +37,7 @@ import cgi
 import hashlib
 import time
 import urllib
+import httplib 
 
 import logging
 logger = logging.getLogger(__name__)
@@ -53,7 +54,6 @@ except ImportError:
         # For Google AppEngine
         from django.utils import simplejson
         _parse_json = lambda s: simplejson.loads(s)
-
 
 class GraphAPI(object):
     """A client for the Facebook Graph API.
@@ -157,6 +157,24 @@ class GraphAPI(object):
     def delete_object(self, id):
         """Deletes the object with the given ID from the graph."""
         self.request(id, post_args={"method": "delete"})
+        """
+        conn = httplib.HTTPSConnection('graph.facebook.com')
+        conn.request('DELETE', '/%s?access_token=%s' % (id, self.access_token))
+        resp = conn.getresponse()
+        raw = resp.read()
+        logger.debug('facebook response raw: %s \n\n' % raw )
+        try:
+            response = _parse_json(raw)
+            if response.get("error"):
+                raise GraphAPIError(response["error"]["type"],
+                                    response["error"]["message"])
+        except AttributeError:
+            pass
+        finally:
+            resp.close()
+            
+        return response
+        """
 
     def request(self, path, args=None, post_args=None):
         """Fetches the given path in the Graph API.

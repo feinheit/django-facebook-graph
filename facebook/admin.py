@@ -6,7 +6,7 @@ from models import User, Photo, Page, Event, Request, TestUser
 
 class AdminBase(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
-        obj.get_from_facebook(save=True, request=request)
+        obj.get_from_facebook(save=True)
     
     def profile_link(self, obj):
         if obj.facebook_link:
@@ -52,6 +52,6 @@ admin.site.register(Event, EventAdmin)
 
 
 class RequestAdmin(AdminBase):
-    list_display = ('id', '_application', '_to', '_from', '_data', '_message', '_created_time')
-    readonly_fields = ('_graph', '_application', '_to', '_from', '_data', '_message', '_created_time')
+    list_display = ('id', '_application_id', '_to', '_from', '_data', '_message', '_created_time')
+    readonly_fields = ('_graph', '_application_id', '_to', '_from', '_data', '_message', '_created_time')
 admin.site.register(Request, RequestAdmin)

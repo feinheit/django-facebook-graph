@@ -19,7 +19,7 @@ from facebook import GraphAPIError
 from fields import JSONField
 from utils import get_graph, post_image, get_FQL
 
-FACEBOOK_APPS_CHOICE = tuple((a, unicode(a)) for a in settings.FACEBOOK_APPS.iteritems())
+FACEBOOK_APPS_CHOICE = tuple((v['ID'], unicode(k)) for k,v in settings.FACEBOOK_APPS.items())
 
 class Base(models.Model):
     # Last Lookup JSON
@@ -98,7 +98,7 @@ class Base(models.Model):
                         val = val[:-5]
                     setattr(self, field, datetime.strptime(val, "%Y-%m-%dT%H:%M:%S")) #  - timedelta(hours=7) 
 
-                    
+
                 elif isinstance(self._meta.get_field(field), models.ForeignKey):
                     # trying to build the ForeignKey and if the foreign Object doesnt exists, create it.
                     # todo: check if the related model is a facebook model (not sure if there are other possible relations ...) 
@@ -456,21 +456,28 @@ class Request(Base):
     id = models.BigIntegerField(primary_key=True, unique=True)
     
     # Cached Facebook Graph fields for db lookup
-    _application = models.CharField('Application', max_length=30, choices=FACEBOOK_APPS_CHOICE, blank=True, null=True)
+    _application_id = models.BigIntegerField('Application', max_length=30, choices=FACEBOOK_APPS_CHOICE, blank=True, null=True)
     _to = models.ForeignKey(User, blank=True, null=True, related_name='request_to_set')
     _from = models.ForeignKey(User, blank=True, null=True, related_name='request_from_set')
     _data = models.TextField(blank=True, null=True)
     _message = models.TextField(blank=True, null=True)
     _created_time = models.DateTimeField(blank=True, null=True)
     
-    def delete(self, facebook=True, graph=None, *args, **kwargs):
+    def delete(self, facebook=True, local=settings.DEBUG, graph=None, *args, **kwargs):
         if facebook:
             if not graph: graph = get_graph()
             try:
                 graph.delete_object(str(self.id))
+                if local:
+                    super(Request, self).delete(*args, **kwargs)
             except GraphAPIError, e:
                 logger.warning('DELETE Request failed: %s' % e)
-        super(Request, self).delete(*args, **kwargs)
+        else:
+            super(Request, self).delete(*args, **kwargs)
+    
+    def get_from_facebook(self, graph=None, save=settings.DEBUG):
+        """ Only saves the request to the db if DEBUG is True."""
+        super(Request, self).get_from_facebook(graph=graph, save=save)
     
     def __unicode__(self):
         return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)

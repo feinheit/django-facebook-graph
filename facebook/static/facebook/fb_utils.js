@@ -10,7 +10,8 @@
 FQ = {
     queue: new Array(),
     add: function(f) { if (typeof f == 'function') { this.queue.push(f); } },
-    run: function() { while(this.queue.length > 0) { f = this.queue.pop(); f(); } }
+    run: function() { while(this.queue.length > 0) { f = this.queue.pop(); f();
+                      FB.Canvas.setSize(); } }
 };
 var fb = {};
 fb['user'] = {}
@@ -19,7 +20,7 @@ fb['perms'] = [];
   window.fbAsyncInit = function() {
     FB.init({appId: FACEBOOK_APP_ID, status: true, cookie: true,
              xfbml: true});
-    FB.Canvas.setAutoResize();
+    FB.Canvas.setSize();
     FB.getLoginStatus(function(response) {
       log(response);
       if (response.session) {
