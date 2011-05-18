@@ -36,6 +36,7 @@ fb['perms'] = [];
       }
       FQ.run(); 
     }, 'json');
+    FB.Canvas.setSize();
   };
 (function() {
     var e = document.createElement('script'); e.async = true;
