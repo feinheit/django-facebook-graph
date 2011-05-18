@@ -44,59 +44,17 @@ fb['perms'] = [];
     document.getElementById('fb-root').appendChild(e);
 }());
   
-$(function(){
-    $('#invite').click(function(event) {
-        $target = $(event.target);
-        
-        if (!$target.hasClass('loading')) {
-            FB.ui({method: 'apprequests', 
-                message: $('#invitation-text').val(), 
-                data: $target.data('data')}, 
-            function(response){
-                $target.addClass('loading');
-                $.post($target.data('target'), response, function(data) {
-                    document.location.reload();
-                });
-            });
+
+FQ.add(function(){
+    FB.Event.subscribe('auth.login', function(response){
+        if ($.isEmptyObject(fb.user)) {
+            var url = window.location.toString();
+            url.match(/\?(.+)$/);
+            var params = RegExp.$1;
+            top.location.href = FACEBOOK_REDIRECT_URL ;
         }
     });
-    
-    $('.reminder-wallpost').click(function(event){
-        $target = $(event.target);
-         FB.ui(
-           {
-             method: 'feed',
-             link: $target.data('url'),
-             caption: $target.data('caption'),
-             to: $target.data('to'),
-             message: $('#invitation-text').val()
-           },
-           function(response) {
-             if (response && response.post_id) {
-               // alert('Post was published.');
-             } else {
-               // alert('Post was not published.');
-             }
-           }
-         );
-    });
-    
-    $('.attend').click(function(event){
-        $target = $(event.target);
-        document.location.href=$target.data('target')
-    });
-    
-    FQ.add(function(){
-        FB.Event.subscribe('auth.login', function(response){
-            if ($.isEmptyObject(fb.user)) {
-                var url = window.location.toString();
-                url.match(/\?(.+)$/);
-                var params = RegExp.$1;
-                top.location.href = FACEBOOK_REDIRECT_URL ;
-            }
-        });
-        FB.Event.subscribe('edge.create', function(response){
-            log(response);
-        });
+    FB.Event.subscribe('edge.create', function(response){
+        log(response);
     });
 });
