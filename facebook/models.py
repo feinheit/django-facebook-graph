@@ -169,7 +169,7 @@ class Base(models.Model):
             connection_config = model_connection_config[connection_name]
             connecting_field_name = connection_config['field']
         else:
-            raise ObjectDoesNotExist('The Facebook Model %s has no connection configured with the name "%s"' % (self.__class__, connection))
+            raise ObjectDoesNotExist('The Facebook Model %s has no connection configured with the name "%s"' % (self.__class__, connection_name))
     
         connecting_field = getattr(self, connecting_field_name)
         connected_model = self._meta.get_field(connecting_field_name).rel.to
@@ -199,10 +199,10 @@ class Base(models.Model):
         #transaction.commit()
 
     def clean(self, refresh=True, *args, **kwargs):
-       ''' On save, update timestamps '''
-       if not self.id:
-           self.created = datetime.now()
-       self.updated = datetime.now()
+        ''' On save, update timestamps '''
+        if not self.id:
+            self.created = datetime.now()
+        self.updated = datetime.now()
 
     def __unicode__(self):
         if hasattr(self, '_name'):
@@ -219,7 +219,7 @@ class Base(models.Model):
 #        return super(Base, self).__getattr_(name)
 
 
-class User(Base):
+class UserBase(Base):
     id = models.BigIntegerField(primary_key=True, unique=True)
     access_token = models.CharField(max_length=250, blank=True, null=True)
     user = models.OneToOneField(DjangoUser, blank=True, null=True)
@@ -273,7 +273,15 @@ class User(Base):
         if 'access_token' in response.iterkeys():
             self.access_token = response['access_token']
         super(User, self).save_from_facebook(response, update_slug)
-        
+
+    class Meta:
+        abstract=True
+
+
+class User(UserBase):
+    class Meta:
+        abstract=False
+
 
 class Photo(Base):
     fb_id = models.BigIntegerField(unique=True, null=True, blank=True)
@@ -483,7 +491,7 @@ class Request(Base):
         return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)
 
 
-class TestUser(User):
+class TestUser(UserBase):
     login_url = models.URLField('Login URL', blank=True, max_length=160)
     password = models.CharField('Password', max_length=30, blank=True)
     belongs_to = models.BigIntegerField(_('Belongs to'), help_text=_('The app the testuser has been created with.'))
@@ -507,3 +515,8 @@ class TestUser(User):
             self.access_token = response['access_token']
         self.id = response['id']
         super(TestUser, self).save_from_facebook(response, update_slug)
+        
+    class Meta:
+        verbose_name = _('Test user')
+        verbose_name_plural = _('Test users')
+
