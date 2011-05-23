@@ -495,6 +495,7 @@ class TestUser(UserBase):
     login_url = models.URLField('Login URL', blank=True, max_length=160)
     password = models.CharField('Password', max_length=30, blank=True)
     belongs_to = models.BigIntegerField(_('Belongs to'), help_text=_('The app the testuser has been created with.'))
+    _email = models.EmailField(blank=True, null=True, max_length=100)
     
     def __unicode__(self):
         return 'Testuser: %s (%s)' % (self._email, self.id)
