@@ -272,7 +272,7 @@ class UserBase(Base):
     def save_from_facebook(self, response, update_slug=False):
         if 'access_token' in response.iterkeys():
             self.access_token = response['access_token']
-        super(User, self).save_from_facebook(response, update_slug)
+        super(UserBase, self).save_from_facebook(response, update_slug)
 
     class Meta:
         abstract=True

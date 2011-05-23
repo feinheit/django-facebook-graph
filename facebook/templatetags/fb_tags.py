@@ -53,3 +53,7 @@ def fb_testuser_menu(app_name=None):
     tu = TestUsers(graph)
     testusers = tu.get_test_users()
     return {'users': testusers}
+
+@register.simple_tag
+def messages(message, user_id):
+    return message.render(user_id)
