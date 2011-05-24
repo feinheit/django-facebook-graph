@@ -147,3 +147,10 @@ def deauthorize_and_delete(request):
         return HttpResponse('ok')
     raise Http404
 
+""" Allows to register client-side errors. """
+def log_error(request):
+    if not request.is_ajax() or not request.method == 'POST':
+        raise Http404
+    logger.error(request.POST.get('message')) 
+    return HttpResponse('logged error.')   
+

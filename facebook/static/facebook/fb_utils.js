@@ -59,3 +59,13 @@ FQ.add(function(){
         log(response);
     });
 });
+
+function log_error(url, message, csrf_token) {
+    $.post( url,
+        {'csrfmiddlewaretoken': csrf_token,
+         'message': message },
+         function(response){
+             log(response);
+         }, 'text'
+    );
+}
