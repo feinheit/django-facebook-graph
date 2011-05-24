@@ -109,6 +109,7 @@ class SessionBase(object):
     def __init__(self):
         self.app_is_authenticated, self.access_token, self.signed_request = None, None, None
         self.token_expires, self.user_id, self.me, self.user = None, None, None, None
+        self.app_requests = []  # TODO: Put this in its own class.
     
     def store_token(self, *args, **kwargs):
         raise AttributeError('Not Implemented')

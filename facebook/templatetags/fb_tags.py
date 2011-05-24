@@ -3,7 +3,7 @@ from django import template
 from django.conf import settings
 from facebook.utils import get_app_dict, get_static_graph
 from django.template.defaultfilters import escapejs
-
+import re
 register = template.Library()
 from django.utils.safestring import mark_safe
 from facebook.testusers import TestUsers
@@ -59,3 +59,7 @@ def fb_testuser_menu(app_name=None):
 @register.simple_tag
 def messages(message, user):
     return mark_safe(message.render(user))
+
+@register.simple_tag
+def messages_escaped(message, user):
+    return mark_safe(escapejs(message.render(user)))

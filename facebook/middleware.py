@@ -110,6 +110,30 @@ class Redirect2AppDataMiddleware(object):
         except KeyError:
             return None
 
+class AppRequestMiddleware(object):
+    """ Processes App requests. Generates a Request object for every request
+        and attaches it to the session.
+        The objects are only stored in the database if DEBUG is True, since
+        the ids are available in every request from facebook.
+        The app_requests need to be deleted manually from facebook.
+    """
+    def process_request(self, request):
+        app_requests = []
+        if request.GET.get('request_ids', None):
+            fb = FBSession(request)
+            request_ids = request.GET.get('request_ids').split(',')
+            logger.debug('Got app request ids: %s' % request_ids)
+            for id in request_ids:
+                r = Request(id=id)
+                if settings.DEBUG:
+                    try:
+                        r.save()
+                    except IntegrityError:
+                        pass
+                app_requests.append(r)
+            fb.app_requests = app_requests
+            fb.modified('AppRequestMiddleware')
+
 
 class FakeSessionCookieMiddleware(object):
     # from http://djangosnippets.org/snippets/460/
