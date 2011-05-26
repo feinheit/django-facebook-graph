@@ -32,6 +32,9 @@ class Base(models.Model):
 
     class Meta:
         abstract = True
+        
+    class Facebook:
+        pass
 
     @property
     def _id(self):
@@ -209,6 +212,14 @@ class Base(models.Model):
             return '%s (%s)' % (self._name, self.id)
         else:
             return str(self.id)
+    
+    def delete(self, facebook=False, graph=None, *args, **kwargs):
+        if facebook:
+            if not graph: graph = get_graph()
+            graph.delete_object(str(self.id))
+        super(Request, self).delete(*args, **kwargs)
+    delete.alters_data = True
+
 
 # it crashes my python instance on mac os x without proper error message, so may we shoudn't use that handy shortcut
 # maybe its only, that the admin should'nt use these computed fields
@@ -238,7 +249,8 @@ class UserBase(Base):
     friends = models.ManyToManyField('self')
     
     class Facebook:
-        pass
+        public_fields = ['id', 'name', 'first_name', 'last_name', 'gender', 'locale', 'username']
+        member_fields = ['link', 'third_party_id', 'updated_time', 'verified']
 
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
@@ -352,6 +364,13 @@ class Page(Base):
 
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
+    
+    class Facebook:
+        public_fields = ['id', 'name', 'picture', 'link', 'category', 'likes', 'location', 'phone', 'checkins', 
+                         'website', 'username', 'founded', 'products']
+        member_fields = []
+        connections = ['feed', 'posts', 'tagged', 'statuses', 'links', 'notes', 'photos', 'albums', 'events', 'videos']
+
 
     #@models.permalink
     #def get_absolute_url(self):
@@ -443,7 +462,7 @@ class Event(Base):
     
     def respond(self, graph, status='attending'):
         fb_response = graph.put_object(str(self.id), status)
-        self.save_rsvp_status(graph.user, status)
+        self.save_rsvp_status(graph.user_id, status)
         return fb_response
 
 
@@ -471,17 +490,8 @@ class Request(Base):
     _message = models.TextField(blank=True, null=True)
     _created_time = models.DateTimeField(blank=True, null=True)
     
-    def delete(self, facebook=True, local=settings.DEBUG, graph=None, *args, **kwargs):
-        if facebook:
-            if not graph: graph = get_graph()
-            try:
-                graph.delete_object(str(self.id))
-                if local:
-                    super(Request, self).delete(*args, **kwargs)
-            except GraphAPIError, e:
-                logger.warning('DELETE Request failed: %s' % e)
-        else:
-            super(Request, self).delete(*args, **kwargs)
+    def delete(self, facebook=True, graph=None, *args, **kwargs):
+        super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
     
     def get_from_facebook(self, graph=None, save=settings.DEBUG):
         """ Only saves the request to the db if DEBUG is True."""

@@ -56,8 +56,6 @@ class OAuth2ForCanvasMiddleware(object):
             if 'user_id' in parsed_request:
                 fb.user_id = parsed_request['user_id']
             
-            if 'user' in parsed_request:
-                fb.user = parsed_request['user']
             else:
                 logger.debug("Signed Request didn't contain public user info.")
             if expires:

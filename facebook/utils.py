@@ -1,5 +1,6 @@
 import logging
 from django.utils.datetime_safe import datetime
+import warnings
 logger = logging.getLogger(__name__)
 
 import base64
@@ -108,7 +109,7 @@ def get_FQL(fql, access_token=None):
 class SessionBase(object):
     def __init__(self):
         self.app_is_authenticated, self.access_token, self.signed_request = None, None, None
-        self.token_expires, self.user_id, self.me, self.user = None, None, None, None
+        self.token_expires, self.user_id, self.me = None, None, None
         self.app_requests = []  # TODO: Put this in its own class.
     
     def store_token(self, *args, **kwargs):
@@ -225,14 +226,17 @@ class FBSession(SessionBase):
     @signed_request.setter
     def signed_request(self, parsed_request):
         self.fb_session['signed_request'] = parsed_request
+        self.app_is_authenticated = True if getattr(parsed_request, 'user_id', False) else False
         self.modified('signed_request.setter')
     
     @property
     def user(self):
-        return self.fb_session.get('user', None)
+        raise AttributeError('The user attribute was confusing.\n Use signded_request["user"] instead.' )
     
     @user.setter
     def user(self, user):
+        raise AttributeError('The user attribute was confusing.\n Use signded_request["user"] instead.' )
+        """
         if isinstance(user, dict):
             self.fb_session['user'] = user
         elif isinstance(user, basestring):
@@ -241,10 +245,10 @@ class FBSession(SessionBase):
             except ValueError:
                 pass
         else:
-            raise TypeError('User has to a dict or JSON-string.')
+            raise TypeError('User has to be a dict or JSON-string.')
         self.modified('user.setter')
         #logger.debug('User age: %s' % self.fb_session['user']['age']['min'])
-
+        """
 
 class FBSessionNoOp(SessionBase):
     def __init__(self):
@@ -279,7 +283,7 @@ class Graph(facebook.GraphAPI):
         logger.debug('app_secret: %s' %application['SECRET'])
         logger.debug('app_id: %s' %application['ID'])
         self.HttpRequest = request
-        self._me, self._user = None, None
+        self._me, self._user_id = None, None
         self.app_id, self.app_secret = application['ID'], application['SECRET']
         self.via = 'No token requested'
         self.fb_session = FBSession(request) if request else FBSessionNoOp()
@@ -299,7 +303,7 @@ class Graph(facebook.GraphAPI):
         if not self.fb_session.access_token:
             return None
         self.access_token = self.fb_session.access_token
-        self._user = self.fb_session.user_id
+        self._user_id = self.fb_session.user_id
         return self.access_token
 
     def get_token_from_cookie(self):
@@ -346,15 +350,25 @@ class Graph(facebook.GraphAPI):
         if not access_token:
             if not self.access_token or not self.fb_session.app_is_authenticated:
                 return None
+            """
+            elif self._user_id:
+                self._me, created = User.objects.get_or_create(id=self._user_id)
+                if created:
+                    self._me.get_from_facebook(graph=self, save=True)                
+            """
         else:
             try:
-                self._me = self.request('me')
-                self._user = self._me['id']
-                self.fb_session.me = self._me
+                me = self.request('me')
+                self._user_id = me['id']
+                self.fb_session.me = me
+                self._me = me  
             except facebook.GraphAPIError as e:
                 logger.debug('could not use the accesstoken via %s: %s' % (self.via, e.message))
                 self.fb_session.store_token(None)
-            return self._me
+            #self._me, created = User.objects.get_or_create(id=self._user_id)
+            #if created:
+            #    self._me.save_from_facebook(me)         
+        return self._me
 
     @property
     def me(self):  # Is now a lazy property.
@@ -363,10 +377,19 @@ class Graph(facebook.GraphAPI):
         else:
             self._get_me()
 
-    @property
+    @property  #DEPRECIATED. Kept for compatibility reasons.
     def user(self):
-        if self._user:
-            return self._user
+        warnings.warn('The user property is depreceated. Use user_id instead.', DeprecationWarning)
+        if self._user_id:
+            return self._user_id
+        else:
+            me = self._get_me(self.access_token)
+            return getattr(me, 'id', None)
+
+    @property
+    def user_id(self):
+        if self._user_id:
+            return self._user_id
         else:
             me = self._get_me(self.access_token)
             return getattr(me, 'id', None)
@@ -502,3 +525,12 @@ def redirect_GET_session(to, request, permanent=False):
         return response
     else:
         return response
+    
+
+def totimestamp(instance):
+    import time
+    return time.mktime(instance.timetuple())
+    
+    
+
+

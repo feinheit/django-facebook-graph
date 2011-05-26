@@ -31,7 +31,7 @@ def input(request, action):
             user.access_token = graph.access_token
             user.save_from_facebook(json)
         else:
-            user, created = User.objects.get_or_create(id=graph.user)
+            user, created = User.objects.get_or_create(id=graph.user_id)
             user.get_from_facebook(request)
             user.access_token = graph.access_token
             user.save()
@@ -42,13 +42,13 @@ def input(request, action):
         if json == None:
             return HttpResponseBadRequest('Facebook Graph JSON response is required as "json" attribute')
         
-        user, created = User.objects.get_or_create(id=graph.user)
+        user, created = User.objects.get_or_create(id=graph.user_id)
         user.save_friends(json)
         
         return HttpResponse('ok')
     
     elif action == 'user-friends-once':
-        user, created = User.objects.get_or_create(id=graph.user)
+        user, created = User.objects.get_or_create(id=graph.user_id)
         if created or not user.access_token:
             user.get_friends(save=True, request=request)
         user.access_token = graph.access_token
