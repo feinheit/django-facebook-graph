@@ -217,7 +217,7 @@ class Base(models.Model):
         if facebook:
             if not graph: graph = get_graph()
             graph.delete_object(str(self.id))
-        super(Request, self).delete(*args, **kwargs)
+        super(Base, self).delete(*args, **kwargs)
     delete.alters_data = True
 
 
