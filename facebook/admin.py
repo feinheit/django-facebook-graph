@@ -10,7 +10,7 @@ class AdminBase(admin.ModelAdmin):
     
     def profile_link(self, obj):
         if obj.facebook_link:
-            return '<a href="%s" target="_blank"><img src="%s/picture?type=small" /></a>' % (obj.facebook_link, obj.graph_url)
+            return '<a href="%s" target="_blank"><img src="%s/picture?type=square" /></a>' % (obj.facebook_link, obj.graph_url)
         else:
             return '<img src="http://graph.facebook.com/%s/picture" />' % (obj.id)
     profile_link.allow_tags = True

@@ -103,7 +103,8 @@ def get_FQL(fql, access_token=None):
         response = _parse_json(raw)
     finally:
         file.close()
-
+    if isinstance(response, dict) and response.get('error_code', False):
+        raise facebook.GraphAPIError(response['error_code'], response['error_msg'])
     return response
 
 class SessionBase(object):
@@ -442,7 +443,7 @@ def post_image(access_token, image, message, object='me'):
     """ in some cases, response is not an object """
     if response:
         if response.get("error"):
-            raise GraphAPIError(response["error"]["type"],
+            raise facebook.GraphAPIError(response["error"]["type"],
                                 response["error"]["message"])
     return response
 

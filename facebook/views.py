@@ -1,4 +1,5 @@
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect,\
+    HttpResponseForbidden
 from django.conf import settings
 from facebook.utils import get_graph, parseSignedRequest, get_app_dict
 import functools, sys, logging
@@ -153,4 +154,12 @@ def log_error(request):
         raise Http404
     logger.error(request.POST.get('message')) 
     return HttpResponse('logged error.')   
+
+def fql_console(request):
+    if not settings.DEBUG:
+        return HttpResponseForbidden
+    else:
+        return render_to_response('facebook/fqlconsole.html', {},
+                                  RequestContext(request))
+
 

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+{% load fb_tags %}
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+  <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame 
+       Remove this if you use the .htaccess -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<script type="text/javascript">
+    window.log = function(){
+      log.history = log.history || [];   // store logs to an array for reference
+      log.history.push(arguments);
+      if(this.console){
+        console.log( Array.prototype.slice.call(arguments) );
+      }
+    };
+    FACEBOOK_APP_ID = '{% fb_app_id %}'
+    FACEBOOK_REDIRECT_URL = '{% fb_redirect_url %}'
+    
+</script>
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.js"></script>
+
+<script type="text/javascript">
+function query(){
+    log('query');
+    return false;
+}
+
+</script>
+
+
+<title>FQL Console</title>
+</head>
+
+<body id="agbs">
+    <div class="wrapper">
+        <header>
+          <h1>FQL console</h1>
+          <h2>By using this I confirm that I know what I'm doing.</h2><p></p>
+        </header>
+        <div class="main">
+            <div id="query">
+                <p><textarea id="query-textarea" name="query" cols="100" rows="10"></textarea></p>
+                <p><button id="query-button" onclick="query(); return false;">Query!</button></p>
+            </div>
+            <div id="output">
+                <textarea id="output" name="output" cols="100" rows="30" wrap="virtual" readonly>
+                    
+                </textarea>
+            </div>
+        </div>
+    </div>
+    <div id="fb-root"></div>
+    <script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>
+</body>
+</html>

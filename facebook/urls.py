@@ -11,6 +11,7 @@ go_to_template = csrf_exempt(direct_to_template)
 
 urlpatterns = patterns('',
     url(r'^deauthorize/$', 'facebook.views.deauthorize_and_delete', name='deauthorize'),
-    url(r'^(?P<action>[a-z-]+)/$', input, name="input"),
+    url(r'^fql/$', 'facebook.views.fql_console', name="fql_console"),
     url(r'^log_error/$', 'facebook.views.log_error', name="log_error"),
+    url(r'^(?P<action>[a-z-]+)/$', input, name="input"),
 )
