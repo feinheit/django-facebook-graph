@@ -25,12 +25,19 @@ class TestUsers(object):
                                       {'access_token': self.graph.access_token })['data'] 
         users=[]
         for item in response:
-            testuser, created = TestUser.objects.get_or_create(id=item['id'], 
+            # Facebook sometimes does not deliver a login-url. Ignore those users.
+            try:
+                testuser, created = TestUser.objects.get_or_create(id=item['id'], 
                                 defaults={'id': item['id'], 'login_url': item['login_url'],
                                           'belongs_to': self.graph.app_id,
                                           '_graph': simplejson.dumps(item) })
-            testuser.save_from_facebook(item, app_id=self.graph.app_id)
-            users.append(testuser)
+            
+                testuser.save_from_facebook(item, app_id=self.graph.app_id)
+                users.append(testuser)
+            except KeyError:
+                pass
+                
+            
         # cleanup db
         users_ids=[int(i['id']) for i in response]
         testusers = TestUser.objects.select_related(depth=1).filter(belongs_to=self.graph.app_id)
