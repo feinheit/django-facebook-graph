@@ -19,7 +19,7 @@ class TestUsers(object):
         user.save_from_facebook(response, app_id=self.graph.app_id)
         return user
 
-    def get_test_users(self):
+    def get_test_users(self, login_url_required=False):
         """ users is a dict array with the fields access_token, login_url and id. """
         response = self.graph.request('%s/accounts/test-users' % self.graph.app_id, 
                                       {'access_token': self.graph.access_token })['data'] 
@@ -31,8 +31,12 @@ class TestUsers(object):
                                 defaults={'id': item['id'], 'login_url': item['login_url'],
                                           'belongs_to': self.graph.app_id,
                                           '_graph': simplejson.dumps(item) })
-            
-                testuser.save_from_facebook(item, app_id=self.graph.app_id)
+                if created:
+                    testuser.save_from_facebook(item, app_id=self.graph.app_id)
+                else:
+                    testuser.login_url = item['login_url']
+                    testuser._graph = simplejson.dumps(item)
+                testuser.save()
                 users.append(testuser)
             except KeyError:
                 pass
