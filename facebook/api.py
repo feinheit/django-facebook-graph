@@ -188,6 +188,10 @@ class GraphAPI(object):
                 post_args["access_token"] = self.access_token
             else:
                 args["access_token"] = self.access_token
+        if post_args:
+            for k, v in post_args.iteritems():
+                if isinstance(v, basestring):
+                    post_args[k] = v.encode('utf-8')
         post_data = None if post_args is None else urllib.urlencode(post_args)
         query = "https://graph.facebook.com/" + path + "?" + urllib.urlencode(args)
         file = urllib.urlopen(query, post_data)
