@@ -5,13 +5,13 @@ from facebook.utils import get_graph, parseSignedRequest, get_app_dict, FBSessio
 import functools, sys, logging
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, redirect, get_object_or_404
-from django.template.context import RequestContext
 from django.template.defaultfilters import urlencode
+from django.template import loader, RequestContext
 from django.core.urlresolvers import resolve, Resolver404, reverse
 from django.contrib.sites.models import Site
 from feinheit.newsletter.models import Subscription
 from feinheit.translations import short_language_code
-
+from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
 
 from models import User
@@ -122,8 +122,12 @@ def channel(request):
         locale = fb.signed_request['user']['locale']
     except KeyError:
         locale = 'en_US'  #TODO: Make this nicer.
-    return render_to_response('facebook/channel.html', {'locale': locale}, 
-                              context_instance=RequestContext(request))
+    t=datetime.now()+timedelta(weeks=500)
+    response = HttpResponse(loader.render_to_string('facebook/channel.html', {'locale': locale}, 
+                              context_instance=RequestContext(request)))
+    response['Expires'] = t.ctime()
+    return response
+
 
 # Deauthorize callback, signed request: {u'issued_at': 1305126336, u'user_id': u'xxxx', u'user': {u'locale': u'de_DE', u'country': u'ch'}, u'algorithm': u'HMAC-SHA256'}
 
