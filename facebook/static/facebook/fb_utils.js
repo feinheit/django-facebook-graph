@@ -6,12 +6,20 @@
     </script>
     <script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>
  */
+ 
+/* This is due to a bug in IE8 */
 
+function canvas_resize() {
+    if (window.location.search.toString().indexOf('fb_xd_fragment') == -1) {
+        FB.Canvas.setSize();
+    }
+}
+  
 FQ = {
     queue: new Array(),
     add: function(f) { if (typeof f == 'function') { this.queue.push(f); } },
     run: function() { while(this.queue.length > 0) { f = this.queue.pop(); f();
-                      FB.Canvas.setSize(); } }
+                      canvas_resize(); } }
 };
 var fb = {};
 fb['user'] = {}
@@ -20,7 +28,7 @@ fb['perms'] = [];
   window.fbAsyncInit = function() {
     FB.init({appId: FACEBOOK_APP_ID, status: true, cookie: true,
              xfbml: true});
-    FB.Canvas.setSize();
+    canvas_resize();
     FB.getLoginStatus(function(response) {
       log(response);
       if (response.session) {
@@ -36,7 +44,7 @@ fb['perms'] = [];
       }
       FQ.run(); 
     }, 'json');
-    FB.Canvas.setSize();
+    canvas_resize();
   };
 (function() {
     var e = document.createElement('script'); e.async = true;
