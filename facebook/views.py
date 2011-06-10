@@ -1,7 +1,7 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect,\
     HttpResponseForbidden
 from django.conf import settings
-from facebook.utils import get_graph, parseSignedRequest, get_app_dict
+from facebook.utils import get_graph, parseSignedRequest, get_app_dict, FBSession
 import functools, sys, logging
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, redirect, get_object_or_404
@@ -60,21 +60,6 @@ def input(request, action):
     
     return HttpResponseBadRequest('action %s not implemented' % action)
 
-"""
-try:
-    page_id = settings.FACEBOOK_PAGE_ID
-except AttributeError:
-    raise ImproperlyConfigured, 'You have to define FACEBOOK_PAGE_ID in your settings!'
-try:
-    redirect_url = settings.FACEBOOK_REDIRECT_PAGE_URL
-except AttributeError:
-    raise ImproperlyConfigured, 'You have to define FACEBOOK_REDIRECT_PAGE_URL in your settings!\n'\
-            'i.e. http://www.facebook.com/#!/myapp'
-try:
-    app_id = settings.FACEBOOK_APP_ID
-except AttributeError:
-    raise ImproperlyConfigured, 'You have to define FACEBOOK_APP_ID in your settings!'
-"""
 
 def redirect_to_page(view):   
     """ Decorator that redirects a canvas URL to a page using the path that is in app_data.path """
@@ -128,6 +113,17 @@ def redirect_to_page(view):
         return view(*args, **kwargs)
     
     return wrapper
+
+@csrf_exempt
+def channel(request):
+    """ Returns the channel.html file as described in http://developers.facebook.com/docs/reference/javascript/FB.init/"""
+    fb = FBSession(request)
+    try:
+        locale = fb.signed_request['user']['locale']
+    except KeyError:
+        locale = 'en_US'  #TODO: Make this nicer.
+    return render_to_response('facebook/channel.html', {'locale': locale}, 
+                              context_instance=RequestContext(request))
 
 # Deauthorize callback, signed request: {u'issued_at': 1305126336, u'user_id': u'xxxx', u'user': {u'locale': u'de_DE', u'country': u'ch'}, u'algorithm': u'HMAC-SHA256'}
 

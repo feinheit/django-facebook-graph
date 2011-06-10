@@ -1,12 +1,12 @@
 from django.conf.urls.defaults import *
 
 from views import input
-from django.views.generic.simple import direct_to_template
+from django.views.generic.base import TemplateView
 from django.views.decorators.csrf import csrf_exempt
 
 
 """ Use this instead of direct_to_template """
-go_to_template = csrf_exempt(direct_to_template)
+go_to_template = csrf_exempt(TemplateView.as_view)
 
 
 urlpatterns = patterns('',
@@ -14,4 +14,5 @@ urlpatterns = patterns('',
     url(r'^fql/$', 'facebook.views.fql_console', name="fql_console"),
     url(r'^log_error/$', 'facebook.views.log_error', name="log_error"),
     url(r'^(?P<action>[a-z-]+)/$', input, name="input"),
+    url(r'^channel.html$', 'facebook.views.channel', name='channel'),
 )

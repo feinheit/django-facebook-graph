@@ -39,7 +39,7 @@ def fb_canvas_page(app_name=None):
 @register.simple_tag
 def fb_canvas_url(request, app_name=None):
     app = get_app_dict(app_name)
-    if request.is_secure:
+    if request.is_secure and False:  # FIXME: For some reason always returns true.
         return app['SECURE-CANVAS-URL']
     else:
         return app['CANVAS-URL']

@@ -3,6 +3,7 @@
     <script type="text/javascript">
         FACEBOOK_APP_ID = '{% facebook_app_id %}'
         FACEBOOK_REDIRECT_URL = '{% facebook_redirect_url %}'
+        FACEBOOK_CHANNEL_URL = '{% url channel %}'
     </script>
     <script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>
  */
@@ -10,9 +11,12 @@
 /* This is due to a bug in IE8 */
 
 function canvas_resize() {
+    /*
     if (window.location.search.toString().indexOf('fb_xd_fragment') == -1) {
         FB.Canvas.setSize();
     }
+    */
+    FB.Canvas.setSize();
 }
   
 FQ = {
@@ -27,7 +31,9 @@ fb['perms'] = [];
 
   window.fbAsyncInit = function() {
     FB.init({appId: FACEBOOK_APP_ID, status: true, cookie: true,
-             xfbml: true});
+             xfbml: true,
+             channelUrl : document.location.protocol + '//' + document.location.host + FACEBOOK_CHANNEL_URL }
+    );
     canvas_resize();
     FB.getLoginStatus(function(response) {
       log(response);
@@ -49,7 +55,7 @@ fb['perms'] = [];
 (function() {
     var e = document.createElement('script'); e.async = true;
     e.src = document.location.protocol +
-    '//connect.facebook.net/en_US/all.js';
+    '//connect.facebook.net/de_DE/all.js';
     document.getElementById('fb-root').appendChild(e);
 }());
   
