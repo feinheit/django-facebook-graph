@@ -17,4 +17,6 @@ urlpatterns = patterns('',
                        )
 
 if 'registration' in settings.INSTALLED_APPS:
-    urlpatterns += ((r'', include('registration.backends.default.urls')),)
+    urlpatterns += patterns('',
+        url(r'', include('registration.backends.default.urls')),
+        )
