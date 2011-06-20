@@ -21,7 +21,7 @@ class AuthenticationBackend(object):
         try:
             facebook_user = FacebookUser.objects.get(id=uid)
             facebook_user.access_token = access_token
-            facebook_user.save()
+            facebook_user.save_from_facebook(profile)
             user = facebook_user.user
         except ObjectDoesNotExist:
             facebook_user = FacebookUser(id=uid,
@@ -34,7 +34,7 @@ class AuthenticationBackend(object):
             user.last_name = profile['last_name']
             user.save()
             facebook_user.user = user
-            facebook_user.save()
+            facebook_user.save_from_facebook(profile)
 
         return user
 
