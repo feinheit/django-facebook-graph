@@ -19,6 +19,7 @@ from facebook import GraphAPIError
 from fields import JSONField
 from utils import get_graph, post_image, get_FQL
 
+FACEBOOK_APPS_CHOICE = tuple((v['ID'], unicode(k)) for k,v in settings.FACEBOOK_APPS.items())
 
 class Base(models.Model):
     # Last Lookup JSON
@@ -26,11 +27,14 @@ class Base(models.Model):
 
     slug = models.SlugField(unique=True, blank=True, null=True)
 
-    created = models.DateTimeField(editable=False, default=datetime.now)
-    updated = models.DateTimeField(editable=False, default=datetime.now)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.now)
+    updated = models.DateTimeField(auto_now=True, default=datetime.now)
 
     class Meta:
         abstract = True
+        
+    class Facebook:
+        pass
 
     @property
     def _id(self):
@@ -41,24 +45,6 @@ class Base(models.Model):
     def graph_url(self):
         return 'http://graph.facebook.com/%s' % self._id
     
-    def get_facebook_url(self):
-        app_id = getattr(settings, 'FACEBOOK_APP_ID', '')
-        path = self.get_absolute_url()
-        if getattr(settings, 'FACEBOOK_REDIRECT_PAGE_URL', False):
-            url = '%s?sk=app_%s&app_data=%s' % (settings.FACEBOOK_REDIRECT_PAGE_URL, app_id, urlencode(path))
-            return url
-        else:
-            return path
-    
-    def get_tab_deeplink(self):
-        app_id = settings.FACEBOOK_APP_ID
-        path = self.get_absolute_url()
-        if getattr(settings, 'FACEBOOK_PAGE_URL', False):
-            url = '%s?sk=app_%s&app_data=%s' % (settings.FACEBOOK_PAGE_URL, app_id, urlencode(path))
-            return url
-        else:
-            return path
-
     @property
     def graph(self):
         return self._graph
@@ -81,11 +67,9 @@ class Base(models.Model):
             self.save_from_facebook(response)
         return self._graph
 
-    def get_from_facebook(self, save=False, request=None, access_token=None, \
-             client_secret=None, client_id=None):
-
-        graph = get_graph(request=request, access_token=access_token, \
-                          client_secret=client_secret, client_id=client_id)
+    def get_from_facebook(self, graph=None, save=False):
+        if not graph:
+            graph = get_graph()
         try:
             response = graph.request(str(self._id))
             if response and save:
@@ -116,7 +100,8 @@ class Base(models.Model):
                     if '+' in val: # ignore timezone for now ...
                         val = val[:-5]
                     setattr(self, field, datetime.strptime(val, "%Y-%m-%dT%H:%M:%S")) #  - timedelta(hours=7) 
-                    
+
+
                 elif isinstance(self._meta.get_field(field), models.ForeignKey):
                     # trying to build the ForeignKey and if the foreign Object doesnt exists, create it.
                     # todo: check if the related model is a facebook model (not sure if there are other possible relations ...) 
@@ -125,20 +110,14 @@ class Base(models.Model):
                     setattr(self, field, obj)
                     if created:
                         obj.get_from_facebook(save=True)
-                    
                 else:
                     setattr(self, field, val)
             if prop == 'from' and hasattr(self, '_%s_id' % prop):
                 setattr(self, '_%s_id' % prop, val['id'])
 
-        # try to generate a slug, but only the first time (because the slug should be more persistent)
-        if not self.slug or update_slug:
-            try:
-                self.slug = slugify(self._name)[:50]
-            except:
-                self.slug = self.id
         self.save()
-    
+    save_from_facebook.alters_data = True
+     
     
     def save_to_facebook(self, target, graph=None):
         if not graph: graph=get_graph()
@@ -159,6 +138,18 @@ class Base(models.Model):
         
         response = graph.put_object(str(target), self.Facebook.publish, **args)
         return response
+    
+    def save(self, *args, **kwargs):
+        # try to generate a slug, but only the first time (because the slug should be more persistent)
+        if not self.slug:
+            try:
+                if self._name:
+                    self.slug = slugify(self._name)[:50]
+                else:
+                    self.slug = slugify(self.id)
+            except:
+                self.slug = self.id
+        super(Base, self).save(*args, **kwargs)
     
     def get_connections(self, connection_name, graph, save=False):
         response = graph.request('%s/%s' % (self._id, connection_name))
@@ -181,7 +172,7 @@ class Base(models.Model):
             connection_config = model_connection_config[connection_name]
             connecting_field_name = connection_config['field']
         else:
-            raise ObjectDoesNotExist('The Facebook Model %s has no connection configured with the name "%s"' % (self.__class__, connection))
+            raise ObjectDoesNotExist('The Facebook Model %s has no connection configured with the name "%s"' % (self.__class__, connection_name))
     
         connecting_field = getattr(self, connecting_field_name)
         connected_model = self._meta.get_field(connecting_field_name).rel.to
@@ -210,18 +201,25 @@ class Base(models.Model):
             connection_object.save()
         #transaction.commit()
 
-    def clean(self, refresh=True, request=None, access_token=None, \
-            client_secret=None, client_id=None, *args, **kwargs):
-       ''' On save, update timestamps '''
-       if not self.id:
-           self.created = datetime.now()
-       self.updated = datetime.now()
+    def clean(self, refresh=True, *args, **kwargs):
+        ''' On save, update timestamps '''
+        if not self.id:
+            self.created = datetime.now()
+        self.updated = datetime.now()
 
     def __unicode__(self):
         if hasattr(self, '_name'):
             return '%s (%s)' % (self._name, self.id)
         else:
             return str(self.id)
+    
+    def delete(self, facebook=False, graph=None, *args, **kwargs):
+        if facebook:
+            if not graph: graph = get_graph()
+            graph.delete_object(str(self.id))
+        super(Base, self).delete(*args, **kwargs)
+    delete.alters_data = True
+
 
 # it crashes my python instance on mac os x without proper error message, so may we shoudn't use that handy shortcut
 # maybe its only, that the admin should'nt use these computed fields
@@ -232,9 +230,9 @@ class Base(models.Model):
 #        return super(Base, self).__getattr_(name)
 
 
-class User(Base):
+class UserBase(Base):
     id = models.BigIntegerField(primary_key=True, unique=True)
-    access_token = models.CharField(max_length=250, blank=True)
+    access_token = models.CharField(max_length=250, blank=True, null=True)
     user = models.OneToOneField(DjangoUser, blank=True, null=True)
 
     # Cached Facebook Graph fields for db lookup
@@ -243,7 +241,7 @@ class User(Base):
     _name = models.CharField(max_length=100, blank=True, null=True)
     _link = models.URLField(verify_exists=False, blank=True, null=True)
     _birthday = models.DateField(blank=True, null=True)
-    _email = models.EmailField(blank=True, null=True)
+    _email = models.EmailField(blank=True, null=True, max_length=100)
     _location = models.CharField(max_length=70, blank=True, null=True)
     _gender = models.CharField(max_length=10, blank=True, null=True)
     _locale = models.CharField(max_length=6, blank=True, null=True)
@@ -251,16 +249,14 @@ class User(Base):
     friends = models.ManyToManyField('self')
     
     class Facebook:
-        pass
+        public_fields = ['id', 'name', 'first_name', 'last_name', 'gender', 'locale', 'username']
+        member_fields = ['link', 'third_party_id', 'updated_time', 'verified']
 
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
 
-    def get_friends(self, save=False, request=None, access_token=None, \
-             client_secret=None, client_id=None):
 
-        graph = get_graph(request=request, access_token=access_token, \
-                          client_secret=client_secret, client_id=client_id)
+    def get_friends(self, graph, save=False):
         response = graph.request('%s/friends' % self.id)
         friends = response['data']
 
@@ -284,6 +280,19 @@ class User(Base):
     @property
     def facebook_link(self):
         return self._link
+
+    def save_from_facebook(self, response, update_slug=False):
+        if 'access_token' in response.iterkeys():
+            self.access_token = response['access_token']
+        super(UserBase, self).save_from_facebook(response, update_slug)
+
+    class Meta:
+        abstract=True
+
+
+class User(UserBase):
+    class Meta:
+        abstract=False
 
 
 class Photo(Base):
@@ -315,10 +324,10 @@ class Photo(Base):
         return 'http://www.facebook.com/photo.php?fbid=%s' % self.id
 
     def send_to_facebook(self, object='me', save=False, request=None, access_token=None, \
-             client_secret=None, client_id=None, message=''):
+             application=None, message=''):
 
         graph = get_graph(request=request, access_token=access_token, \
-                          client_secret=client_secret, client_id=client_id)
+                          app_name=application)
 
         response = post_image(graph.access_token, self.image.file, message, object=object)
 
@@ -355,17 +364,26 @@ class Page(Base):
 
     def __unicode__(self):
         return '%s (%s)' % (self._name, self.id)
+    
+    class Facebook:
+        public_fields = ['id', 'name', 'picture', 'link', 'category', 'likes', 'location', 'phone', 'checkins', 
+                         'website', 'username', 'founded', 'products']
+        member_fields = []
+        connections = ['feed', 'posts', 'tagged', 'statuses', 'links', 'notes', 'photos', 'albums', 'events', 'videos']
+
 
     #@models.permalink
     #def get_absolute_url(self):
     #    return ('page', (), {'portal' : self.portal.slug, 'page' : self.slug})
 
+"""
+Applications are by default stored in the settings.
 
 class Application(Page):
-    """ The Application inherits the Page, because every application has a Page """
+    # The Application inherits the Page, because every application has a Page
     api_key = models.CharField(max_length=32, help_text=_('The applications API Key'))
     secret = models.CharField(max_length=32, help_text=_('The applications Secret'))
-
+"""    
 
 class EventManager(models.Manager):
     def upcoming(self):
@@ -444,7 +462,7 @@ class Event(Base):
     
     def respond(self, graph, status='attending'):
         fb_response = graph.put_object(str(self.id), status)
-        self.save_rsvp_status(graph.user, status)
+        self.save_rsvp_status(graph.user_id, status)
         return fb_response
 
 
@@ -465,7 +483,7 @@ class Request(Base):
     id = models.BigIntegerField(primary_key=True, unique=True)
     
     # Cached Facebook Graph fields for db lookup
-    _application = models.ForeignKey(Application, blank=True, null=True)
+    _application_id = models.BigIntegerField('Application', max_length=30, choices=FACEBOOK_APPS_CHOICE, blank=True, null=True)
     _to = models.ForeignKey(User, blank=True, null=True, related_name='request_to_set')
     _from = models.ForeignKey(User, blank=True, null=True, related_name='request_from_set')
     _data = models.TextField(blank=True, null=True)
@@ -473,14 +491,42 @@ class Request(Base):
     _created_time = models.DateTimeField(blank=True, null=True)
     
     def delete(self, facebook=True, graph=None, *args, **kwargs):
-        if facebook:
-            if not graph: graph = get_graph()
-            try:
-                graph.delete_object(str(self.id))
-            except GraphAPIError, e:
-                logger.warning('DELETE Request failed: %s' % e)
-        super(Request, self).delete(*args, **kwargs)
+        super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
+    
+    def get_from_facebook(self, graph=None, save=settings.DEBUG):
+        """ Only saves the request to the db if DEBUG is True."""
+        super(Request, self).get_from_facebook(graph=graph, save=save)
     
     def __unicode__(self):
         return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)
+
+
+class TestUser(UserBase):
+    login_url = models.URLField('Login URL', blank=True, max_length=160)
+    password = models.CharField('Password', max_length=30, blank=True)
+    belongs_to = models.BigIntegerField(_('Belongs to'), help_text=_('The app the testuser has been created with.'))
     
+    def __unicode__(self):
+        return 'Testuser: %s (%s)' % (self._email, self.id)
+    
+    def set_password(self, graph, new_password):
+        if graph.request('%s' % self.id, None, {'password': new_password, 'access_token': graph.access_token }):
+            self.password = new_password
+            self.save()
+    
+    def save_from_facebook(self, response, update_slug=False, app_id=None):
+        if app_id:
+            self.belongs_to = int(app_id)
+        if 'login_url' in response.keys():
+            self.login_url = response['login_url']
+        if 'password' in response.keys():
+            self.password = response['password']
+        if 'access_token' in response.keys():
+            self.access_token = response['access_token']
+        self.id = response['id']
+        super(TestUser, self).save_from_facebook(response, update_slug)
+        
+    class Meta:
+        verbose_name = _('Test user')
+        verbose_name_plural = _('Test users')
+

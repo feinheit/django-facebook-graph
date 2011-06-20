@@ -1,6 +1,7 @@
 from django.contrib import admin
+from django.conf import settings
 
-from models import User, Photo, Page, Application, Event, Request
+from models import User, Photo, Page, Event, Request, TestUser
 
 
 class AdminBase(admin.ModelAdmin):
@@ -9,7 +10,7 @@ class AdminBase(admin.ModelAdmin):
     
     def profile_link(self, obj):
         if obj.facebook_link:
-            return '<a href="%s" target="_blank"><img src="%s/picture?type=small" /></a>' % (obj.facebook_link, obj.graph_url)
+            return '<a href="%s" target="_blank"><img src="%s/picture?type=square" /></a>' % (obj.facebook_link, obj.graph_url)
         else:
             return '<img src="http://graph.facebook.com/%s/picture" />' % (obj.id)
     profile_link.allow_tags = True
@@ -21,6 +22,9 @@ class UserAdmin(AdminBase):
     
 admin.site.register(User, UserAdmin)
 
+if settings.DEBUG:
+    admin.site.register(TestUser, UserAdmin)
+    
 
 class PhotoAdmin(AdminBase):
     list_display = ('_id', '_name', 'like_count', '_from_id')
@@ -33,12 +37,12 @@ class PageAdmin(AdminBase):
     readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link')
 admin.site.register(Page, PageAdmin)
 
-
+"""
 class ApplicationAdmin(AdminBase):
     list_display = ('id', 'profile_link', 'slug', '_name', '_picture', '_likes','api_key', 'secret')
     readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link')
 admin.site.register(Application, ApplicationAdmin)
-
+"""
 
 class EventAdmin(AdminBase):
     list_display = ('id', 'profile_link', '_owner', '_name', '_description', '_start_time', '_end_time', '_location', '_venue', '_privacy')
@@ -48,6 +52,6 @@ admin.site.register(Event, EventAdmin)
 
 
 class RequestAdmin(AdminBase):
-    list_display = ('id', '_application', '_to', '_from', '_data', '_message', '_created_time')
-    readonly_fields = ('_graph', '_application', '_to', '_from', '_data', '_message', '_created_time')
+    list_display = ('id', '_application_id', '_to', '_from', '_data', '_message', '_created_time')
+    readonly_fields = ('_graph', '_application_id', '_to', '_from', '_data', '_message', '_created_time')
 admin.site.register(Request, RequestAdmin)

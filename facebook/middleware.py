@@ -1,7 +1,8 @@
 import logging
+import urlparse
+from django.utils.datetime_safe import datetime
 logger = logging.getLogger(__name__)
 
-import cgi
 import urllib
 
 from django.conf import settings
@@ -11,7 +12,7 @@ from django.utils import simplejson, translation
 
 _parse_json = lambda s: simplejson.loads(s)
 
-from utils import parseSignedRequest
+from utils import parseSignedRequest, FBSession, get_app_dict
 
 
 class OAuth2ForCanvasMiddleware(object):
@@ -19,69 +20,68 @@ class OAuth2ForCanvasMiddleware(object):
         """
         Writes the signed_request into the Session 
         """
-        fb = request.session.get('facebook', dict())
-        app_secret = settings.FACEBOOK_APP_SECRET
-        application = None
+        fb = FBSession(request)
+        application = get_app_dict()
         
-        # if feincms is installed, try to get the application from the page
-        try:
+        if 'feincms' in settings.INSTALLED_APPS:
+            # if feincms is installed, try to get the application from the page
             from facebook.feincms.utils import get_application_from_request
-            application = get_application_from_request(request)
+            page_app = get_application_from_request(request)
             if application:
-                app_secret = application.secret
-        except ImportError:
-            logger.debug('FeinCMS not installed')
+                application = get_app_dict(page_app)
         
         # default POST/GET request from facebook with a signed request
         if 'signed_request' in request.REQUEST:
-            fb['signed_request'] = parseSignedRequest(request.REQUEST['signed_request'], app_secret)
-            logger.debug('got signed_request from facebook: %s' % fb['signed_request'])
-            language = fb['signed_request']['user']['locale']
-            logger.debug('language: %s' %language)
-            request.LANGUAGE_CODE = language
-            translation.activate(language)
-            
+            parsed_request = parseSignedRequest(request.REQUEST['signed_request'], application['SECRET'])
+            logger.debug(u'got signed_request from facebook: %s' % parsed_request)
+            if 'language' in parsed_request:
+                language = parsed_request['user']['locale']
+                logger.debug('language: %s' %language)
+                request.LANGUAGE_CODE = language
+                translation.activate(language)
+            fb.signed_request = parsed_request
+            logger.debug('stored signed_request')
+            expires = None
             # rewrite important data
-            if 'oauth_token' in fb['signed_request']:
-                fb['access_token'] = fb['signed_request']['oauth_token']
-            if 'access_token' in fb['signed_request']:
-                fb['access_token'] = fb['signed_request']['access_token']
-            if 'user_id' in fb['signed_request']:
-                fb['user_id'] = fb['signed_request']['user_id']
-                fb['app_is_authenticated'] = True
-            request.session['facebook'] = fb
-            request.session.modified = True
+            if 'oauth_token' in parsed_request:
+                expires = datetime.fromtimestamp(float(parsed_request['expires']))
+                fb.store_token(parsed_request['oauth_token'], expires)
+            elif 'access_token' in parsed_request:
+                expires = datetime.fromtimestamp(float(parsed_request['expires']))
+                fb.store_token(parsed_request['access_token'], expires)
+            else:
+                #The chance is good that there is already a valid token in the session.
+                fb.store_token(None)
+            
+            if 'user_id' in parsed_request:
+                fb.user_id = parsed_request['user_id']
+            
+            else:
+                logger.debug("Signed Request didn't contain public user info.")
+            if expires:
+                logger.debug('Signed Request issued at: %s' % datetime.fromtimestamp(float(parsed_request['issued_at'])))
 
         # auth via callback from facebook
         elif 'code' in request.REQUEST:
-            args = dict(client_id=settings.FACEBOOK_APP_ID,
-                        client_secret=settings.FACEBOOK_APP_SECRET,
-                        code=request.GET['code'],
+            args = dict(client_id=application['id'],
+                        client_secret=application['secret'],
+                        code=request.REQUEST['code'],
                         redirect_uri = request.build_absolute_uri()
                             .split('?')[0]
-                            .replace(settings.FACEBOOK_CANVAS_URL, settings.FACEBOOK_CANVAS_PAGE)
+                            .replace(application['CANVAS-URL'], application['CANVAS-PAGE'])
                         )
             
             response = urllib.urlopen("https://graph.facebook.com/oauth/access_token?" + urllib.urlencode(args))
             raw = response.read()
-            parsed = cgi.parse_qs(raw)
-            
+            parsed = urlparse.parse_qs(raw)  # Python 2.6 parse_qs is now part of the urlparse module
             if parsed.get('access_token', None):
-                fb['access_token'] = parsed["access_token"][-1]
-                logger.debug('got access_token from facebook callback: %s' % fb['access_token'])
+                expires = datetime.fromtimestamp(float(parsed['expires'][-1]))
+                fb.store_token(parsed["access_token"][-1], expires)
+                logger.debug('Got access token from callback: %s. Expires at %s' % (parsed, expires))
             else:
                 logger.debug('facebook did not respond an accesstoken: %s' % raw)
-            request.session['facebook'] = fb
-            request.session.modified = True
-        # old (?) method where facebook serves the accestoken unencrypted in 'session' parameter
-        elif 'session' in request.REQUEST:
-            session = _parse_json(request.REQUEST['session'])
-            fb['access_token'] = session.get('access_token')
-            logger.debug('got access_token from session: %s' % request.REQUEST['session'])
-            request.session['facebook'] = fb
-            request.session.modified = True
-            
-    def process_response(self,request, response):
+        
+    def process_response(self, request, response):
         """ p3p headers for allowing cookies in Internet Explorer. 
         more infos: http://adamyoung.net/IE-Blocking-iFrame-Cookies
         thanks to frog32 for the hint """
@@ -107,6 +107,30 @@ class Redirect2AppDataMiddleware(object):
                 return None
         except KeyError:
             return None
+
+class AppRequestMiddleware(object):
+    """ Processes App requests. Generates a Request object for every request
+        and attaches it to the session.
+        The objects are only stored in the database if DEBUG is True, since
+        the ids are available in every request from facebook.
+        The app_requests need to be deleted manually from facebook.
+    """
+    def process_request(self, request):
+        app_requests = []
+        if request.GET.get('request_ids', None):
+            fb = FBSession(request)
+            request_ids = request.GET.get('request_ids').split(',')
+            logger.debug('Got app request ids: %s' % request_ids)
+            for id in request_ids:
+                r = Request(id=id)
+                if settings.DEBUG:
+                    try:
+                        r.save()
+                    except IntegrityError:
+                        pass
+                app_requests.append(r)
+            fb.app_requests = app_requests
+            fb.modified('AppRequestMiddleware')
 
 
 class FakeSessionCookieMiddleware(object):

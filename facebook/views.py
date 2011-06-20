@@ -1,15 +1,17 @@
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect,\
+    HttpResponseForbidden
 from django.conf import settings
-from facebook.utils import get_graph, parseSignedRequest
+from facebook.utils import get_graph, parseSignedRequest, get_app_dict, FBSession
 import functools, sys, logging
-from django.shortcuts import render_to_response, redirect
-from django.template.context import RequestContext
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.template.defaultfilters import urlencode
+from django.template import loader, RequestContext
 from django.core.urlresolvers import resolve, Resolver404, reverse
 from django.contrib.sites.models import Site
 from feinheit.newsletter.models import Subscription
 from feinheit.translations import short_language_code
-
+from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
 
 from models import User
@@ -30,7 +32,7 @@ def input(request, action):
             user.access_token = graph.access_token
             user.save_from_facebook(json)
         else:
-            user, created = User.objects.get_or_create(id=graph.user)
+            user, created = User.objects.get_or_create(id=graph.user_id)
             user.get_from_facebook(request)
             user.access_token = graph.access_token
             user.save()
@@ -41,13 +43,13 @@ def input(request, action):
         if json == None:
             return HttpResponseBadRequest('Facebook Graph JSON response is required as "json" attribute')
         
-        user, created = User.objects.get_or_create(id=graph.user)
+        user, created = User.objects.get_or_create(id=graph.user_id)
         user.save_friends(json)
         
         return HttpResponse('ok')
     
     elif action == 'user-friends-once':
-        user, created = User.objects.get_or_create(id=graph.user)
+        user, created = User.objects.get_or_create(id=graph.user_id)
         if created or not user.access_token:
             user.get_friends(save=True, request=request)
         user.access_token = graph.access_token
@@ -57,21 +59,6 @@ def input(request, action):
         return HttpResponse('ok')
     
     return HttpResponseBadRequest('action %s not implemented' % action)
-
-
-try:
-    page_id = settings.FACEBOOK_PAGE_ID
-except AttributeError:
-    raise ImproperlyConfigured, 'You have to define FACEBOOK_PAGE_ID in your settings!'
-try:
-    redirect_url = settings.FACEBOOK_REDIRECT_PAGE_URL
-except AttributeError:
-    raise ImproperlyConfigured, 'You have to define FACEBOOK_REDIRECT_PAGE_URL in your settings!\n'\
-            'i.e. http://www.facebook.com/#!/myapp'
-try:
-    app_id = settings.FACEBOOK_APP_ID
-except AttributeError:
-    raise ImproperlyConfigured, 'You have to define FACEBOOK_APP_ID in your settings!'
 
 
 def redirect_to_page(view):   
@@ -127,49 +114,52 @@ def redirect_to_page(view):
     
     return wrapper
 
-
-def newsletter(request):
-
-    def subscribe(registration):
-        logger.debug('registration: %s' %registration)
-        subscriber, created = Subscription.objects.get_or_create(email=registration['email'])
-        subscriber.salutation = 'f' if registration['gender'] == 'female' else 'm'
-        subscriber.first_name, subscriber.last_name = registration['first_name'], registration['last_name']
-        subscriber.city = registration['location']['name']
-        subscriber.language = short_language_code()
-        subscriber.ip = request.META['REMOTE_ADDR']
-        subscriber.activation_code = registration['facebook_id']
-        subscriber.email = registration['email']
-        subscriber.active = True
-        subscriber.save()
-        if getattr(settings, 'CLEVERREACH_GROUPS', False):
-            """ Copy cleverreach.py to your project folder to make adjustments. """
-            try: 
-                cleverreach = __import__('%s.cleverreach' %settings.APP_MODULE)
-                from cleverreach import insert_new_user, deactivate_user
-            except ImportError:
-                from akw.cleverreach import insert_new_user, deactivate_user  # TODO: Check this        
-            forms = getattr(settings, 'CLEVERREACH_FORMS', None)
-            form_id = forms[short_language_code()] if forms else None    
-            groups = getattr(settings, 'CLEVERREACH_GROUPS')
-            group_id = groups['nl_%s' %short_language_code()]
-            status = insert_new_user(registration, group_id, activated=True, sendmail=False, form_id=form_id)
-            logger.debug('Cleverreach response: %s' %status)
-    
-    if request.method == 'POST' and request.POST.get('signed_request', None):
-        signed_request = parseSignedRequest(request.POST.get('signed_request'))
-        logger.debug('newsletter signed_request: %s' %signed_request)
-        signed_request['registration'].update({'facebook_id': signed_request['user_id']})
-        subscribe(signed_request['registration'])
-        return redirect('newsletter_thanks')
-        
-    site = Site.objects.all()[0].domain
-    context = {'app_id': settings.FACEBOOK_APP_ID,
-               'redirect_uri': 'http://%s%s' %(site, reverse('newsletter_registration'))}
-    return render_to_response('content/facebook/register.txt', context, 
-                              RequestContext(request))
+@csrf_exempt
+def channel(request):
+    """ Returns the channel.html file as described in http://developers.facebook.com/docs/reference/javascript/FB.init/"""
+    fb = FBSession(request)
+    try:
+        locale = fb.signed_request['user']['locale']
+    except KeyError:
+        locale = 'en_US'  #TODO: Make this nicer.
+    t=datetime.now()+timedelta(weeks=500)
+    response = HttpResponse(loader.render_to_string('facebook/channel.html', {'locale': locale}, 
+                              context_instance=RequestContext(request)))
+    response['Expires'] = t.ctime()
+    return response
 
 
+# Deauthorize callback, signed request: {u'issued_at': 1305126336, u'user_id': u'xxxx', u'user': {u'locale': u'de_DE', u'country': u'ch'}, u'algorithm': u'HMAC-SHA256'}
+
+@csrf_exempt
+def deauthorize_and_delete(request):
+    """ Deletes a user on a deauthorize callback. """
+    if request.method == 'GET':
+        raise Http404
+    if 'signed_request' in request.POST:
+        application = get_app_dict()
+        parsed_request = parseSignedRequest(request.REQUEST['signed_request'], application['SECRET'])
+        user = get_object_or_404(User, id=parsed_request['user_id'])
+        if settings.DEBUG == False:
+            user.delete()
+            logger.info('Deleting User: %s' % user)
+        else:
+            logger.info('User %s asked for deauthorization. Not deleted in Debug mode.')
+        return HttpResponse('ok')
+    raise Http404
+
+""" Allows to register client-side errors. """
+def log_error(request):
+    if not request.is_ajax() or not request.method == 'POST':
+        raise Http404
+    logger.error(request.POST.get('message')) 
+    return HttpResponse('logged error.')   
+
+def fql_console(request):
+    if not settings.DEBUG:
+        return HttpResponseForbidden
+    else:
+        return render_to_response('facebook/fqlconsole.html', {},
+                                  RequestContext(request))
 
 
-    
