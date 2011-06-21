@@ -11,12 +11,9 @@
 /* This is due to a bug in IE8 */
 
 function canvas_resize() {
-    /*
     if (window.location.search.toString().indexOf('fb_xd_fragment') == -1) {
         FB.Canvas.setSize();
     }
-    */
-    FB.Canvas.setSize();
 }
   
 FQ = {
@@ -52,6 +49,7 @@ fb['perms'] = [];
     }, 'json');
     canvas_resize();
   };
+
 (function() {
     var e = document.createElement('script'); e.async = true;
     e.src = document.location.protocol +
