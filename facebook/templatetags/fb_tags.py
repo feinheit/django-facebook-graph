@@ -1,7 +1,7 @@
 #coding=utf-8
 from django import template
 from django.conf import settings
-from facebook.utils import get_app_dict, get_static_graph
+from facebook.utils import get_app_dict, get_static_graph, get_graph
 from django.template.defaultfilters import escapejs
 import re
 register = template.Library()
@@ -63,3 +63,9 @@ def messages(message, user):
 @register.simple_tag
 def messages_escaped(message, user):
     return mark_safe(escapejs(message.render(user)))
+
+@register.simple_tag
+def access_token(request):
+    graph = get_graph(request)
+    return mark_safe(graph.access_token)
+    
