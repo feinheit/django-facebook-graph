@@ -1,0 +1,82 @@
+{% extends "admin/change_form.html" %}
+{% load i18n adminmedia fb_tags %}
+
+{% block extrahead %}{{ block.super }}
+<style type="text/css">
+	#id_id { width: 200px;}
+	#event_url {width: 400px;}
+</style>
+<div id="fb-root"></div>
+<script>
+    fb = {};
+    fb['user'] = {}
+    fb['perms'] = {};
+  window.fbAsyncInit = function() {
+    FB.init({appId: '{% fb_app_id %}', status: true, cookie: true,
+             xfbml: true});
+    FB.getLoginStatus(function(response) {
+        //console.log(response);
+      if (response.session) {
+        fb.user = response.session;
+        django.jQuery('#id_access_token').val(response.session.access_token);
+        if (response.perms) {
+            fb.perms = JSON.parse(response.perms);
+           }
+      }
+      if (django.jQuery.inArray('user_events', fb['perms']['user']) > -1){
+            // console.log('App has perms to publish to the stream');
+          django.jQuery('#fb-is-logged-in').show();
+      } else {
+          django.jQuery('#fb-login-button').show();
+      }
+    });
+    FB.Event.subscribe('auth.login', function() {
+    });
+  };
+  (function() {
+    var e = document.createElement('script'); e.async = true;
+    e.src = document.location.protocol +
+      '//connect.facebook.net/de_DE/all.js';
+    document.getElementById('fb-root').appendChild(e);
+  }());
+	function parse_event_url(source, target){
+		var exp = /(eid=)(\d+)/;
+		exp.exec(source.val());
+		target.val(RegExp.$2);
+	}
+	function do_parse(){
+		parse_event_url(django.jQuery(this),django.jQuery('#id_id'));
+	}
+	django.jQuery(function(){
+		django.jQuery("#event_url").focus(function(){
+		    // Select input field contents
+		    this.select();
+		});
+		django.jQuery("#event_url").change(function(){
+			parse_event_url(django.jQuery(this), django.jQuery('#id_id'));
+			//django.jQuery('input[name=_continue]').trigger('click');
+		});
+		django.jQuery("#event_url").val("https://www.facebook.com/event.php?eid=" + django.jQuery('#id_id').val());
+	});
+</script>
+{% endblock %}
+
+{% block content %}
+<div id="fb-url-helper">
+	<label for="event_url">Event URL:&nbsp;</label>&nbsp;
+	<input id="event_url" name="event_url" type="text">&nbsp;
+	<button onclick="do_parse">Parse</button>
+	<p class="help">Facebook Event URL hier pasten. Mit TAB bestätigen oder auf (Parse) klicken.</p>
+</div>
+Settings: {{ settings.FACEBOOK_APPS.keys }}
+{{ block.super }}
+{% endblock %}
+
+
+{% block after_field_sets %}
+<div id="fb-login-button" style="display:block;">
+    <fb:login-button show-faces="false" width="200" max-rows="1" perms="user_events, email, rsvp_event, create_event, friends_events, offline_access"></fb:login-button>
+</div>
+<p>Access Token (required for SECRET events): {% access_token request %}</p>
+<p id="fb-is-logged-in" style="display:none;">FB eingeloggt</p>
+{% endblock %}

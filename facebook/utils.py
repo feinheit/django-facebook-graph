@@ -28,7 +28,7 @@ Example App Settings Entry:
 FACEBOOK_APPS = {
     'My great App' : {
             'ID': '155XXXXXXXXXXX',
-            'API-KEY': '6fXXXXXXXXXXXXXXXXXXX1c',
+            'API-KEY': 'depreciated: same as ID',
             'SECRET': 'cbXXXXXXXXXXXXXXXXXXXXXd8',
             'CANVAS-PAGE': 'http://apps.facebook.com/mygreatapp/',
             'CANVAS-URL': 'http://localhost.local/',
@@ -279,7 +279,8 @@ class Graph(facebook.GraphAPI):
     
     """
     def __init__(self, application, request=None, access_token=None, 
-                 code=None, request_token=True, force_refresh=False):
+                 code=None, request_token=True, force_refresh=False,
+                 prefer_cookie=False):
         super(Graph, self).__init__(access_token)  # self.access_token = access_token
         logger.debug('app_secret: %s' %application['SECRET'])
         logger.debug('app_id: %s' %application['ID'])
@@ -294,7 +295,8 @@ class Graph(facebook.GraphAPI):
             self.via = 'access_token'
         elif request and not force_refresh and self.get_token_from_session():
             self.via = 'session'
-        elif request and not force_refresh and self.get_token_from_cookie():
+        elif request and (not force_refresh and self.get_token_from_cookie()) or \
+                          (prefer_cookie and self.get_token_from_cookie()):
             self.via = 'cookie'
         elif self.get_token_from_app():
             self.via = 'application'

@@ -34,7 +34,7 @@ class JSONField(models.TextField):
     def to_python(self, value):
         """Convert our string value to JSON after we load it from the DB"""
 
-        if isinstance(value, dict):
+        if isinstance(value, dict) or isinstance(value, list):
             return value
         elif isinstance(value, basestring):
             # Avoid asking the JSON decoder to handle empty values:
@@ -70,7 +70,7 @@ class JSONField(models.TextField):
         if not value:
             return ""
 
-        if isinstance(value, dict):
+        if isinstance(value, dict) or isinstance(value, list):
             value = json.dumps(value, cls=DjangoJSONEncoder)
 
         assert isinstance(value, basestring)

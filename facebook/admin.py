@@ -1,12 +1,14 @@
 from django.contrib import admin
 from django.conf import settings
 
-from models import User, Photo, Page, Event, Request, TestUser
+from models import User, Photo, Page, Event, Request, TestUser, Post
+from utils import get_graph
 
 
 class AdminBase(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
-        obj.get_from_facebook(save=True)
+        graph = get_graph(request, force_refresh=True, prefer_cookie=True)
+        obj.get_from_facebook(save=True, graph=graph)
     
     def profile_link(self, obj):
         if obj.facebook_link:
@@ -14,6 +16,14 @@ class AdminBase(admin.ModelAdmin):
         else:
             return '<img src="http://graph.facebook.com/%s/picture" />' % (obj.id)
     profile_link.allow_tags = True
+    
+    def change_view(self, request, object_id, extra_context=None):
+        fb_context = {
+            'facebook_apps': settings.FACEBOOK_APPS.keys(),
+            'graph' : get_graph(request, force_refresh=True, prefer_cookie=True)
+        }
+        return super(AdminBase, self).change_view(request, object_id,
+            extra_context=fb_context)
 
 class UserAdmin(AdminBase):
     list_display = ('id', 'profile_link', 'access_token', 'user', '_name', 'created', 'updated',)
@@ -55,3 +65,25 @@ class RequestAdmin(AdminBase):
     list_display = ('id', '_application_id', '_to', '_from', '_data', '_message', '_created_time')
     readonly_fields = ('_graph', '_application_id', '_to', '_from', '_data', '_message', '_created_time')
 admin.site.register(Request, RequestAdmin)
+
+class PostAdmin(AdminBase):
+    def picture_link(self, obj):
+            return '<img src="%s" />' % (obj._picture)
+    picture_link.allow_tags = True
+    picture_link.short_description = u'picture'
+    
+    def icon_link(self, obj):
+            return '<img src="%s" alt="%s" width="16" height="16"/>' % (obj._icon, obj._type)
+    icon_link.allow_tags = True
+    icon_link.short_description = u'icon'
+    
+    list_display = ('icon_link', 'id', '_message', '_type', 'picture_link')
+    list_display_links = ('id',)
+    readonly_fields = ('_graph', '_application', '_to', '_from', '_message', '_picture',
+                       '_properties', '_actions', '_privacy', '_likes', '_comments', '_targeting')
+    date_hierarchy = '_updated_time'
+    list_filter = ('_type',)
+    
+    
+admin.site.register(Post, PostAdmin)
+    

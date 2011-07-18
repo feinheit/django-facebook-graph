@@ -43,7 +43,7 @@ class Base(models.Model):
 
     @property
     def graph_url(self):
-        return 'http://graph.facebook.com/%s' % self._id
+        return 'https://graph.facebook.com/%s' % self._id
     
     @property
     def graph(self):
@@ -75,7 +75,9 @@ class Base(models.Model):
             if response and save:
                 self.save_from_facebook(response)
             elif save:
-                self._graph = {'django-facebook-error' : 'The query returned nothing. Maybe the object is not published, accessible?'}
+                self._graph = {'django-facebook-error' : 'The query returned nothing. Maybe the object is not published, accessible?',
+                               'response': response,
+                               'access_token': graph.access_token }
                 self.save()
             else:
                 return response
@@ -530,3 +532,40 @@ class TestUser(UserBase):
         verbose_name = _('Test user')
         verbose_name_plural = _('Test users')
 
+POST_TYPES = (('status', _('Status message')),
+              ('link', _('Link')),
+              ('photo', _('Photo'))
+)
+
+class Post(Base):
+    id = models.CharField(_('id'), max_length=40, primary_key=True)
+    _from = models.ForeignKey(User, blank=True, null=True, verbose_name=_('from'),
+                              related_name='posts_sent')
+    _to = models.ManyToManyField(User, blank=True, null=True,
+                                 related_name='posts_received')
+    _message = models.TextField(_('message'), blank=True)
+    _picture = models.URLField(_('picture url'), max_length=255, blank=True)
+    _link = models.URLField(_('link url'), max_length=255, blank=True)
+    _name = models.CharField(_('link name'), max_length=255, blank=True)
+    _caption = models.CharField(_('link caption'), max_length=255, blank=True)
+    _description = models.CharField(_('link description'), max_length=255, blank=True)
+    _source = models.URLField(_('movie source'), max_length=255, blank=True)
+    _properties = JSONField(_('movie properties'), blank=True, null=True)
+    _icon = models.URLField(_('icon'), blank=True)
+    _actions = JSONField(_('actions'), blank=True, null=True)
+    _privacy = JSONField(_('privacy'), blank=True, null=True)
+    _type = models.CharField(_('type'), max_length=20, choices=POST_TYPES, blank=True)
+    _likes = JSONField(_('likes'), blank=True, null=True)
+    _comments = JSONField(_('comments'), blank=True, null=True) #denormalized
+    _object_id = models.BigIntegerField(_('object id'), blank=True, null=True)  #generic FK to image or movie
+    _application = JSONField(_('application'), blank=True, null=True)
+    _created_time = models.DateTimeField(_('created time'), blank=True, null=True)
+    _updated_time = models.DateTimeField(_('updated time'), blank=True, null=True)
+    _targeting = JSONField(_('targeting'), blank=True, null=True)
+
+    class Meta:
+        verbose_name = _('Post')
+        verbose_name_plural = _('Posts')
+    
+    def __unicode__(self):
+        return u'%s, %s %s' % (self.id, self._message[:50], self._picture)
