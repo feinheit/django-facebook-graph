@@ -538,11 +538,10 @@ POST_TYPES = (('status', _('Status message')),
 )
 
 class Post(Base):
-    id = models.CharField(_('id'), max_length=40, primary_key=True)
+    id = models.SlugField(_('id'), max_length=40, primary_key=True)
     _from = models.ForeignKey(User, blank=True, null=True, verbose_name=_('from'),
                               related_name='posts_sent')
-    _to = models.ManyToManyField(User, blank=True, null=True,
-                                 related_name='posts_received')
+    _to = JSONField(_('to'), blank=True, null=True)  # could be M2M but nees JSON processor.
     _message = models.TextField(_('message'), blank=True)
     _picture = models.URLField(_('picture url'), max_length=255, blank=True)
     _link = models.URLField(_('link url'), max_length=255, blank=True)

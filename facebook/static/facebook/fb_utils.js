@@ -1,11 +1,25 @@
 /* add this to your base template:
     {% load fb_tags %}
     <script type="text/javascript">
-        FACEBOOK_APP_ID = '{% facebook_app_id %}'
-        FACEBOOK_REDIRECT_URL = '{% facebook_redirect_url %}'
-        FACEBOOK_CHANNEL_URL = '{% url channel %}'
+        FACEBOOK_APP_ID = '{% fb_app_id %}';
+        FACEBOOK_REDIRECT_URL = '{% fb_redirect_url %}';
+        FACEBOOK_CHANNEL_URL = '{% url channel %}';
     </script>
     <script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>
+    
+    
+    add this to the bottom of your base.html:
+    
+    <script type="text/javascript">
+    (function() {
+	    var e = document.createElement('script'); e.async = true;
+	    e.src = document.location.protocol +
+	    '//connect.facebook.net/de_DE/all.js';
+	    document.getElementById('fb-root').appendChild(e);
+	}());
+    </script>
+    
+    add     url(r'^facebook/', include('facebook.urls')), to yor urls.py. 
  */
  
 /* This is due to a bug in IE8 */
@@ -49,14 +63,6 @@ fb['perms'] = [];
     }, 'json');
     canvas_resize();
   };
-
-(function() {
-    var e = document.createElement('script'); e.async = true;
-    e.src = document.location.protocol +
-    '//connect.facebook.net/de_DE/all.js';
-    document.getElementById('fb-root').appendChild(e);
-}());
-  
 
 FQ.add(function(){
     FB.Event.subscribe('auth.login', function(response){

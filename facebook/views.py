@@ -120,7 +120,7 @@ def channel(request):
     fb = FBSession(request)
     try:
         locale = fb.signed_request['user']['locale']
-    except KeyError:
+    except (KeyError, TypeError):
         locale = 'en_US'  #TODO: Make this nicer.
     t=datetime.now()+timedelta(weeks=500)
     response = HttpResponse(loader.render_to_string('facebook/channel.html', {'locale': locale}, 
