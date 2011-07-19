@@ -1,11 +1,24 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from facebook.models import Application, Page
+from facebook.models import Page
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
+""" Add those extensions to your APP_MODULE.models like so::
+        
+        from facebook.feincms.extensions import facebook_application
+        Page.register_extension(facebook_application)
+"""
 
 def facebook_application(cls, admin_cls):
-    cls.add_to_class('facebook_application', models.ForeignKey(Application, blank=True, null=True, help_text=_('Link this page to a facebook app. Used for Facebook Tabs, to determine the underlaying FB App')))
+    if not getattr(settings, 'FACEBOOK_APPS'):
+        raise ImproperlyConfigured, 'You need to set your FACEBOOK_APPS dict correctly.'
+    APP_CHOICES = tuple((x,unicode(x)) for x in settings.FACEBOOK_APPS.keys())
+    
+    cls.add_to_class('facebook_application', models.CharField(max_length=25, 
+                     choices = APP_CHOICES,
+                     blank=True, null=True, help_text=_('Link this page to a facebook app. Used for Facebook Tabs, to determine the underlaying FB App')))
     cls.add_to_class('facebook_page', models.ForeignKey(Page, blank=True, null=True, related_name='facebook_page_set', help_text=_('Link this page to a facebook page. Used for Facebook Tabs, to determine the underlaying FB Page and prevent the Tab to be added to a random foreign page')))
 
     admin_cls.fieldsets.append((_('Facebook Application'),{
