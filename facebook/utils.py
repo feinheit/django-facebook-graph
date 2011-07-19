@@ -45,14 +45,23 @@ def base64_url_decode(s):
     return base64.urlsafe_b64decode(s.encode("utf-8") + '=' * (4 - len(s) % 4))
 
 
-def parseSignedRequest(signed_request, secret=None):
+def get_app_dict(application=None):
+    if not application:
+        application = settings.FACEBOOK_APPS.values()[0]
+    else:
+        application = settings.FACEBOOK_APPS[application]
+    return application
+
+
+def parseSignedRequest(signed_request, secret=None, application=None):
     """
     adapted from from
     http://web-phpproxy.appspot.com/687474703A2F2F7061737469652E6F72672F31303536363332
     """
 
     if not secret:
-        secret = settings.FACEBOOK_APP_SECRET
+        app_dict = get_app_dict(application)
+        secret = app_dict['SECRET']
 
     (encoded_sig, payload) = signed_request.split(".", 2)
     sig = base64_url_decode(encoded_sig)
@@ -397,13 +406,6 @@ class Graph(facebook.GraphAPI):
             me = self._get_me(self.access_token)
             return getattr(me, 'id', None)
 
-
-def get_app_dict(application=None):
-    if not application:
-        application = settings.FACEBOOK_APPS.values()[0]
-    else:
-        application = settings.FACEBOOK_APPS[application]
-    return application
 
 def get_graph(request=None, app_name=None, app_dict=None, *args, **kwargs):
     if app_dict:
