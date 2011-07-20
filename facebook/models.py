@@ -67,11 +67,14 @@ class Base(models.Model):
             self.save_from_facebook(response)
         return self._graph
 
-    def get_from_facebook(self, graph=None, save=False):
+    def get_from_facebook(self, graph=None, save=False, args=None):
         if not graph:
             graph = get_graph()
+        target = str(self._id)
+        if args:
+            target = '%s?%s' % (target, args)
         try:
-            response = graph.request(str(self._id))
+            response = graph.request(target)
             if response and save:
                 self.save_from_facebook(response)
             elif save:
@@ -135,10 +138,13 @@ class Base(models.Model):
                     args[fieldname[1:]] = field.isoformat()
                 elif isinstance(fieldclass, JSONField):
                     args[fieldname[1:]] = json.dumps(field)
+                elif isinstance(fieldclass, models.FileField) or isinstance(fieldclass, models.ImageField):
+                    raise NotImplementedError  # TODO: use code from image field here
                 else:
                     args[fieldname[1:]] = field
-        
-        response = graph.put_object(str(target), self.Facebook.publish, **args)
+
+        # graph.put_object("me", "feed", message="Hello, world")
+        response = graph.put_object(parent_object=str(target), connection_name=self.Facebook.publish, **args)
         return response
     
     def save(self, *args, **kwargs):
@@ -300,6 +306,7 @@ class User(UserBase):
 class Photo(Base):
     fb_id = models.BigIntegerField(unique=True, null=True, blank=True)
     image = models.ImageField(upload_to='uploads/')
+    message = models.TextField(_('message'), blank=True)
 
     # Cached Facebook Graph fields for db lookup
     _name = models.CharField(max_length=100, blank=True, null=True)
@@ -325,11 +332,12 @@ class Photo(Base):
     def facebook_link(self):
         return 'http://www.facebook.com/photo.php?fbid=%s' % self.id
 
-    def send_to_facebook(self, object='me', save=False, request=None, access_token=None, \
-             application=None, message=''):
+    def send_to_facebook(self, object='me', save=False, graph=None, message=None, app_name=None):
 
-        graph = get_graph(request=request, access_token=access_token, \
-                          app_name=application)
+        if not graph:
+            graph = get_graph(app_name=app_name)
+        if not message:
+            message = self.message
 
         response = post_image(graph.access_token, self.image.file, message, object=object)
 
@@ -347,6 +355,10 @@ class Page(Base):
     _picture = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, help_text=_('Cached picture of the page'))
     _likes = models.IntegerField(blank=True, null=True, help_text=_('Cached fancount of the page'))
     _link = models.CharField(max_length=255, blank=True, null=True)
+    _access_token = models.CharField(max_length=255, blank=True, null=True)
+    # TODO:
+    # format: { app_name, app_id, access_token }
+    #access_token = JSONField(_('access token'), blank=True, null=True)
 
     @property
     def name(self):
@@ -435,13 +447,14 @@ class Event(Base):
     class Meta:
         ordering = ('_start_time',)
     
-    class Facebook:
+    class Facebook:  # TODO: refactoring here.
         connections = {'attending' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'attending'}},
                        'maybe' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'unsure'}},
                        'declined' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'declined'}},
                        'noreply' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'not_replied'}},
                        'invited' : {'field' : 'invited', 'extra_fields' : ['rsvp_status',]},}
         publish = 'events'
+        arguments = ['name', 'start_time', 'end_time']
     
     def save_rsvp_status(self, user_id, status):
         user, created = User.objects.get_or_create(id=user_id)
@@ -534,10 +547,12 @@ class TestUser(UserBase):
 
 POST_TYPES = (('status', _('Status message')),
               ('link', _('Link')),
-              ('photo', _('Photo'))
+              ('photo', _('Photo')),
+              ('video', _('Video')),
+              # Umfrage
 )
 
-class Post(Base):
+class PostBase(Base):
     id = models.SlugField(_('id'), max_length=40, primary_key=True)
     _from = models.ForeignKey(User, blank=True, null=True, verbose_name=_('from'),
                               related_name='posts_sent')
@@ -563,8 +578,33 @@ class Post(Base):
     _targeting = JSONField(_('targeting'), blank=True, null=True)
 
     class Meta:
-        verbose_name = _('Post')
-        verbose_name_plural = _('Posts')
-    
+        abstract=True
+        
+    class Facebook:
+        publish = 'feed'
+        connections = {'likes': None, 'comments': None }  # TODO: Create models for reference
+        arguments = ['message', 'picture', 'link', 'name', 'caption', 'description', 'source', 'actions', 'privacy']
+
+
     def __unicode__(self):
         return u'%s, %s %s' % (self.id, self._message[:50], self._picture)
+    
+    def send_to_facebook(self, graph=None, save=False):
+        if not graph:
+            graph = get_graph()
+        
+        response = post_post(graph.access_token, self.image.file, message, object=object)
+
+        if save:
+            self.id = response['id']
+            self.save()
+        return response['id']
+
+
+class Post(PostBase):
+
+    class Meta:
+        verbose_name = _('Post')
+        verbose_name_plural = _('Posts')
+        abstract = False
+        

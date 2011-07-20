@@ -2,7 +2,7 @@
 from django import template
 from django.conf import settings
 from facebook.utils import get_app_dict, get_static_graph, get_graph
-from django.template.defaultfilters import escapejs
+from django.template.defaultfilters import escapejs, capfirst
 import re
 register = template.Library()
 from django.utils.safestring import mark_safe
@@ -48,6 +48,11 @@ def fb_canvas_url(request, app_name=None):
 def fb_redirect_url(app_name=None):
     app = get_app_dict(app_name)
     return app['REDIRECT-URL']
+
+@register.simple_tag
+def fb_first_app():
+    app = settings.FACEBOOK_APPS.keys()
+    return capfirst(app[0])
 
 @register.inclusion_tag('facebook/includes/testuser_choice.html')
 def fb_testuser_menu(app_name=None):
