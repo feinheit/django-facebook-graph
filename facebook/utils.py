@@ -34,6 +34,7 @@ FACEBOOK_APPS = {
             'CANVAS-URL': 'http://localhost.local/',
             'SECURE-CANVAS-URL': 'https://localhost.local/',
             'REDIRECT-URL': 'http://apps.facebook.com/mygreatapp/',
+            'DOMAIN': 'http://localhost.local:8000',
     }
 }
 

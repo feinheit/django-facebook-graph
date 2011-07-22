@@ -553,7 +553,7 @@ POST_TYPES = (('status', _('Status message')),
 )
 
 class PostBase(Base):
-    id = models.SlugField(_('id'), max_length=40, primary_key=True)
+    id = models.CharField(_('id'), max_length=40, primary_key=True)
     _from = models.ForeignKey(User, blank=True, null=True, verbose_name=_('from'),
                               related_name='posts_sent')
     _to = JSONField(_('to'), blank=True, null=True)  # could be M2M but nees JSON processor.
@@ -562,7 +562,7 @@ class PostBase(Base):
     _link = models.URLField(_('link url'), max_length=255, blank=True)
     _name = models.CharField(_('link name'), max_length=255, blank=True)
     _caption = models.CharField(_('link caption'), max_length=255, blank=True)
-    _description = models.CharField(_('link description'), max_length=255, blank=True)
+    _description = models.TextField(_('link description'),null=True, blank=True)
     _source = models.URLField(_('movie source'), max_length=255, blank=True)
     _properties = JSONField(_('movie properties'), blank=True, null=True)
     _icon = models.URLField(_('icon'), blank=True)
@@ -588,17 +588,6 @@ class PostBase(Base):
 
     def __unicode__(self):
         return u'%s, %s %s' % (self.id, self._message[:50], self._picture)
-    
-    def send_to_facebook(self, graph=None, save=False):
-        if not graph:
-            graph = get_graph()
-        
-        response = post_post(graph.access_token, self.image.file, message, object=object)
-
-        if save:
-            self.id = response['id']
-            self.save()
-        return response['id']
 
 
 class Post(PostBase):
