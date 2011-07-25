@@ -549,6 +549,7 @@ POST_TYPES = (('status', _('Status message')),
               ('link', _('Link')),
               ('photo', _('Photo')),
               ('video', _('Video')),
+              ('note', _('Note')),
               # Umfrage
 )
 
@@ -568,7 +569,7 @@ class PostBase(Base):
     _icon = models.URLField(_('icon'), blank=True)
     _actions = JSONField(_('actions'), blank=True, null=True)
     _privacy = JSONField(_('privacy'), blank=True, null=True)
-    _type = models.CharField(_('type'), max_length=20, choices=POST_TYPES, blank=True)
+    _type = models.CharField(_('type'), max_length=20, choices=POST_TYPES, default='status')
     _likes = JSONField(_('likes'), blank=True, null=True)
     _comments = JSONField(_('comments'), blank=True, null=True) #denormalized
     _object_id = models.BigIntegerField(_('object id'), blank=True, null=True)  #generic FK to image or movie
@@ -576,6 +577,7 @@ class PostBase(Base):
     _created_time = models.DateTimeField(_('created time'), blank=True, null=True)
     _updated_time = models.DateTimeField(_('updated time'), blank=True, null=True)
     _targeting = JSONField(_('targeting'), blank=True, null=True)
+    _subject = models.CharField(_('subject'), blank=True, max_length=255)
 
     class Meta:
         abstract=True
@@ -585,10 +587,15 @@ class PostBase(Base):
         connections = {'likes': None, 'comments': None }  # TODO: Create models for reference
         arguments = ['message', 'picture', 'link', 'name', 'caption', 'description', 'source', 'actions', 'privacy']
 
-
     def __unicode__(self):
         return u'%s, %s %s' % (self.id, self._message[:50], self._picture)
 
+    # Note has no type attribute.
+    def get_from_facebook(self, graph=None, save=False, *args, **kwargs):
+        super(PostBase, self).get_from_facebook(graph, save=False, *args, **kwargs)
+        if self._subject:
+            self._type = 'note'
+        self.save()
 
 class Post(PostBase):
 

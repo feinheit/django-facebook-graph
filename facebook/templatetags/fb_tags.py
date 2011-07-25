@@ -74,3 +74,12 @@ def access_token(request):
     graph = get_graph(request)
     return mark_safe(graph.access_token)
     
+@register.simple_tag(takes_context=True)
+def query_page_fan(context, request):
+    try:    
+        is_fan = request.session['facebook']['signed_request']['page']['liked']
+    except (AttributeError, KeyError):
+        is_fan = False
+    context['is_fan'] = is_fan
+    return ''
+
