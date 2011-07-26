@@ -2,11 +2,12 @@
 from django import template
 from django.conf import settings
 from facebook.utils import get_app_dict, get_static_graph, get_graph
-from django.template.defaultfilters import escapejs, capfirst
+from django.template.defaultfilters import escapejs, capfirst, stringfilter
 import re
 register = template.Library()
 from django.utils.safestring import mark_safe
 from facebook.testusers import TestUsers
+from datetime import datetime
 
 @register.simple_tag
 def fb_app_settings(app_id=None):
@@ -83,3 +84,13 @@ def query_page_fan(context, request):
     context['is_fan'] = is_fan
     return ''
 
+@register.filter
+@stringfilter
+def post_uid(value):
+    ids = value.split('_')
+    return ids[-1]
+
+@register.filter
+@stringfilter
+def parse_date(value):
+    return datetime.strptime(value, '%Y-%m-%dT%H:%M:%S+0000')  # 2011-07-13T10:24:18+0000

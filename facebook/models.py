@@ -15,6 +15,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.template.defaultfilters import slugify
 
 from facebook import GraphAPIError
+import re
 
 from fields import JSONField
 from utils import get_graph, post_image, get_FQL
@@ -296,6 +297,12 @@ class UserBase(Base):
 
     class Meta:
         abstract=True
+        
+    def get_absolute_url(self):
+        if self._link:
+            return self._link
+        else:
+            return 'http://www.facebook.com/profile.php?id=%s' % self.id
 
 
 class User(UserBase):
@@ -595,7 +602,39 @@ class PostBase(Base):
         super(PostBase, self).get_from_facebook(graph, save=False, *args, **kwargs)
         if self._subject:
             self._type = 'note'
+        elif not self._type:
+            self._type = 'status'
         self.save()
+    
+    def get_post_uid(self):
+        ids = self.id.split('_')
+        return ids[-1]
+    
+    @property
+    def comments(self):
+        return self._comments.get('data', [])
+    
+    @property
+    def to(self):
+        return self._to.get('data')[0]
+    
+    @property
+    def actions(self):
+        return dict((a['name'], a) for a in self._actions)
+    
+    @property
+    def like_link(self):
+        if self._link:
+            return self._link
+        elif self.actions.get('Like', False):
+            return self.actions['Like']['link']
+        elif self._type == 'note':
+            return u'http://www.facebook.com/note.php?note_id=%s' % self.id
+        else:
+            try:
+                return self.get_absolute_url()
+            except AttributeError:
+                return ''
 
 class Post(PostBase):
 

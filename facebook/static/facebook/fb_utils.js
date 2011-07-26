@@ -40,7 +40,7 @@ var fb = {};
 fb['user'] = {}
 fb['perms'] = [];
 
-  window.fbAsyncInit = function() {
+window.fbAsyncInit = function() {
     FB.init({appId: FACEBOOK_APP_ID, status: true, cookie: true,
              xfbml: true,
              channelUrl : document.location.protocol + '//' + document.location.host + FACEBOOK_CHANNEL_URL }
@@ -51,7 +51,7 @@ fb['perms'] = [];
       if (response.session) {
         fb.user = response.session;
         if (response.perms){
-            var perms = $.parseJSON(response.perms);
+            var perms = JSON.parse(response.perms);
             fb.perms = perms.extended;
         } else {
             FB.api('/me/permissions/', function(data){
