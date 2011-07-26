@@ -563,7 +563,7 @@ POST_TYPES = (('status', _('Status message')),
 class PostBase(Base):
     id = models.CharField(_('id'), max_length=40, primary_key=True)
     _from = models.ForeignKey(User, blank=True, null=True, verbose_name=_('from'),
-                              related_name='posts_sent')
+                              related_name='%(app_label)s_%(class)s_posts_sent')
     _to = JSONField(_('to'), blank=True, null=True)  # could be M2M but nees JSON processor.
     _message = models.TextField(_('message'), blank=True)
     _picture = models.URLField(_('picture url'), max_length=255, blank=True)
@@ -599,7 +599,7 @@ class PostBase(Base):
 
     # Note has no type attribute.
     def get_from_facebook(self, graph=None, save=False, *args, **kwargs):
-        super(PostBase, self).get_from_facebook(graph, save=False, *args, **kwargs)
+        super(PostBase, self).get_from_facebook(graph=graph, save=True, *args, **kwargs)
         if self._subject:
             self._type = 'note'
         elif not self._type:
