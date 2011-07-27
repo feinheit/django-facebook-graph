@@ -213,8 +213,9 @@ class GraphAPI(object):
 
 class GraphAPIError(Exception):
     def __init__(self, type, message):
-        Exception.__init__(self, message)
+        Exception.__init__(self)
         self.type = type
+        self.message = message        
 
 
 def get_user_from_cookie(cookies, app_id, app_secret):
