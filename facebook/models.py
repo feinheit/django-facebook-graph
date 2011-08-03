@@ -515,8 +515,10 @@ class Request(Base):
     def delete(self, facebook=True, graph=None, *args, **kwargs):
         super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
     
-    def get_from_facebook(self, graph=None, save=settings.DEBUG):
+    def get_from_facebook(self, graph=None, save=settings.DEBUG, quick=True):
         """ Only saves the request to the db if DEBUG is True."""
+        if quick and save and self._graph:
+            return self
         super(Request, self).get_from_facebook(graph=graph, save=save)
     
     def __unicode__(self):

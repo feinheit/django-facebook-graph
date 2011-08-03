@@ -117,9 +117,9 @@ def get_FQL(fql, access_token=None):
         raise facebook.GraphAPIError(response['error_code'], response['error_msg'])
     return response
 
-class SessionBase(object):
+class SessionBase(object):    
     def __init__(self):
-        self.app_is_authenticated, self.access_token, self.signed_request = None, None, None
+        self.app_is_authenticated, self.access_token, self.signed_request = True, None, None
         self.token_expires, self.user_id, self.me = None, None, None
         self.app_requests = []  # TODO: Put this in its own class.
     
@@ -132,19 +132,16 @@ class SessionBase(object):
     class Meta:
         abstract=True
 
-
+    
 class FBSession(SessionBase):
-    """ This class uses Properties and setter. Requires Python 2.6. """
+    """ This class uses Properties and setter. Requires Python 2.6. """    
     def __init__(self, request):
         if request == None:
             raise AttributeError('Need Request to Access the Session.')
         self.fb_session = self.get_fb_session(request)
         self.request = request
+        self.app_requests = []  # TODO: Put this in its own class.
     
-    def modified(self, who='unknown'):
-        self.request.session.modified = True
-        logger.debug('Session modified by %s: %s' % (who, self.fb_session))
-        
     def get_fb_session(self, request):
         fb = request.session.get('facebook', None)
         if not fb:
@@ -152,6 +149,12 @@ class FBSession(SessionBase):
             request.session.modified = True
             fb = request.session['facebook']
         return fb
+    
+    def modified(self, who='unknown'):
+        self.request.session.modified = True
+        logger.debug('Session modified by %s: %s' % (who, self.fb_session))
+        
+
     
     @property
     def app_is_authenticated(self):

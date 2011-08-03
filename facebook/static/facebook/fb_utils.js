@@ -10,6 +10,7 @@
     
     add this to the bottom of your base.html:
     
+    <div id="fb-root"></div>
     <script type="text/javascript">
     (function() {
 	    var e = document.createElement('script'); e.async = true;

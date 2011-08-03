@@ -31,8 +31,8 @@ class OAuth2ForCanvasMiddleware(object):
                 application = get_app_dict(page_app)
         
         # default POST/GET request from facebook with a signed request
-        if 'signed_request' in request.REQUEST:
-            parsed_request = parseSignedRequest(request.REQUEST['signed_request'], application['SECRET'])
+        if 'signed_request' in request.POST:
+            parsed_request = parseSignedRequest(request.POST['signed_request'], application['SECRET'])
             logger.debug(u'got signed_request from facebook: %s' % parsed_request)
             if 'language' in parsed_request:
                 language = parsed_request['user']['locale']
