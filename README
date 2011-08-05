@@ -6,7 +6,47 @@ tested apps:
 
 please read the code. we will update documentation soon.
 
-makes use of the original facebook graph python library via submodule : http://github.com/facebook/python-sdk/ (symlinked to __init__.py)
+
+Graph helper tools:
+==============================
+
+ * add 'facebook' to your INSTALLED_APPS. This will create django classes for the main facebook models.
+ * add 'SignedRequestMiddleware' to your settings.MIDDLEWARE.
+ * optionally add 'AppRequestMiddleware' if you need to deal with app requests.
+ * add url(r'^facebook/', include('facebook.urls')), to your urls.py.
+ * create an app settings dict as described in utils.py for each of your apps. I recommend using a different settings file for local development.
+ * for client side utilities add fb_utils to your html template and follow the instructions in the comments section.
+
+Now you can generate a graph instance with the following command::
+
+    from facebook.utils import get_graph    
+    graph = get_graph(request)
+    
+To make a graph request to facebook simply use graph.request. I.e. to get a certain message object::
+
+    fb_message = graph.request('%s' % post_id)
+
+You can also create facebook user objects like so::
+
+    from facebook.models import User
+    user = User(id=graph.me['id'])
+    user.get_from_facebook(graph=graph, save=True)
+
+The app stores as much data as possible in the session to minimize requests to Facebook. You can access the session class directly 
+to get informations about the current user::
+
+    from facebook.utils import FBSession    
+    fb = FBSession(request)
+    signed_request = fb.signed_request
+
+
+
+Facebook Models
+===============
+
+The facebook app adds the models: Users, Events, Pages, Photos, Posts and Requests to the admin interface. Django can fetch the
+data from facebook on save and store it locally. It is not yet possible to create a model this way and upload it to facebook except for Photos.
+There is a login button so you can access private data as well. 
 
 
 
