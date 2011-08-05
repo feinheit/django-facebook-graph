@@ -57,3 +57,13 @@ Simple usage of Facebook Auth:
  * add 'facebook.backends.authentication.AuthenticationBackend' to AUTHENTICATION_BACKENDS
  * add url(r'^accounts/', include('facebook.backends.registration.urls')) to your urls
  * now you can insert the facebook button: <fb:login-button perms="email" onlogin="window.location.href='{% url auth_login %}?next={{ request.get_full_path }}'"></fb:login-button> 
+
+
+Client side utilities:
+======================
+
+ * FQ Facebook queue that gets executed when the user login status is clear. Use FQ.add(function(){...});
+ * fb object that contains the user details and permissions.
+ * async init method with channel URL. Some fixes for IE.
+ * a log function that can record client side responses back to the server.
+
