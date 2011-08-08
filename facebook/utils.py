@@ -263,7 +263,7 @@ class FBSession(SessionBase):
         self.modified('user.setter')
         #logger.debug('User age: %s' % self.fb_session['user']['age']['min'])
         """
-
+        
 class FBSessionNoOp(SessionBase):
     def __init__(self):
         super(FBSessionNoOp, self).__init__()
@@ -412,6 +412,7 @@ class Graph(facebook.GraphAPI):
 
 
 def get_graph(request=None, app_name=None, app_dict=None, *args, **kwargs):
+    """ This is the main factory function that returns a graph class. """
     if app_dict:
         application = app_dict
     else:
@@ -537,6 +538,7 @@ def redirect_GET_session(to, request, permanent=False):
     
 
 def totimestamp(instance):
+    """ converts a timeinstance to a timestamp requiered by the Graph API"""
     import time
     return time.mktime(instance.timetuple())
     

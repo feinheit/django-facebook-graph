@@ -34,9 +34,8 @@ You can also create facebook user objects like so::
 
 The app stores as much data as possible in the session to minimize requests to Facebook. You can access the session class directly 
 to get informations about the current user::
-
-    from facebook.utils import FBSession    
-    fb = FBSession(request)
+  
+    fb = request.fb_session
     signed_request = fb.signed_request
 
 
@@ -91,3 +90,16 @@ To friend testusers you can use the following command::
 If TESTUSER-2-id is not specified, the app will try to friend every testuser.
 Testusers must have the app installt to allow friend relationships through this command.
 
+There is also a fb_testuser_menu template tag. The tag adds a select menu that allows you to select
+a testuser. You are then redirected to the facebook page of that test user (and logged in).
+The tag has to fetch the login-url for every testuser associated to the app and might be a bit slow
+when you have a lot of test users installed. I suggest putting the tag in the admin template.
+
+
+Template Tags:
+==============
+
+{% fb_app_settings %} Adds a (X) button that links to the Facebook page where you can deauthorize 
+your app.
+{% query_page_fan %} returns True if the user is fan of the page where the app tab is in.
+{% fb_app_id [app_name] %} Returns the app id. Similiar tags for canvas page, canvas_url, redirect url and domain. 

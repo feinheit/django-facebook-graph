@@ -21,6 +21,7 @@ class OAuth2ForCanvasMiddleware(object):
         Writes the signed_request into the Session 
         """
         fb = FBSession(request)
+        setattr(request, 'fb_session', fb)
         application = get_app_dict()
         
         if 'feincms' in settings.INSTALLED_APPS:

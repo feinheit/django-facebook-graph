@@ -69,6 +69,7 @@ class Base(models.Model):
         return self._graph
 
     def get_from_facebook(self, graph=None, save=False, args=None):
+        """ Updates the local fields with data from facebook. Use this function."""
         if not graph:
             graph = get_graph()
         target = str(self._id)
@@ -223,6 +224,7 @@ class Base(models.Model):
             return str(self.id)
     
     def delete(self, facebook=False, graph=None, *args, **kwargs):
+        """ Deletes the local model and if facebook is true, also the facebook instance."""
         if facebook:
             if not graph: graph = get_graph()
             graph.delete_object(str(self.id))
@@ -266,6 +268,7 @@ class UserBase(Base):
 
 
     def get_friends(self, graph, save=False):
+        """ this function needs a valid access token."""
         response = graph.request('%s/friends' % self.id)
         friends = response['data']
 
@@ -297,7 +300,20 @@ class UserBase(Base):
 
     class Meta:
         abstract=True
-        
+    
+    def picture_url(self, type='large'):
+        if type not in ['large', 'small', 'square']:
+            raise AttributeError, 'type must be one of large, small or square.'
+        return u'https://graph.facebook.com/%s/picture?type=%s' % (self.id, type)
+
+    @property
+    def square_picture_url(self):
+        return self.picture_url(type='square')
+    
+    @property
+    def large_picture_url(self):
+        return self.picture_url(type='large')
+            
     def get_absolute_url(self):
         if self._link:
             return self._link
@@ -502,6 +518,7 @@ class EventUser(models.Model):
 
 
 class Request(Base):
+    """ App request model. Must be deleted manually by the app."""
     id = models.BigIntegerField(primary_key=True, unique=True)
     
     # Cached Facebook Graph fields for db lookup

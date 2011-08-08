@@ -27,7 +27,7 @@ class AuthenticationBackend(object):
             facebook_user = FacebookUser(id=uid,
                                          access_token=access_token)
             user, c = User.objects.get_or_create(
-                                username=slugify(profile["name"]),
+                                username=slugify(profile["id"]),  # must be unique
                                 email=profile["email"],
                                 password=hashlib.md5(uid).hexdigest())
             user.first_name = profile['first_name']
