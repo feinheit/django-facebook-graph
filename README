@@ -67,3 +67,27 @@ Client side utilities:
  * async init method with channel URL. Some fixes for IE.
  * a log function that can record client side responses back to the server.
 
+
+Test Users:
+===========
+
+Facebook allows you to have an army of test users to test your apps. 
+While DEBUG is True, you can see the testuser model in the admin frontend.
+To create a testuser for your app use the following command::
+    
+    ./manage.py create_testuser -i
+
+To show a list of registered testusers attached to your app type::
+
+    ./manage.py testusers
+
+This will give you a list with the names and login-URLs of the testusers. A star in front of the
+name means the testuser has installed your app.
+
+To friend testusers you can use the following command::
+
+    ./manage.py friend <TESTUSER-id> [<TESTUSER-2-id>]
+
+If TESTUSER-2-id is not specified, the app will try to friend every testuser.
+Testusers must have the app installt to allow friend relationships through this command.
+
