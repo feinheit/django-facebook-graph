@@ -25,7 +25,7 @@ def session_without_cookies(request):
 def is_page_fan(request):
     """ checks if the user likes the page, the tab is in. """
     try:    
-        is_fan = request.session['facebook']['signed_request']['page']['liked']
+        is_fan = request.fb_session.signed_request['page']['liked']
     except (AttributeError, KeyError):
         is_fan = False
-    return {'is_fan' : is_fan }
+    return {'is_fan' : is_fan, 'signed_request': request.fb_session.signed_request }
