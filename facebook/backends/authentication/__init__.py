@@ -15,7 +15,7 @@ class AuthenticationBackend(object):
         try:
             graph = facebook.GraphAPI(access_token)
             profile = graph.get_object("me")
-        except facebook.GraphAPIError:
+        except (facebook.GraphAPIError, IOError): # IOError because of timeouts
             return None
 
         try:
