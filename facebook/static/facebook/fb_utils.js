@@ -1,8 +1,8 @@
 /* add this to your base template:
     {% load fb_tags %}
     <script type="text/javascript">
-        FACEBOOK_APP_ID = '{% fb_app_id %}';
-        FACEBOOK_REDIRECT_URL = '{% fb_redirect_url %}';
+        FACEBOOK_APP_ID = '{% fb_app_id feincms_page.facebook_application %}';
+        FACEBOOK_REDIRECT_URL = '{% fb_redirect_url feincms_page.facebook_application %}';
         FACEBOOK_CHANNEL_URL = '{% url channel %}';
     </script>
     <script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>

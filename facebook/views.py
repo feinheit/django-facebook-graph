@@ -4,7 +4,7 @@ from django.conf import settings
 from facebook.utils import get_graph, parseSignedRequest, get_app_dict, FBSession
 import functools, sys, logging
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render_to_response, redirect, get_object_or_404
+from django.shortcuts import render_to_response, redirect, get_object_or_404, render
 from django.template.defaultfilters import urlencode
 from django.template import loader, RequestContext
 from django.core.urlresolvers import resolve, Resolver404, reverse
@@ -13,6 +13,8 @@ from feinheit.newsletter.models import Subscription
 from feinheit.translations import short_language_code
 from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
+
+import urllib2
 
 from models import User
 
@@ -148,12 +150,21 @@ def deauthorize_and_delete(request):
         return HttpResponse('ok')
     raise Http404
 
+
+@csrf_exempt
+def redirect(request):
+    encoded_url = request.GET.get('next','')
+    """ Forces a _parent redirect to the specified url. """
+    return render(request, 'facebook/redirecter.html', {'destination': urllib2.unquote(encoded_url) })
+
+
 """ Allows to register client-side errors. """
 def log_error(request):
     if not request.is_ajax() or not request.method == 'POST':
         raise Http404
     logger.error(request.POST.get('message')) 
     return HttpResponse('logged error.')   
+
 
 def fql_console(request):
     if not settings.DEBUG:
