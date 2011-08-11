@@ -26,6 +26,6 @@ def is_page_fan(request):
     """ checks if the user likes the page, the tab is in. """
     try:    
         is_fan = request.fb_session.signed_request['page']['liked']
-    except (AttributeError, KeyError):
+    except (AttributeError, KeyError, TypeError):
         is_fan = False
     return {'is_fan' : is_fan, 'signed_request': request.fb_session.signed_request }
