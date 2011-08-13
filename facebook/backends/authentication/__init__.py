@@ -28,10 +28,10 @@ class AuthenticationBackend(object):
                                          access_token=access_token)
             user, c = User.objects.get_or_create(
                                 username=slugify(profile["id"]),  # must be unique
-                                email=profile["email"],
+                                email=profile.get('email', u''),
                                 password=hashlib.md5(uid).hexdigest())
-            user.first_name = profile['first_name']
-            user.last_name = profile['last_name']
+            user.first_name = profile.get('first_name', u'')
+            user.last_name = profile.get('last_name', u'')
             user.save()
             facebook_user.user = user
             facebook_user.save_from_facebook(profile)
