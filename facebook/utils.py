@@ -48,7 +48,10 @@ def base64_url_decode(s):
 
 def get_app_dict(application=None):
     if not application:
-        application = settings.FACEBOOK_APPS.values()[0]
+        if getattr(settings, 'FACEBOOK_DEFAULT_APPLICATION', False):
+            application = settings.FACEBOOK_APPS[settings.FACEBOOK_DEFAULT_APPLICATION]
+        else:
+            application = settings.FACEBOOK_APPS.values()[0]
     else:
         application = settings.FACEBOOK_APPS[application]
     return application
@@ -138,9 +141,10 @@ class FBSession(SessionBase):
     def __init__(self, request):
         if request == None:
             raise AttributeError('Need Request to Access the Session.')
+        if getattr(request, 'fb_session', None):
+            raise AttributeError('Session already exists in Request.')
         self.fb_session = self.get_fb_session(request)
         self.request = request
-        self.app_requests = []  # TODO: Put this in its own class.
     
     def get_fb_session(self, request):
         fb = request.session.get('facebook', None)
@@ -153,7 +157,18 @@ class FBSession(SessionBase):
     def modified(self, who='unknown'):
         self.request.session.modified = True
         logger.debug('Session modified by %s: %s' % (who, self.fb_session))
-        
+            
+    def cookie_info(self, app_dict, store=True):
+        cookie = facebook.get_user_from_cookie(self.request.COOKIES, app_dict['ID'], app_dict['SECRET'])
+        if cookie:
+            if store:
+                if cookie['uid']:
+                    self.fb_session['user_id'] = cookie['uid']
+                if cookie['access_token']:
+                    self.access_token = cookie['access_token']
+            return {'user_id': cookie['uid'], 'access_token': cookie['access_token']}
+        else:
+            return None
 
     
     @property
@@ -207,6 +222,7 @@ class FBSession(SessionBase):
         self.access_token = None
         self.user_id = None
         self.app_is_authenticated = False      
+
     
     @property
     def user_id(self):
@@ -250,19 +266,23 @@ class FBSession(SessionBase):
     @user.setter
     def user(self, user):
         raise AttributeError('The user attribute was confusing.\n Use signded_request["user"] instead.' )
-        """
-        if isinstance(user, dict):
-            self.fb_session['user'] = user
-        elif isinstance(user, basestring):
-            try:
-                self.fb_session['user'] = simplejson.loads(user)
-            except ValueError:
-                pass
+
+    @property
+    def app_requests(self):
+        ar = self.fb_session.get('app_requests', None)
+        return ar.split(',') if ar else []
+    
+    @app_requests.setter
+    def app_requests(self, item):
+        if isinstance(item, list):
+            self.fb_session['app_requests'] = ','.join(str(i) for i in item)
+        elif isinstance(item, (basestring, int)):
+            ar = self.fb_session.get('app_requests', []).split(',')
+            ar.append(str(item))
+            self.fb_session['app_requests'] = ','.join(ar)
         else:
-            raise TypeError('User has to be a dict or JSON-string.')
-        self.modified('user.setter')
-        #logger.debug('User age: %s' % self.fb_session['user']['age']['min'])
-        """
+            raise AttributeError, 'App_Requests must be a list or str or int, not %s' %type(item)
+        self.modified('app_requests.setter')
         
 class FBSessionNoOp(SessionBase):
     def __init__(self):
@@ -301,7 +321,7 @@ class Graph(facebook.GraphAPI):
         self._me, self._user_id = None, None
         self.app_id, self.app_secret = application['ID'], application['SECRET']
         self.via = 'No token requested'
-        self.fb_session = FBSession(request) if request else FBSessionNoOp()
+        self.fb_session = get_session(request)
         if request_token == False:
             return
         if access_token:
@@ -426,6 +446,16 @@ def get_static_graph(app_name=None, app_dict=None, *args, **kwargs):
 def get_public_graph(app_name=None, app_dict=None, *args, **kwargs):
     """ If you only access public information and don't need an access token. """
     return get_graph(app_name=app_name, app_dict=app_dict, request=None, request_token=False)
+
+def get_session(request=None):
+    if not request:
+        return FBSessionNoOp()
+    else:
+        if hasattr(request, 'fb_session'):
+            return request.fb_session
+        else:
+            return FBSession(request) 
+
 
 def post_image(access_token, image, message, object='me'):
     form = MultiPartForm()

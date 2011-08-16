@@ -536,7 +536,7 @@ class Request(Base):
         """ Only saves the request to the db if DEBUG is True."""
         if quick and save and self._graph:
             return self
-        super(Request, self).get_from_facebook(graph=graph, save=save)
+        super(Request, self).get_from_facebook(graph=graph, save=True)
     
     def __unicode__(self):
         return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)

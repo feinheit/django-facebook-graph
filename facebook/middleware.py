@@ -12,7 +12,8 @@ from django.utils import simplejson, translation
 
 _parse_json = lambda s: simplejson.loads(s)
 
-from utils import parseSignedRequest, FBSession, get_app_dict
+from utils import parseSignedRequest, get_app_dict, get_session
+from facebook.models import Request as AppRequest
 
 
 class OAuth2ForCanvasMiddleware(object):
@@ -20,7 +21,7 @@ class OAuth2ForCanvasMiddleware(object):
         """
         Writes the signed_request into the Session 
         """
-        fb = FBSession(request)
+        fb = get_session(request)
         setattr(request, 'fb_session', fb)
         application = get_app_dict()
         
@@ -124,17 +125,17 @@ class AppRequestMiddleware(object):
     def process_request(self, request):
         app_requests = []
         if request.GET.get('request_ids', None):
-            fb = FBSession(request)
+            fb = get_session(request)
             request_ids = request.GET.get('request_ids').split(',')
             logger.debug('Got app request ids: %s' % request_ids)
             for id in request_ids:
-                r = Request(id=id)
+                r = AppRequest(id=int(id))
                 if settings.DEBUG:
                     try:
                         r.save()
                     except IntegrityError:
                         pass
-                app_requests.append(r)
+                app_requests.append(r.id)
             fb.app_requests = app_requests
             fb.modified('AppRequestMiddleware')
 

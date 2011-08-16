@@ -12,6 +12,9 @@ class AuthenticationBackend(object):
     supports_anonymous_user = False
 
     def authenticate(self, uid=None, access_token=None):
+        if not uid:
+            raise AttributeError, 'FB Authentication Backend got no user id.'
+        
         try:
             graph = facebook.GraphAPI(access_token)
             profile = graph.get_object("me")
