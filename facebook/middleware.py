@@ -19,19 +19,19 @@ from facebook.models import Request as AppRequest
 class OAuth2ForCanvasMiddleware(object):
     def process_request(self, request):
         """
-        Writes the signed_request into the Session 
+        Writes the signed_request into the Session
         """
         fb = get_session(request)
         setattr(request, 'fb_session', fb)
         application = get_app_dict()
-        
+
         if 'feincms' in settings.INSTALLED_APPS:
             # if feincms is installed, try to get the application from the page
             from facebook.feincms.utils import get_application_from_request
             page_app = get_application_from_request(request)
             if application:
                 application = get_app_dict(page_app)
-        
+
         # default POST/GET request from facebook with a signed request
         if 'signed_request' in request.POST:
             parsed_request = parseSignedRequest(request.POST['signed_request'], application['SECRET'])
@@ -54,25 +54,26 @@ class OAuth2ForCanvasMiddleware(object):
             else:
                 #The chance is good that there is already a valid token in the session.
                 fb.store_token(None)
-            
+
             if 'user_id' in parsed_request:
                 fb.user_id = parsed_request['user_id']
-            
+
             else:
                 logger.debug("Signed Request didn't contain public user info.")
             if expires:
                 logger.debug('Signed Request issued at: %s' % datetime.fromtimestamp(float(parsed_request['issued_at'])))
 
         # auth via callback from facebook
-        elif 'code' in request.REQUEST:
-            args = dict(client_id=application['id'],
-                        client_secret=application['secret'],
+        elif 'code' in request.REQUEST: # TODO this name is much too generic; how can we detect
+                                        # whether it really is a callback? referer checking?
+            args = dict(client_id=application['ID'],
+                        client_secret=application['SECRET'],
                         code=request.REQUEST['code'],
                         redirect_uri = request.build_absolute_uri()
                             .split('?')[0]
                             .replace(application['CANVAS-URL'], application['CANVAS-PAGE'])
                         )
-            
+
             response = urllib.urlopen("https://graph.facebook.com/oauth/access_token?" + urllib.urlencode(args))
             raw = response.read()
             parsed = urlparse.parse_qs(raw)  # Python 2.6 parse_qs is now part of the urlparse module
@@ -82,12 +83,12 @@ class OAuth2ForCanvasMiddleware(object):
                 logger.debug('Got access token from callback: %s. Expires at %s' % (parsed, expires))
             else:
                 logger.debug('facebook did not respond an accesstoken: %s' % raw)
-        
+
     def process_response(self, request, response):
-        """ p3p headers for allowing cookies in Internet Explorer. 
+        """ p3p headers for allowing cookies in Internet Explorer.
         more infos: http://adamyoung.net/IE-Blocking-iFrame-Cookies
         thanks to frog32 for the hint """
-        
+
         response['p3p'] = 'CP="IDC DSP COR ADM DEVi TAIi PSA PSD IVAi IVDi CONi HIS OUR IND CNT"'
         return response
 
@@ -98,12 +99,12 @@ class SignedRequestMiddleware(OAuth2ForCanvasMiddleware):
 
 
 class Redirect2AppDataMiddleware(object):
-    """ If app_data is specified, this middleware assumes that app_data is the deep link and redirects to that page 
+    """ If app_data is specified, this middleware assumes that app_data is the deep link and redirects to that page
     example: http://www.facebook.com/PAGENAME?sk=app_APP_ID&app_data=/foo/bar/ redirects to /foo/bar/
     /
     IMPLEMENTATION: this middleware should be placed after OAuth2ForCanvasMiddleware, because it needs session['facebook']
     """
-    
+
     def process_request(self, request):
         try:
             # only execute first time (Facebook will POST the tab with signed_request parameter)
@@ -149,20 +150,20 @@ class FakeSessionCookieMiddleware(object):
             request.COOKIES[settings.SESSION_COOKIE_NAME] = \
               request.REQUEST[settings.SESSION_COOKIE_NAME]
             request.COOKIES['fakesession'] = True
-    
+
     def process_response(self, request, response):
         cookie_name = settings.SESSION_COOKIE_NAME
-        
+
         if isinstance(response, (HttpResponseRedirect, HttpResponsePermanentRedirect)):
             location = response._headers['location'][1]
-            
+
             # only append session id if the redirection stays inside (local)
             if not location.find('http') == 0 and not location.find('/admin/') == 0:
                 separator = '&' if '?' in location else '?'
-                response._headers['location'] = ('Location' , '%s%s%s=%s' % (location, 
-                            separator, cookie_name, 
+                response._headers['location'] = ('Location' , '%s%s%s=%s' % (location,
+                            separator, cookie_name,
                             request.session._get_session_key()))
-            
+
                 logger.debug('FakeSessionCookieMiddleware: changed redirect location from "%s" to "%s" ' % (location, response._headers['location'][1]))
         return response
 
