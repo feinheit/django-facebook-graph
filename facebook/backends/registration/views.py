@@ -24,53 +24,58 @@ def login(request, template_name='registration/login.html',
           redirect_field_name=REDIRECT_FIELD_NAME,
           authentication_form=AuthenticationForm,
           application=None):
-    
+
     fb_app = get_app_dict(application)
-    cookie = facebook.get_user_from_cookie(request.COOKIES, 
-                                           fb_app['ID'], 
+    cookie = facebook.get_user_from_cookie(request.COOKIES,
+                                           fb_app['ID'],
                                            fb_app['SECRET'])
     redirect_to = request.REQUEST.get(redirect_field_name, '')
-    
-    # Because we override the login, we should check for POST data, 
+
+    # Because we override the login, we should check for POST data,
     #to give priority to the django auth view
     if not request.method == "POST" and cookie:
         # Light security check -- make sure redirect_to isn't garbage.
         if not redirect_to or ' ' in redirect_to:
             redirect_to = fb_app['REDIRECT-URL']
 
-        # Heavier security check -- redirects to http://example.com should 
-        # not be allowed, but things like /view/?param=http://example.com 
+        # Heavier security check -- redirects to http://example.com should
+        # not be allowed, but things like /view/?param=http://example.com
         # should be allowed. This regex checks if there is a '//' *before* a
         # question mark.
         elif '//' in redirect_to and re.match(r'[^\?]*//', redirect_to):
                 redirect_to = fb_app['REDIRECT-URL']
 
         if not request.user.is_authenticated():
-            new_user = authenticate(uid=cookie["uid"], 
+            new_user = authenticate(uid=cookie["uid"],
                                     access_token=cookie["access_token"])
-            auth_login(request, new_user)
-            
-            if 'registration' in settings.INSTALLED_APPS:
-                from registration import signals
-                signals.user_registered.send(sender='facebook_login',
-                                         user=new_user,
-                                         request=request)
 
-        return HttpResponseRedirect(redirect_to)
-    else:
-        return auth_views.login(request, template_name, 
-                                redirect_field_name, authentication_form)
+            # Authentication might still fail -- new_user might be an
+            # instance of AnonymousUser.
+            if new_user.is_authenticated():
+                auth_login(request, new_user)
 
-def logout(request, next_page=None, 
-           template_name='registration/logged_out.html', 
+                if 'registration' in settings.INSTALLED_APPS:
+                    from registration import signals
+                    signals.user_registered.send(sender='facebook_login',
+                                             user=new_user,
+                                             request=request)
+
+            return HttpResponseRedirect(redirect_to)
+
+    return auth_views.login(request, template_name,
+                            redirect_field_name, authentication_form)
+
+
+def logout(request, next_page=None,
+           template_name='registration/logged_out.html',
            redirect_field_name=REDIRECT_FIELD_NAME,
            application=None):
-    
+
     fb_app = get_app_dict(application)
-    cookie = facebook.get_user_from_cookie(request.COOKIES, 
-                                           fb_app['ID'], 
+    cookie = facebook.get_user_from_cookie(request.COOKIES,
+                                           fb_app['ID'],
                                            fb_app['SECRET'])
-    response = auth_views.logout(request, next_page, 
+    response = auth_views.logout(request, next_page,
                                  template_name, redirect_field_name)
     if cookie:
         response.delete_cookie("fbs_" + fb_app['ID'])
@@ -79,11 +84,11 @@ def logout(request, next_page=None,
 def connect(request, redirect_field_name=REDIRECT_FIELD_NAME,
             application=None):
     fb_app = get_app_dict(application)
-    cookie = facebook.get_user_from_cookie(request.COOKIES, 
-                                           fb_app['ID'], 
+    cookie = facebook.get_user_from_cookie(request.COOKIES,
+                                           fb_app['ID'],
                                            fb_app['SECRET'])
     redirect_to = request.REQUEST.get(redirect_field_name, reverse('account'))
-    
+
     if request.user.is_authenticated() and cookie:
         try:
             graph = facebook.GraphAPI(cookie["access_token"])
@@ -92,7 +97,7 @@ def connect(request, redirect_field_name=REDIRECT_FIELD_NAME,
             return render_to_response(
                         'registration/facebook/graph_error.html', {'error': e},
                         context_instance=RequestContext(request))
-        
+
         # if the user has already a facebook connection, abort and show
         # error message
         if hasattr(request.user, 'facebookuser'):
@@ -112,13 +117,13 @@ def connect(request, redirect_field_name=REDIRECT_FIELD_NAME,
                         'registration/facebook/user_exists.html', ctx,
                         context_instance=RequestContext(request))
         except FacebookUser.DoesNotExist:
-            fb_user = FacebookUser(id=cookie['uid'], 
+            fb_user = FacebookUser(id=cookie['uid'],
                                    user=request.user,
                                    profile_url=profile["link"],
                                    access_token=cookie["access_token"])
             fb_user.save()
             return HttpResponseRedirect(redirect_to)
-    
+
     elif request.user.is_authenticated():
         ctx = {'username' : request.user.username}
         # if no cookie is present, the user did not authorize the application
