@@ -530,7 +530,10 @@ class Request(Base):
     _created_time = models.DateTimeField(blank=True, null=True)
     
     def delete(self, facebook=True, graph=None, *args, **kwargs):
-        super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
+        try:
+            super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
+        except GraphAPIError:
+            super(Request, self).delete(facebook=False, graph=graph, *args, **kwargs)
     
     def get_from_facebook(self, graph=None, save=settings.DEBUG, quick=True):
         """ Only saves the request to the db if DEBUG is True."""

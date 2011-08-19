@@ -6,6 +6,9 @@ from utils import get_graph
 
 
 class AdminBase(admin.ModelAdmin):
+    
+    search_fields = ['id']
+        
     def save_model(self, request, obj, form, change):
         graph = get_graph(request, force_refresh=True, prefer_cookie=True)
         obj.get_from_facebook(save=True, graph=graph)
