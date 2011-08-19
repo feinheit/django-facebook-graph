@@ -51,7 +51,7 @@ def login(request, template_name='registration/login.html',
 
             # Authentication might still fail -- new_user might be an
             # instance of AnonymousUser.
-            if new_user.is_authenticated():
+            if new_user and new_user.is_authenticated():
                 auth_login(request, new_user)
 
                 if 'registration' in settings.INSTALLED_APPS:
