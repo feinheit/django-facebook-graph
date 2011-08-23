@@ -14,7 +14,7 @@ class AuthenticationBackend(object):
     def authenticate(self, uid=None, access_token=None):
         if not uid:
             raise AttributeError, 'FB Authentication Backend got no user id.'
-        
+
         try:
             graph = facebook.GraphAPI(access_token)
             profile = graph.get_object("me")
@@ -27,8 +27,14 @@ class AuthenticationBackend(object):
             facebook_user.save_from_facebook(profile)
             user = facebook_user.user
         except ObjectDoesNotExist:
-            facebook_user = FacebookUser(id=uid,
-                                         access_token=access_token)
+            # The Facebook user instance might already exist in the database.
+            # Fetch the record using the Facebook ``uid`` -- this should prevent
+            # integrity errors from the database in the future.
+            try:
+                facebook_user = FacebookUser.objects.get(id=uid)
+            except FacebookUser.DoesNotExist:
+                facebook_user = FacebookUser(id=uid, access_token=access_token)
+
             user, c = User.objects.get_or_create(
                                 username=slugify(profile["id"]),  # must be unique
                                 email=profile.get('email', u''),
