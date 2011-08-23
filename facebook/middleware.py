@@ -64,11 +64,7 @@ class OAuth2ForCanvasMiddleware(object):
                 logger.debug('Signed Request issued at: %s' % datetime.fromtimestamp(float(parsed_request['issued_at'])))
 
         # auth via callback from facebook
-        elif 'code' in request.REQUEST:
-            if 'facebook' not in request.META.get('HTTP_REFERER', u''):
-                # `code` does not originate from facebook, do nothing.
-                return None
-
+        elif 'code' in request.REQUEST and 'facebook' in request.META.get('HTTP_REFERER', u''):
             args = dict(client_id=application['ID'],
                         client_secret=application['SECRET'],
                         code=request.REQUEST['code'],
