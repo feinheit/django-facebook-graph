@@ -11,6 +11,13 @@ from facebook.models import User as FacebookUser
 
 @transaction.commit_on_success
 def get_or_create_user(username, defaults):
+    """
+    Hopefully a bit safer version of User.objects.get_or_create
+
+    Thanks, StackOverflow:
+
+    http://stackoverflow.com/questions/2235318/how-do-i-deal-with-this-race-condition-in-django
+    """
     try:
         user = User.objects.create(username=username, **defaults)
     except IntegrityError: # Probably a duplicate?
