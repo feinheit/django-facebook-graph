@@ -2,11 +2,29 @@ import hashlib
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
-
+from django.db import transaction
 from django.template.defaultfilters import slugify
 
 import facebook
 from facebook.models import User as FacebookUser
+
+
+@transaction.commit_on_success
+def get_or_create_user(username, defaults):
+    """
+    Hopefully a bit safer version of User.objects.get_or_create
+
+    Thanks, StackOverflow:
+
+    http://stackoverflow.com/questions/2235318/how-do-i-deal-with-this-race-condition-in-django
+    """
+    try:
+        user = User.objects.create(username=username, **defaults)
+    except IntegrityError: # Probably a duplicate?
+        transaction.commit()
+        user = User.objects.get(username=username)
+    return user
+
 
 class AuthenticationBackend(object):
     supports_anonymous_user = False
@@ -35,9 +53,7 @@ class AuthenticationBackend(object):
             except FacebookUser.DoesNotExist:
                 facebook_user = FacebookUser(id=uid, access_token=access_token)
 
-            user, c = User.objects.get_or_create(
-                username=slugify(profile["id"]),  # must be unique
-                defaults={
+            user = get_or_create_user(slugify(profile['id']), {
                     'email': profile.get('email', u''),
                     'first_name': profile.get('first_name', u''),
                     'last_name': profile.get('last_name', u''),
