@@ -661,4 +661,33 @@ class Post(PostBase):
         verbose_name = _('Post')
         verbose_name_plural = _('Posts')
         abstract = False
-        
+
+
+class Score(models.Model):
+    user = models.ForeignKey(User)
+    score = models.PositiveIntegerField(_('Score'))
+    
+    class Meta:
+        verbose_name = _('Score')
+        verbose_name_plural = _('Scores')
+    
+    def __unicode__(self):
+        return u'%s, %s' % (self.user, self.score)
+    
+    def send_to_facebook(self, app_name=None, graph=None):
+        if not graph:
+            graph = get_static_graph(app_name=app_name)
+        if score <= 0:
+            raise AttributeError, 'The score must be an integer > 0.'
+        return graph.request('%s/scores' % self.user.id ,'', {'score': str(self.score) })
+
+    def save(self, facebook=True, app_name=None, graph=None):
+        super(Score, self).save()
+        if facebook:
+            return self.send_to_facebook(app_name=app_name, graph=graph) 
+
+    def delete(self, app_name=None, *args, **kwargs):
+        graph = get_static_graph(app_name=app_name)
+        graph.request('%s/scores' % self.user.id, post_args={'method': 'delete'})
+        super(Score, self).delete(*args, **kwargs)
+    
