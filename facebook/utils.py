@@ -276,12 +276,16 @@ class FBSession(SessionBase):
     def app_requests(self, item):
         if isinstance(item, list):
             self.fb_session['app_requests'] = ','.join(str(i) for i in item)
+        elif isinstance(item, facebook.models.Request):
+            ar = self.fb_session.get('app_requests', []).split(',')
+            ar.append(str(item.id))
+            self.fb_session['app_requests'] = ','.join(ar)
         elif isinstance(item, (basestring, int)):
             ar = self.fb_session.get('app_requests', []).split(',')
             ar.append(str(item))
             self.fb_session['app_requests'] = ','.join(ar)
         else:
-            raise AttributeError, 'App_Requests must be a list or str or int, not %s' %type(item)
+            raise AttributeError, 'App_Requests must be a list, Request, str or int, not %s' %type(item)
         self.modified('app_requests.setter')
         
 class FBSessionNoOp(SessionBase):
