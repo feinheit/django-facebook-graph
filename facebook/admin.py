@@ -7,7 +7,7 @@ from utils import get_graph
 def delete_object(modeladmin, request, queryset):
     graph = get_graph(request)
     for obj in queryset:
-        obj.delete()
+        obj.delete(graph=graph, facebook=True)
 delete_object.short_description = _("Delete selected objects (also on Facebook)")
 
 class AdminBase(admin.ModelAdmin):
