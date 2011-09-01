@@ -4,11 +4,18 @@ from django.utils.translation import ugettext_lazy as _
 from models import User, Photo, Page, Event, Request, TestUser, Post, Score
 from utils import get_graph
 
+def delete_object(modeladmin, request, queryset):
+    graph = get_graph(request)
+    for obj in queryset:
+        obj.delete()
+delete_object.short_description = _("Delete selected objects (also on Facebook)")
 
 class AdminBase(admin.ModelAdmin):
+    actions = [delete_object]
     def save_model(self, request, obj, form, change):
         graph = get_graph(request, force_refresh=True, prefer_cookie=True)
         obj.get_from_facebook(save=True, graph=graph)
+    
     
     def profile_link(self, obj):
         if obj.facebook_link:
@@ -24,6 +31,7 @@ class AdminBase(admin.ModelAdmin):
         }
         return super(AdminBase, self).change_view(request, object_id,
             extra_context=fb_context)
+    
 
 class UserAdmin(AdminBase):
     list_display = ('id', 'profile_link', 'access_token', 'user', '_name', 'created', 'updated',)

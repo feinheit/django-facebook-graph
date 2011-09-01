@@ -529,8 +529,17 @@ class Request(Base):
     _message = models.TextField(blank=True, null=True)
     _created_time = models.DateTimeField(blank=True, null=True)
     
-    def delete(self, facebook=True, graph=None, *args, **kwargs):
-        super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
+    def delete(self, facebook=True, graph=None, app_name=None, *args, **kwargs):
+        if not graph:
+            graph = get_graph(request=None, app_name=app_name) # Method needs static graph
+        try:
+            super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
+        except GraphAPIError:
+            graph = get_graph(request=None, app_name=app_name)
+            try:
+                super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
+            except GraphAPIError:
+                super(Request, self).delete(facebook=False, graph=None, *args, **kwargs)
     
     def get_from_facebook(self, graph=None, save=settings.DEBUG, quick=True):
         """ Only saves the request to the db if DEBUG is True."""
@@ -676,13 +685,13 @@ class Score(models.Model):
     
     def send_to_facebook(self, app_name=None, graph=None):
         if not graph:
-            graph = get_static_graph(app_name=app_name)
-        if score <= 0:
+            graph = get_graph(request=None, app_name=app_name)
+        if self.score <= 0:
             raise AttributeError, 'The score must be an integer > 0.'
         return graph.request('%s/scores' % self.user.id ,'', {'score': str(self.score) })
 
-    def save(self, facebook=True, app_name=None, graph=None):
-        super(Score, self).save()
+    def save(self, facebook=True, app_name=None, graph=None, *args, **kwargs):
+        super(Score, self).save(*args, **kwargs)
         if facebook:
             return self.send_to_facebook(app_name=app_name, graph=graph) 
 

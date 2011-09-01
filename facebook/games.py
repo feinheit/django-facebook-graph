@@ -1,6 +1,6 @@
 #coding=utf-8
 
-from facebook.models import Score
+from facebook.models import Score, User
 
 """ Views for game-related task such as getting and settings scores and achievments. """
 from facebook.utils import get_static_graph
@@ -31,7 +31,8 @@ def get_user_and_friends_scores(user_id, graph, app_name=None):
 
 def set_user_score(user_id, score, app_name=None, facebook=True):
     graph = get_static_graph(app_name=app_name)
-    obj, created = Score.objects.get_or_create(user__id=user_id)
+    user_id = int(user_id)
+    obj, created = Score.objects.get_or_create(user_id=user_id, defaults={'score':0})
     if not created and int(score) < obj.score:
         return 'score lower than current score. Not updated.'
     elif score > 0:
