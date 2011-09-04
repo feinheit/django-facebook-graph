@@ -8,90 +8,66 @@ Getting started with django-facebook-graph
 You need to create a Facebook Application on Facebook Developers for nearly
 every functionality of ``django-facebook-graph``.
 
-* https://developers.facebook.com/apps
+    https://developers.facebook.com/apps
+
+For detailed installation istructions check out the installation_ section.
 
 
 Facebook Connect support for your website
 =========================================
 
-The Facebook Connect support consists of two parts: A backend for
-django-registration_ which creates users and an authentication
-backend which is responsible for the actual login on a Django website.
-
-.. _django-registration: https://bitbucket.org/ubernostrum/django-registration
-
-
-Setting the authentication backend
-----------------------------------
-
-We want to handle logins with the default backend first and fall back to
-the Facebook authentication backend if the default backend couldn't handle
-the login request::
-
-    AUTHENTICATION_BACKENDS = (
-        'django.contrib.auth.backends.ModelBackend',
-        'facebook.backends.authentication.AuthenticationBackend',
-    )
-
-
-Activating the registration backend
------------------------------------
-
-The registration backend is set in ``urls.py`` (like all other registration
-backends)::
-
-    url(r'^accounts/', include('facebook.backends.registration.urls')),
-
+Currently the framework supports user login with the facebook login button. It's fairly plug and play.
+Make sure you have added the auth.backend and login url as described in the installation_ instructions.
 
 Adding the Facebook login to your website
 -----------------------------------------
-
-``base.html``::
-
-    window.fbAsyncInit = function() {
-    FB.init({appId: '???????????????????', status: true, cookie: true,
-             xfbml: true});
-    };
-    (function() {
-    var e = document.createElement('script'); e.async = true;
-    e.src = document.location.protocol +
-      '//connect.facebook.net/en_US/all.js';
-    document.getElementById('fb-root').appendChild(e);
-    }());
-
 
 FBML tags::
 
     <fb:login-button perms="email" onlogin="window.location.href='{% url auth_login %}?next=/'"></fb:login-button>
 
+Checkout the facebook documentation on the login button: 
+http://developers.facebook.com/docs/reference/plugins/login/
+
+
+Using the graph API
+===================
+
+You can generate a graph instance with the following command::
+
+    from facebook.utils import get_graph    
+    graph = get_graph(request)
+    
+To make a graph request to facebook, simply use graph.request(). I.e. to get a certain message object::
+
+    fb_message = graph.request('%s' % post_id)
+
+You can also create facebook user objects like so::
+
+    from facebook.models import User
+    user = User(id=graph.me['id'])
+    user.get_from_facebook(graph=graph, save=True)
+
+The app stores as much data as possible in the session to minimize requests to Facebook. You can access the session class directly 
+to get informations about the current user::
+  
+    from facebook.utils import get_session
+    fb = get_session()
+    signed_request = fb.signed_request
+
+
+About the Access Token
+----------------------
+Facebook distinguishes between the app access token and the user access token. A user access token is needed for requests that need a user's
+permission. It's generally more powerfull thann an app access token. You should generally get the user access token when you pass the request
+argument to the get_graph(request=request) function.
+
+However, some operations require the app access token. Like deleting app requests or saving user score. You can implicitly get the app access 
+token by just calling graph=get_graph() without providing the request object, or explicitly by calling get_static_graph().
 
 
 Sending posts onto a Facebook wall
 ==================================
-
-Django configuration
---------------------
-
-::
-
-    MIDDLEWARE_CLASSES = (
-        # ...
-        'facebook.middleware.SignedRequestMiddleware',
-        # ....
-
-::
-
-    window.fbAsyncInit = function() {
-        FB.init({appId: '192738540778417', status: true, cookie: true,
-                 xfbml: true});
-    };
-    (function() {
-        var e = document.createElement('script'); e.async = true;
-        e.src = document.location.protocol +
-          '//connect.facebook.net/en_US/all.js';
-        document.getElementById('fb-root').appendChild(e);
-    }());
-
 
 Ensure your app has sufficient permissions
 ------------------------------------------
@@ -101,15 +77,14 @@ permission::
 
     function get_publish_perms(callback_fn) {
         FB.login(function(response) {
-            window.fb_response = response;
             if (response.session) {
                 if (response.perms) {
-                    //fb.perms.push(response.perms);
+                    // fb.perms.push(response.perms);
                     if (response.perms.indexOf('publish_stream') != -1) {
                         callback_fn();
                     }
                 } else {
-                    alert('Dann halt nicht.');
+                    alert('No permission.');
                 }
             } else {
                 // user is not logged in
@@ -117,10 +92,9 @@ permission::
         }, {perms:'publish_stream'});
     }
 
-To determine whether a permission is already provided use the following
+To determine whether a permission is already provided you culd use the following
 snippet::
 
-    var fb = {};
     FB.getLoginStatus(function(response) {
         fb.loginStatus = response;
         fb.perms = $.parseJSON(response.perms).extended;
@@ -128,6 +102,21 @@ snippet::
 
 The second parameter, ``true`` causes a reload of the login status. This
 adds the permissions to the response too, which is very helpful for us.
+
+the perms are also loaded into the fb object on page load. So you could also just try::
+    
+    if (fb.perms.indexOf('publish_stream') != -1) {
+        post_to_wall();
+    } else {
+        FB.login(function(response){
+                 }, 
+                 {perms: 'publish_stream' }
+        );      
+    }
+
+The logical consequence if the if-statement fails would be to make a call to FB.login() to show a login window. The problem here is
+that most browsers block the popup if it doesn't follow an immediate user action. I therefore recommend to attach the above function to 
+a click event on a button.
 
 
 Actually create a Facebook wall post
@@ -139,10 +128,16 @@ post is easy::
     from facebook.utils import get_graph
     def my_view(request, ...):
         graph = get_graph(request)
-        graph.put_wall_post('Whatever', {
-            'name': 'Some object',
+        graph.put_wall_post('Hello World!', {
+            'name': 'Link name',
             'link': 'http://www.example.com/at/this/location/',
             })
 
 It might still be a good idea to enclose the ``put_wall_post`` call in
 ``try..except`` clause.
+
+Keep in mind that if too many users remove a wallpost that had been created through the Graph API, 
+your app will get classified as spam.
+
+
+
