@@ -686,8 +686,8 @@ class Score(models.Model):
     def send_to_facebook(self, app_name=None, graph=None):
         if not graph:
             graph = get_graph(request=None, app_name=app_name)
-        if self.score <= 0:
-            raise AttributeError, 'The score must be an integer > 0.'
+        if self.score < 0:
+            raise AttributeError, 'The score must be an integer >= 0.'
         return graph.request('%s/scores' % self.user.id ,'', {'score': str(self.score) })
 
     def save(self, facebook=True, app_name=None, graph=None, *args, **kwargs):
