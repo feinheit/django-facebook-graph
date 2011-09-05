@@ -3,6 +3,27 @@
 
 {% block extrahead %}{{ block.super }}
 {% include 'admin/facebook/login-button.html' %}
+<script type="text/javascript">
+    function parse_event_url(source, target){
+        var exp = /(eid=)(\d+)/;
+        exp.exec(source.val());
+        target.val(RegExp.$2);
+    }
+    function do_parse(){
+        parse_event_url(django.jQuery(this),django.jQuery('#id_id'));
+    }
+    django.jQuery(function(){
+        django.jQuery("#event_url").focus(function(){
+            // Select input field contents
+            this.select();
+        });
+        django.jQuery("#event_url").change(function(){
+            parse_event_url(django.jQuery(this), django.jQuery('#id_id'));
+            //django.jQuery('input[name=_continue]').trigger('click');
+        });
+        django.jQuery("#event_url").val("https://www.facebook.com/event.php?eid=" + django.jQuery('#id_id').val());
+    });
+</script>
 {% endblock %}
 
 {% block content %}
