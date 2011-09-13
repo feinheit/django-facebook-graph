@@ -48,7 +48,7 @@ window.fbAsyncInit = function() {
     );
     canvas_resize();
     FB.getLoginStatus(function(response) {
-      log(response);
+      // log(response);
       if (response.session) {
         fb.user = response.session;
         if (response.perms){
@@ -74,9 +74,9 @@ FQ.add(function(){
             top.location.href = FACEBOOK_REDIRECT_URL ;
         }
     });
-    FB.Event.subscribe('edge.create', function(response){
+    /*FB.Event.subscribe('edge.create', function(response){
         log(response);
-    });
+    });*/
 });
 
 function log_error(url, message, csrf_token) {

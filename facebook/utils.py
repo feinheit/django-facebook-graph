@@ -396,18 +396,18 @@ class Graph(facebook.GraphAPI):
                 if created:
                     self._me.get_from_facebook(graph=self, save=True)                
             """
-        else:
-            try:
-                me = self.request('me')
-                self._user_id = me['id']
-                self.fb_session.me = me
-                self._me = me  
-            except facebook.GraphAPIError as e:
-                logger.debug('could not use the accesstoken via %s: %s' % (self.via, e.message))
-                self.fb_session.store_token(None)
-            #self._me, created = User.objects.get_or_create(id=self._user_id)
-            #if created:
-            #    self._me.save_from_facebook(me)         
+        
+        try:
+            me = self.request('me')
+            self._user_id = me['id']
+            self.fb_session.me = me
+            self._me = me  
+        except facebook.GraphAPIError as e:
+            logger.debug('could not use the accesstoken via %s: %s' % (self.via, e.message))
+            self.fb_session.store_token(None)
+        #self._me, created = User.objects.get_or_create(id=self._user_id)
+        #if created:
+        #    self._me.save_from_facebook(me)         
         return self._me
 
     @property
@@ -415,7 +415,7 @@ class Graph(facebook.GraphAPI):
         if self._me:
             return self._me
         else:
-            self._get_me()
+            return self._get_me()
 
     @property  #DEPRECIATED. Kept for compatibility reasons.
     def user(self):
