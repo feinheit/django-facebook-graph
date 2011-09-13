@@ -679,6 +679,7 @@ class Score(models.Model):
     class Meta:
         verbose_name = _('Score')
         verbose_name_plural = _('Scores')
+        ordering = ['-score']
     
     def __unicode__(self):
         return u'%s, %s' % (self.user, self.score)
