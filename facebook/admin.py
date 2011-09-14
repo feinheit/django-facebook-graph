@@ -10,6 +10,7 @@ def delete_object(modeladmin, request, queryset):
         obj.delete(graph=graph, facebook=True)
 delete_object.short_description = _("Delete selected objects (also on Facebook)")
 
+
 class AdminBase(admin.ModelAdmin):    
     search_fields = ['id']
     actions = [delete_object]
