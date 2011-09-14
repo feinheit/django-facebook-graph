@@ -1,17 +1,22 @@
 from django.contrib import admin
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from models import User, Photo, Page, Event, Request, TestUser, Post
+from models import User, Photo, Page, Event, Request, TestUser, Post, Score
 from utils import get_graph
 
+def delete_object(modeladmin, request, queryset):
+    graph = get_graph(request)
+    for obj in queryset:
+        obj.delete(graph=graph, facebook=True)
+delete_object.short_description = _("Delete selected objects (also on Facebook)")
 
-class AdminBase(admin.ModelAdmin):
-    
+class AdminBase(admin.ModelAdmin):    
     search_fields = ['id']
-        
+    actions = [delete_object]
     def save_model(self, request, obj, form, change):
         graph = get_graph(request, force_refresh=True, prefer_cookie=True)
         obj.get_from_facebook(save=True, graph=graph)
+    
     
     def profile_link(self, obj):
         if obj.facebook_link:
@@ -27,6 +32,7 @@ class AdminBase(admin.ModelAdmin):
         }
         return super(AdminBase, self).change_view(request, object_id,
             extra_context=fb_context)
+    
 
 class UserAdmin(AdminBase):
     list_display = ('id', 'profile_link', 'access_token', 'user', '_name', 'created', 'updated',)
@@ -120,4 +126,21 @@ class PostAdmin(AdminBase):
     
     
 admin.site.register(Post, PostAdmin)
+
+class ScoreAdmin(admin.ModelAdmin):
+    list_display = ('user', 'score')
+    readonly_fields = ('user', 'score')
+    search_fields = ('user',)
+    ordering = ['score']
     
+""" Because Facebook does not yet correctly support score the score model is just experimental.
+    Import it in your project admin file:
+    
+    from facebook.models import Score
+    from facebook.admin import ScoreAdmin
+    admin.site.register(Score, ScoreAdmin)
+"""
+
+
+
+
