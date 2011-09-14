@@ -1,7 +1,7 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect,\
     HttpResponseForbidden
 from django.conf import settings
-from facebook.utils import get_graph, parseSignedRequest, get_app_dict, FBSession
+from facebook.utils import get_graph, parseSignedRequest, get_app_dict, get_session
 import functools, sys, logging
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, redirect, get_object_or_404, render
@@ -119,7 +119,7 @@ def redirect_to_page(view):
 @csrf_exempt
 def channel(request):
     """ Returns the channel.html file as described in http://developers.facebook.com/docs/reference/javascript/FB.init/"""
-    fb = FBSession(request)
+    fb = get_session(request)
     try:
         locale = fb.signed_request['user']['locale']
     except (KeyError, TypeError):

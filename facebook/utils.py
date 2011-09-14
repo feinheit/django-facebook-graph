@@ -141,7 +141,7 @@ class FBSession(SessionBase):
     def __init__(self, request):
         if request == None:
             raise AttributeError('Need Request to Access the Session.')
-        if getattr(request, 'fb_session', None):
+        if hasattr(request, 'fb_session'):
             raise AttributeError('Session already exists in Request.')
         self.fb_session = self.get_fb_session(request)
         self.request = request

@@ -126,7 +126,8 @@ class AppRequestMiddleware(object):
         app_requests = []
         if request.GET.get('request_ids', None):
             fb = get_session(request)
-            request_ids = request.GET.get('request_ids').split(',')
+            request_ids = urllib.unquote(request.GET.get('request_ids'))
+            request_ids = request_ids.split(',')
             logger.debug('Got app request ids: %s' % request_ids)
             for id in request_ids:
                 r = AppRequest(id=int(id))
