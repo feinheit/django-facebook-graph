@@ -545,6 +545,8 @@ class Request(Base):
         """ Only saves the request to the db if DEBUG is True."""
         if quick and save and self._graph:
             return self
+        if not graph:
+            graph = get_graph() # get app graph only
         super(Request, self).get_from_facebook(graph=graph, save=True)
     
     def __unicode__(self):
