@@ -540,11 +540,13 @@ class Request(Base):
                 super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
             except GraphAPIError:
                 super(Request, self).delete(facebook=False, graph=None, *args, **kwargs)
-    
+
     def get_from_facebook(self, graph=None, save=settings.DEBUG, quick=True):
         """ Only saves the request to the db if DEBUG is True."""
         if quick and save and self._graph:
             return self
+        if not graph:
+            graph = get_graph() # get app graph only
         super(Request, self).get_from_facebook(graph=graph, save=True)
     
     def __unicode__(self):
