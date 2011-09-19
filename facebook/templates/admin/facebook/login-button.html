@@ -10,12 +10,12 @@
     fb['perms'] = {};
   window.fbAsyncInit = function() {
     FB.init({appId: '{% fb_app_id %}', status: true, cookie: true,
-             xfbml: true});
+             xfbml: true, oauth: true });
     FB.getLoginStatus(function(response) {
         console.log(response);
-      if (response.session) {
-        fb.user = response.session;
-        django.jQuery('#user-access-token').text(response.session.access_token);
+      if (response.status === 'connected') {
+        fb.user = response.authResponse;
+        django.jQuery('#user-access-token').text(response.authResponse.accessToken);
         if (response.perms) {
             fb.perms = JSON.parse(response.perms);
            }

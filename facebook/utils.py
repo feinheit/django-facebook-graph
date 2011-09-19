@@ -22,6 +22,9 @@ from django.utils.http import urlquote
 
 _parse_json = lambda s: simplejson.loads(s)
 
+import logging
+logger = logging.getLogger(__name__)
+
 """
 Example App Settings Entry:
 
@@ -148,7 +151,9 @@ class FBSession(SessionBase):
     
     def get_fb_session(self, request):
         fb = request.session.get('facebook', None)
+        logger.debug('found facebook session')
         if not fb:
+            logger.debug('did not find a facebook session. Creating a new one.')
             request.session.update({'facebook': {'app_is_authenticated': True}})
             request.session.modified = True
             fb = request.session['facebook']
@@ -352,8 +357,8 @@ class Graph(facebook.GraphAPI):
             return None
         cookie = facebook.get_user_from_cookie(self.HttpRequest.COOKIES, self.app_id, self.app_secret)
         access_token = cookie['access_token']
-        self.fb_session.store_token(access_token)  # TODO: Set expires
         if access_token:
+            self.fb_session.store_token(access_token)  # TODO: Set expires
             self.access_token = access_token
         if self._get_me():
             self.fb_session.user_id = cookie['uid']

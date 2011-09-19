@@ -63,6 +63,10 @@ The Facebook Javascript SDK
 
 For any client side facebook integration you need the Javascript SDK.
 
+Add the fb namespace to the html tag::
+    
+    <html xmlns="http://www.w3.org/1999/xhtml" xmlns:fb="https://www.facebook.com/2008/fbml">
+
 Add this to the header section of your base template::
 
     {% load fb_tags %}

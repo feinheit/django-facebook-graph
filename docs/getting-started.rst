@@ -24,7 +24,7 @@ Adding the Facebook login to your website
 
 FBML tags::
 
-    <fb:login-button perms="email" onlogin="window.location.href='{% url auth_login %}?next=/'"></fb:login-button>
+    <fb:login-button scope="email" onlogin="window.location.href='{% url auth_login %}?next=/'"></fb:login-button>
 
 Checkout the facebook documentation on the login button: 
 http://developers.facebook.com/docs/reference/plugins/login/
