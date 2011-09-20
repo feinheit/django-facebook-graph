@@ -37,46 +37,54 @@ FQ = {
     run: function() { while(this.queue.length > 0) { f = this.queue.pop(); f();
                       canvas_resize(); } }
 };
-var fb = {};
-fb['user'] = {}
-fb['perms'] = [];
+var fb = {
+    user: {}, // DEPRECATED Property. Here for backwards compatibility.
+    get_perms : function(callback) {
+                    var _perms = false;
+                    return (function() {
+                        if (_perms) {
+                            callback(_perms);
+                            return true;
+                        }
+                        _perms = [];
+                        FB.api('/me/permissions/', function(data){
+                            for (var i in data['data'][0]) {_perms.push(i);} 
+                            callback(_perms);
+                            return true;  
+                        });
+                    })()
+                }
+    };
+    
+
 
 window.fbAsyncInit = function() {
     FB.init({appId: FACEBOOK_APP_ID, status: true, cookie: true,
-             xfbml: true,
+             xfbml: true, oauth: true,
              channelUrl : document.location.protocol + '//' + document.location.host + FACEBOOK_CHANNEL_URL }
     );
     canvas_resize();
     FB.getLoginStatus(function(response) {
-      // log(response);
-      if (response.session) {
-        fb.user = response.session;
-        if (response.perms){
-            var perms = JSON.parse(response.perms);
-            fb.perms = perms.extended;
-        } else {
-            FB.api('/me/permissions/', function(data){
-                for (var i in data['data'][0]) {fb.perms.push(i);}
-            });
-        }
+      log(response);
+      if (response.status === 'connected') {
+        fb.auth = response.authResponse;
+        fb.user = (function(){ return fb.auth; })(); // For backwards compatibility. Will be removed at some point.
+        fb.user.warning = 'This property is deprecated and will be removed! Use fb.auth instead.';
+        fb['status'] = response.status;
       }
       FQ.run(); 
     }, 'json');
-    canvas_resize();
   };
 
 FQ.add(function(){
     FB.Event.subscribe('auth.login', function(response){
-        if ($.isEmptyObject(fb.user)) {
+        if (fb.status != 'connected') {
             var url = window.location.toString();
             url.match(/\?(.+)$/);
             var params = RegExp.$1;
             top.location.href = FACEBOOK_REDIRECT_URL ;
         }
     });
-    /*FB.Event.subscribe('edge.create', function(response){
-        log(response);
-    });*/
 });
 
 function log_error(url, message, csrf_token) {
@@ -88,3 +96,4 @@ function log_error(url, message, csrf_token) {
          }, 'text'
     );
 }
+

@@ -45,16 +45,14 @@ logger = logging.getLogger(__name__)
 
 # Find a JSON parser
 try:
-    import json
-    _parse_json = lambda s: json.loads(s)
+    import simplejson as json
 except ImportError:
     try:
-        import simplejson
-        _parse_json = lambda s: simplejson.loads(s)
+        from django.utils import simplejson as json
     except ImportError:
-        # For Google AppEngine
-        from django.utils import simplejson
-        _parse_json = lambda s: simplejson.loads(s)
+        import json
+
+_parse_json = lambda s: json.loads(s)
 
 class GraphAPI(object):
     """A client for the Facebook Graph API.

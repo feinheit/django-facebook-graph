@@ -1,10 +1,8 @@
-yet simple toolset to use facebooks graph api with django
+================================================
+A toolset to use facebooks graph api with django
+================================================
 
-tested apps:
-- authentication backend (to use with django.contrib.auth)
-- registration backend wrapper (to use with django-registration)
-
-please read the code. we will update documentation soon.
+http://readthedocs.org/docs/django-facebook-graph/en/latest/
 
 
 Graph helper tools:

@@ -20,7 +20,16 @@ from django.shortcuts import redirect
 from django.utils import simplejson
 from django.utils.http import urlquote
 
-_parse_json = lambda s: simplejson.loads(s)
+# Find a JSON parser
+try:
+    import simplejson as json
+except ImportError:
+    try:
+        from django.utils import simplejson as json
+    except ImportError:
+        import json
+
+_parse_json = lambda s: json.loads(s)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -196,6 +205,7 @@ class FBSession(SessionBase):
         
     @property
     def access_token(self):
+        """ Returns the current access token or None. """
         if self.token_expires and self.token_expires < datetime.now():  # TODO: Check if this is executed on every request.
             logger.debug('not returning expired access_token. %s' % self.fb_session.get('access_token'))
             return None
@@ -446,6 +456,58 @@ class Graph(facebook.GraphAPI):
 
     def revoke_auth(self, id):
         return self.request(id + '/permissions', post_args={"method": "delete"})
+    
+    def put_photo(image, message=None, album_id=None, **kwargs):
+        """
+        Shortcut for put_media to upload a photo
+        """
+        self.put_media(image, message, album_id, fxtype='photos', kwargs=kwargs)
+
+    def put_video(image, message=None, album_id=None, **kwargs):
+        """
+        Shortcut for put_media to upload a video
+        """
+        self.put_media(image, message, album_id, fxtype='videos', kwargs=kwargs)
+    
+    def put_media(self, mediafile, message=None, album_id=None, mediatype=None, **kwargs):
+        """ Uploads a file using multipart/form-data
+            mediafile: File like object for the image
+            message: Caption for your image
+            album_id: On photos, None posts to /me/photos which uses or creates and uses 
+                      an album for your application.
+            mediatype: one of 'photos' or 'videos' depending on media type
+        """
+        object = album_id or "me"
+        
+        form = MultiPartForm()
+        form.add_field('access_token', access_token)
+        form.add_field('message', message)
+        form.add_file('source', mediafile.name, mediafile)
+        if kwargs:
+            for k,v in kwargs.items():
+                form.add_field(k, v)
+    
+        request = urllib2.Request('https://graph.facebook.com/%s/%s' % (object, mediatype))
+        logger.debug('posting photo to: https://graph.facebook.com/%s/photos %s' % (object, image))
+        body = str(form)
+        request.add_header('Content-type', form.get_content_type())
+        request.add_header('Content-length', len(body))
+        request.add_data(body)
+    
+        raw = urllib2.urlopen(request).read()
+        logger.debug('facebook response raw (post image): %s' % raw)
+    
+        try:
+            response = _parse_json(raw)
+        except:
+            raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected json' % response)
+    
+        """ in some cases, response is not an object """
+        if response:
+            if response.get("error"):
+                raise facebook.GraphAPIError(response["error"]["type"],
+                                    response["error"]["message"])
+        return response
 
 
 def get_graph(request=None, app_name=None, app_dict=None, *args, **kwargs):
@@ -473,35 +535,10 @@ def get_session(request=None):
         else:
             return FBSession(request) 
 
-
 def post_image(access_token, image, message, object='me'):
-    form = MultiPartForm()
-    form.add_field('access_token', access_token)
-    form.add_field('message', message)
-    form.add_file('image', 'image.jpg', image)
-
-    request = urllib2.Request('https://graph.facebook.com/%s/photos' % object)
-    logger.debug('posting photo to: https://graph.facebook.com/%s/photos %s' % (object, image))
-    #request.add_header('User-agent', 'Chef de cuisine - FB App')
-    body = str(form)
-    request.add_header('Content-type', form.get_content_type())
-    request.add_header('Content-length', len(body))
-    request.add_data(body)
-
-    raw = urllib2.urlopen(request).read()
-    logger.debug('facebook response raw (post image): %s' % raw)
-
-    try:
-        response = _parse_json(raw)
-    except:
-        raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected json' % response)
-
-    """ in some cases, response is not an object """
-    if response:
-        if response.get("error"):
-            raise facebook.GraphAPIError(response["error"]["type"],
-                                response["error"]["message"])
-    return response
+    graph = get_graph()
+    graph.access_token = access_token
+    return graph.put_media(graph, mediafile=image, message=message, mediatype='photos')
 
 
 # from http://www.doughellmann.com/PyMOTW/urllib2/

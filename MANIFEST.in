@@ -1,0 +1,12 @@
+include AUTHORS
+include LICENSE
+include README.rst
+recursive-include facebook/static *.png
+recursive-include facebook/static *.jpg
+recursive-include facebook/static *.gif
+recursive-include facebook/static *.js
+recursive-include facebook/static *.css
+recursive-include facebook/locale *.po
+recursive-include facebook/locale *.mo
+recursive-include facebook/templates *.html
+recursive-include facebook/templates *.txt

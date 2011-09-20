@@ -4,41 +4,30 @@
 	#event_url {width: 400px;}
 </style>
 <div id="fb-root"></div>
-<script>
-    fb = {};
-    fb['user'] = {}
-    fb['perms'] = {};
-  window.fbAsyncInit = function() {
-    FB.init({appId: '{% fb_app_id %}', status: true, cookie: true,
-             xfbml: true, oauth: true });
-    FB.getLoginStatus(function(response) {
-        console.log(response);
-      if (response.status === 'connected') {
-        fb.user = response.authResponse;
-        django.jQuery('#user-access-token').text(response.authResponse.accessToken);
-        if (response.perms) {
-            fb.perms = JSON.parse(response.perms);
-           }
-      }
-      if (django.jQuery.inArray('user_events', fb['perms']['user']) > -1){
+<script type="text/javascript">
+    FACEBOOK_APP_ID = '{% fb_app_id %}';
+    FACEBOOK_REDIRECT_URL = '{% fb_redirect_url %}';
+    FACEBOOK_CHANNEL_URL = '{% url channel %}';
+</script>
+
+<script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>
+
+<script type="text/javascript">
+    function check_login(perms) {
+         if (django.jQuery.inArray('user_events', perms) > -1){
             // console.log('App has perms to publish to the stream');
           django.jQuery('#fb-is-logged-in').show();
-      } else {
-          django.jQuery('#fb-login-button').show();
-      }
+          } else {
+              django.jQuery('#fb-login-button').show();
+          }
+    }
+
+    FQ.add(function(){
+        django.jQuery('#user-access-token').text(response.authResponse.accessToken);
+        fb.get_perms(check_login);
     });
-    FB.Event.subscribe('auth.login', function() {
-    });
-  };
-  (function() {
-    var e = document.createElement('script'); e.async = true;
-    e.src = document.location.protocol +
-      '//connect.facebook.net/de_DE/all.js';
-    document.getElementById('fb-root').appendChild(e);
-  }());
-  
-  function change_app(){
-  	FB.init({appId: django.jQuery('#fb-app-select').val(), status: true, cookie: true,
+    function change_app(){
+        FB.init({appId: django.jQuery('#fb-app-select').val(), status: true, cookie: true,
              xfbml: true});
-  }
+    }
 </script>

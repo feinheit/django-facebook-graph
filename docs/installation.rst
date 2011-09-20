@@ -115,3 +115,6 @@ the login request::
         'django.contrib.auth.backends.ModelBackend',
         'facebook.backends.authentication.AuthenticationBackend',
     )
+    
+Currently django-facebook-graph only supports Facebook Connect with the Login Button.
+The Registration Widget is not supported.
