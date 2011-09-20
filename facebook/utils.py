@@ -64,24 +64,29 @@ def parseSignedRequest(signed_request, secret=None, application=None):
     """
     adapted from from
     http://web-phpproxy.appspot.com/687474703A2F2F7061737469652E6F72672F31303536363332
+    https://github.com/facebook/python-sdk/commit/cb43c5a4a4b8c3e66264ed5508871b175f9c515f
     """
 
     if not secret:
         app_dict = get_app_dict(application)
         secret = app_dict['SECRET']
-
-    (encoded_sig, payload) = signed_request.split(".", 2)
+    
+    try:
+        (encoded_sig, payload) = signed_request.split(".", 2)
+    except IndexError:
+        raise ValueError("Signed Request is malformed")
+    
     sig = base64_url_decode(encoded_sig)
     data = simplejson.loads(base64_url_decode(payload))
 
     if data.get("algorithm").upper() != "HMAC-SHA256":
-        return {}
+        raise ValueError("'signed_request' is using an unknown algorithm")
+    else:
+        expected_sig = hmac.new(secret, msg=payload, digestmod=hashlib.sha256).digest()
 
-#    """ i dont know why, but this crashes in one of my project. but i dont need it anyway """
-#    expected_sig = hmac.new(secret, msg=payload, digestmod=hashlib.sha256).digest()
-#    if sig != expected_sig:
-#        return {}
-
+    if sig != expected_sig:
+        raise ValueError("'signed_request' signature mismatch")
+    
     return data
 
 
@@ -422,7 +427,7 @@ class Graph(facebook.GraphAPI):
         else:
             return self._get_me()
 
-    @property  #DEPRECIATED. Kept for compatibility reasons.
+    @property  #DEPRECATED. Kept for compatibility reasons.
     def user(self):
         warnings.warn('The user property is depreceated. Use user_id instead.', DeprecationWarning)
         if self._user_id:
@@ -438,6 +443,9 @@ class Graph(facebook.GraphAPI):
         else:
             me = self._get_me(self.access_token)
             return getattr(me, 'id', None)
+
+    def revoke_auth(self, id):
+        return self.request(id + '/permissions', post_args={"method": "delete"})
 
 
 def get_graph(request=None, app_name=None, app_dict=None, *args, **kwargs):

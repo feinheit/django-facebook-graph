@@ -37,6 +37,7 @@ import cgi
 import hashlib
 import time
 import urllib
+import urllib2
 import httplib 
 
 import logging
@@ -156,25 +157,7 @@ class GraphAPI(object):
 
     def delete_object(self, id):
         """Deletes the object with the given ID from the graph."""
-        self.request(id, post_args={"method": "delete"})
-        """
-        conn = httplib.HTTPSConnection('graph.facebook.com')
-        conn.request('DELETE', '/%s?access_token=%s' % (id, self.access_token))
-        resp = conn.getresponse()
-        raw = resp.read()
-        logger.debug('facebook response raw: %s \n\n' % raw )
-        try:
-            response = _parse_json(raw)
-            if response.get("error"):
-                raise GraphAPIError(response["error"]["type"],
-                                    response["error"]["message"])
-        except AttributeError:
-            pass
-        finally:
-            resp.close()
-            
-        return response
-        """
+        return self.request(id, post_args={"method": "delete"})
 
     def request(self, path, args=None, post_args=None):
         """Fetches the given path in the Graph API.
@@ -194,13 +177,13 @@ class GraphAPI(object):
                     post_args[k] = v.encode('utf-8')
         post_data = None if post_args is None else urllib.urlencode(post_args)
         query = "https://graph.facebook.com/" + path + "?" + urllib.urlencode(args)
-        file = urllib.urlopen(query, post_data)
+        file = urllib2.urlopen(query, post_data)
         
         raw = file.read()
         logger.debug('facebook response raw: %s, query: %s' % (raw, query))
         try:
             response = _parse_json(raw)
-            if response.get("error"):
+            if isinstance(response, dict) and response.get("error"):
                 raise GraphAPIError(response["error"]["type"],
                                     response["error"]["message"])
         except AttributeError:
