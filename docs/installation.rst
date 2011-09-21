@@ -94,8 +94,30 @@ The Facebook script is loaded asynchrounously. Therefore you have to use the FQ,
 expects the facebook object. The FQ is run when the SDK has been loaded and the user login status determined.
 
 
+Create a Facebook App
+---------------------
+Create a new Facebook app on https://developers.facebook.com/apps. You need to have a verified Facebook account.
+If you don't, Facebook will ask you to verify your account.
+Django-Facebook-Graph uses OAuth 2.0. Activate it in your app settings:
+
+.. image:: _images/FB-app-settings.jpg
+
+
+
+Local Facebook development
+--------------------------
+To develop locally, create a separate app and set http://localhost.local:8000/ as Site URL.
+Map localhost.local to 127.0.0.1 in your /etc/hosts file. (/private/etc/hosts on Mac.)
+Now you can open your app on Facebook and it will load the data from your runserver. On Firefox
+you can even chose 'Open Frame in new tab' for quicker page reloads, 
+once you've opened the page in Facebook and the cookie is set.
+
+For Facebook connect, make sure you use the URL localhost.local:8000 and not localhost:8000.
+This will not work. Facebook enforces the Site URL.
+
+
 Facebook Connect support for your website
-=========================================
+-----------------------------------------
 
 The Facebook Connect support consists of two parts: A backend for
 django-registration_ which creates users and an authentication
@@ -105,7 +127,7 @@ backend which is responsible for the actual login on a Django website.
 
 
 Setting the authentication backend
-----------------------------------
+**********************************
 
 We want to handle logins with the default backend first and fall back to
 the Facebook authentication backend if the default backend couldn't handle

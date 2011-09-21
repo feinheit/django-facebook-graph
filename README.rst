@@ -2,7 +2,22 @@
 A toolset to use facebooks graph api with django
 ================================================
 
+Features
+========
+
+ * Django wrapper for the Facebook Graph and FQL API.
+ * simple access to Facebook data. As in graph.request(user_id).
+ * Django auth backend for Facebook connect.
+ * Upload Photo and Videos to a user's account.
+ * Facebook models are cached locally.
+ * The signed request is automatically stored in the session.
+ * Multiple Facebook apps are possible for each Django project. 
+ * Uses the OAuth 2.0 authentification.
+
+
+Read the documentation on:
 http://readthedocs.org/docs/django-facebook-graph/en/latest/
+
 
 
 Graph helper tools:
