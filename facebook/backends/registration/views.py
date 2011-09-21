@@ -26,14 +26,17 @@ def login(request, template_name='registration/login.html',
           application=None):
 
     fb_app = get_app_dict(application)
+    fb = get_session(request)
+    """
     cookie = facebook.get_user_from_cookie(request.COOKIES,
                                            fb_app['ID'],
                                            fb_app['SECRET'])
+    """
     redirect_to = request.REQUEST.get(redirect_field_name, '')
 
     # Because we override the login, we should check for POST data,
     #to give priority to the django auth view
-    if not request.method == "POST" and cookie:
+    if not request.method == "POST" and fb:
         # Light security check -- make sure redirect_to isn't garbage.
         if not redirect_to or ' ' in redirect_to:
             redirect_to = fb_app['REDIRECT-URL']
@@ -45,22 +48,34 @@ def login(request, template_name='registration/login.html',
         elif '//' in redirect_to and re.match(r'[^\?]*//', redirect_to):
                 redirect_to = fb_app['REDIRECT-URL']
 
-        if not request.user.is_authenticated():
-            new_user = authenticate(uid=cookie["uid"],
-                                    access_token=cookie["access_token"])
+        if request.user.is_authenticated():
+            # TODO: verify user is fb_user.
+            auth_logout(request)
+            
+        # if there is no signed request, get the user id from the cookie.
+        if not fb.user_id:
+            logger.debug('No UserID in session. Trying cookie...\n')
+            fb.cookie_info(fb_app)
+            if not fb.user_id:
+                args = {'client_id': fb_app['ID'], 'redirect_uri' : fb_app['CANVAS-URL'] }
+                auth_url = '%s?%s' % (FB_AUTH_URL,
+                        urllib.urlencode(args))
+                return HttpResponseRedirect(auth_url)
+            
+        new_user = authenticate(uid=fb.user_id, graph=graph)
 
-            # Authentication might still fail -- new_user might be an
-            # instance of AnonymousUser.
-            if new_user and new_user.is_authenticated():
-                auth_login(request, new_user)
+        # Authentication might still fail -- new_user might be an
+        # instance of AnonymousUser.
+        if new_user and new_user.is_authenticated():
+            auth_login(request, new_user)
 
-                if 'registration' in settings.INSTALLED_APPS:
-                    from registration import signals
-                    signals.user_registered.send(sender='facebook_login',
-                                             user=new_user,
-                                             request=request)
+            if 'registration' in settings.INSTALLED_APPS:
+                from registration import signals
+                signals.user_registered.send(sender='facebook_login',
+                                         user=new_user,
+                                         request=request)
 
-            return HttpResponseRedirect(redirect_to)
+        return HttpResponseRedirect(redirect_to)
 
     return auth_views.login(request, template_name,
                             redirect_field_name, authentication_form)
