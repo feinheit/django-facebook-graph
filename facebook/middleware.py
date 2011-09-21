@@ -5,12 +5,17 @@ logger = logging.getLogger(__name__)
 
 import urllib
 
-from django.middleware.csrf import CsrfViewMiddleware as DjangoCsrfViewMiddleware
+from django.middleware.csrf import CsrfViewMiddleware as DjangoCsrfViewMiddleware, _sanitize_token,\
+        _get_new_csrf_key, _make_legacy_session_token, REASON_NO_REFERER, \
+        REASON_BAD_REFERER, REASON_NO_COOKIE, \
+        REASON_NO_CSRF_COOKIE, REASON_BAD_TOKEN, _MAX_CSRF_KEY
 
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import redirect
 from django.utils import simplejson, translation
+from django.utils.crypto import constant_time_compare
+from django.utils.http import same_origin
 
 _parse_json = lambda s: simplejson.loads(s)
 
@@ -192,9 +197,9 @@ class CsrfViewMiddleware(DjangoCsrfViewMiddleware):
             if getattr(request, '_dont_enforce_csrf_checks', False):
                 return self._accept(request)
 
-            if request.is_secure():
+            if request.is_secure() and getattr(settings, 'HTTPS_REFERER_REQUIRED', True):
                 referer = request.META.get('HTTP_REFERER')
-                if referer is None:
+                if referer is None :
                     logger.warning('Forbidden (%s): %s' % (REASON_NO_REFERER, request.path),
                         extra={
                             'status_code': 403,
