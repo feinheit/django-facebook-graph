@@ -14,6 +14,8 @@ Contents:
    installation
    getting-started
    reference
+   examples
+
 
 Indices and tables
 ==================

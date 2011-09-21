@@ -34,14 +34,11 @@ class AuthenticationBackend(object):
         if not graph:
             raise AttributeError, 'Authentication Backend needs a valid graph.'
 
-        try:
-            profile = graph.get_object("me")
-        except (facebook.GraphAPIError, IOError): # IOError because of timeouts
-            return None
+        profile = graph.me
 
         try:
             facebook_user = FacebookUser.objects.get(id=uid)
-            facebook_user.access_token = access_token
+            facebook_user.access_token = graph.access_token
             facebook_user.get_from_facebook(graph=graph, save=True)
             if isinstance(facebook_user.user, User):
                 return facebook_user.user

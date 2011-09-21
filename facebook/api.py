@@ -13,6 +13,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+from urllib2 import HTTPError
 
 """Python client library for the Facebook Platform.
 
@@ -175,9 +176,11 @@ class GraphAPI(object):
                     post_args[k] = v.encode('utf-8')
         post_data = None if post_args is None else urllib.urlencode(post_args)
         query = "https://graph.facebook.com/" + path + "?" + urllib.urlencode(args)
-        file = urllib2.urlopen(query, post_data)
-        
-        raw = file.read()
+        try:
+            file = urllib2.urlopen(query, post_data)
+            raw = file.read()
+        except HTTPError as e:
+            raise GraphAPIError('HTTP ERROR', e.message)
         logger.debug('facebook response raw: %s, query: %s' % (raw, query))
         try:
             response = _parse_json(raw)
