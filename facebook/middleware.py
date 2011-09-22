@@ -19,7 +19,8 @@ from django.utils.http import same_origin
 
 _parse_json = lambda s: simplejson.loads(s)
 
-from utils import parseSignedRequest, get_app_dict, get_session, authenticate
+from utils import get_app_dict, get_session, authenticate
+from facebook.api import parseSignedRequest
 from facebook.models import Request as AppRequest
 
 
@@ -32,7 +33,7 @@ class OAuth2ForCanvasMiddleware(object):
         setattr(request, 'fb_session', fb)
         application = get_app_dict()
         
-        logger.debug('Request Method = %s\n' % request.method)
+        logger.debug('Request Method = %s\n, AccessToken=%s' % (request.method, fb.access_token))      
 
         if 'feincms' in settings.INSTALLED_APPS:
             # if feincms is installed, try to get the application from the page
@@ -40,7 +41,11 @@ class OAuth2ForCanvasMiddleware(object):
             page_app = get_application_from_request(request)
             if application:
                 application = get_app_dict(page_app)
-
+        
+        # Temporary OAuth2.0 fix due to missing access_token in cookie sr:
+        if 'access_token' in request.GET:
+            fb.store_token(request.GET.get('access_token'))
+        
         # default POST/GET request from facebook with a signed request
         if 'signed_request' in request.POST:
             parsed_request = parseSignedRequest(request.POST['signed_request'], application['SECRET'])
@@ -73,7 +78,7 @@ class OAuth2ForCanvasMiddleware(object):
                 logger.debug('Signed Request issued at: %s' % datetime.fromtimestamp(float(parsed_request['issued_at'])))
 
         # auth via callback from facebook
-        elif 'code' in request.REQUEST and 'facebook' in request.META.get('HTTP_REFERER', u''):
+        elif 'code' in request.GET and 'facebook' in request.META.get('HTTP_REFERER', u''):
             authenticate(request.REQUEST['code'], fb, application,
                          request.build_absolute_uri().split('?')[0] \
                             .replace(application['CANVAS-URL'], application['CANVAS-PAGE']))

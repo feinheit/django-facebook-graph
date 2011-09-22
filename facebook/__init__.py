@@ -1,1 +1,1 @@
-from api import GraphAPI, GraphAPIError, get_user_from_cookie
+from api import GraphAPI, GraphAPIError, get_user_from_cookie, parseSignedRequest

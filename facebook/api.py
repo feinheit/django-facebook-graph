@@ -39,7 +39,9 @@ import hashlib
 import time
 import urllib
 import urllib2
-import httplib 
+import httplib
+import base64
+import hmac
 
 import logging
 logger = logging.getLogger(__name__)
@@ -176,6 +178,7 @@ class GraphAPI(object):
                     post_args[k] = v.encode('utf-8')
         post_data = None if post_args is None else urllib.urlencode(post_args)
         query = "https://graph.facebook.com/" + path + "?" + urllib.urlencode(args)
+        logger.debug('query: %s' % query)
         try:
             file = urllib2.urlopen(query, post_data)
             raw = file.read()
@@ -202,6 +205,41 @@ class GraphAPIError(Exception):
         self.message = message        
 
 
+def base64_url_decode(s):
+    return base64.urlsafe_b64decode(s.encode("utf-8") + '=' * (4 - len(s) % 4))
+
+
+def parseSignedRequest(signed_request, secret=None, application=None):
+    """
+    adapted from from
+    http://web-phpproxy.appspot.com/687474703A2F2F7061737469652E6F72672F31303536363332
+    https://github.com/facebook/python-sdk/commit/cb43c5a4a4b8c3e66264ed5508871b175f9c515f
+    """
+
+    if not secret:
+        app_dict = get_app_dict(application)
+        secret = app_dict['SECRET']
+    
+    try:
+        (encoded_sig, payload) = signed_request.split(".", 2)
+    except IndexError:
+        raise ValueError("Signed Request is malformed")
+    
+    sig = base64_url_decode(encoded_sig)
+    data = json.loads(base64_url_decode(payload))
+
+    if data.get("algorithm").upper() != "HMAC-SHA256":
+        raise ValueError("'signed_request' is using an unknown algorithm")
+    else:
+        expected_sig = hmac.new(secret, msg=payload, digestmod=hashlib.sha256).digest()
+
+    if sig != expected_sig:
+        raise ValueError("'signed_request' signature mismatch")
+    
+    return data
+
+
+# Currently not in use. And not working
 def get_user_from_cookie(cookies, app_id, app_secret):
     """Parses the cookie set by the official Facebook JavaScript SDK.
 
@@ -219,12 +257,8 @@ def get_user_from_cookie(cookies, app_id, app_secret):
     """
     cookie = cookies.get("fbsr_" + app_id, "")
     if not cookie: return None
-    args = dict((k, v[-1]) for k, v in cgi.parse_qs(cookie.strip('"')).items())
-    payload = "".join(k + "=" + args[k] for k in sorted(args.keys())
-                      if k != "sig")
-    sig = hashlib.md5(payload + app_secret).hexdigest()
-    expires = int(args["expires"])
-    if sig == args.get("sig") and (expires == 0 or time.time() < expires):
-        return args
-    else:
-        return None
+    parsed_request = parseSignedRequest(cookie, app_secret)
+    
+    
+    
+    
