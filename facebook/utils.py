@@ -98,6 +98,29 @@ def parseSignedRequest(signed_request, secret=None, application=None):
     
     return data
 
+def authenticate(code, fb_session, app_dict=None, application=None redirect_uri=None):
+    
+    if not app_dict:
+        app_dict = get_app_dict(application)
+    
+    args = dict(client_id=app_dict['ID'],
+                client_secret=app_dict['SECRET'],
+                code=code,
+                redirect_uri = redirect_uri or app_dict['REDIRECT-URL']
+                )
+
+    response = urllib.urlopen("https://graph.facebook.com/oauth/access_token?" + urllib.urlencode(args))
+    raw = response.read()
+    parsed = urlparse.parse_qs(raw)  # Python 2.6 parse_qs is now part of the urlparse module
+    if parsed.get('access_token', None):
+        expires = datetime.fromtimestamp(float(parsed['expires'][-1]))
+        fb_session.store_token(parsed["access_token"][-1], expires)
+        logger.debug('Got access token from callback: %s. Expires at %s' % (parsed, expires))
+        return access_token
+    else:
+        logger.debug('facebook did not respond an accesstoken: %s' % raw)
+    return None
+
 
 def get_REST(method, params):
     query = 'https://api.facebook.com/method/%s?format=json&%s' % (method, urllib.urlencode(params))
@@ -343,6 +366,7 @@ class Graph(facebook.GraphAPI):
         logger.debug('app_id: %s' %application['ID'])
         self.HttpRequest = request
         self._me, self._user_id = None, None
+        self.application = application,
         self.app_id, self.app_secret = application['ID'], application['SECRET']
         self.via = 'No token requested'
         self.fb_session = get_session(request)
@@ -350,14 +374,14 @@ class Graph(facebook.GraphAPI):
             return
         if access_token:
             self.via = 'access_token'
-        elif request and not force_refresh and self.get_token_from_session():
-            self.via = 'session'
         elif request and (not force_refresh and self.get_token_from_cookie()) or \
                           (prefer_cookie and self.get_token_from_cookie()):
             self.via = 'cookie'
+        elif request and not force_refresh and self.get_token_from_session():
+            self.via = 'session'
         elif self.get_token_from_app():
             self.via = 'application'
-        logger.debug('Got token via %s.\n%s' % (self.via, self.access_token))
+        logger.info('Got token via %s.\n%s' % (self.via, self.access_token))
 
     def get_token_from_session(self):
         if not self.fb_session.access_token:
@@ -368,10 +392,24 @@ class Graph(facebook.GraphAPI):
 
     def get_token_from_cookie(self):
         #Client-side authentification writes the access token into the cookie.
-        if not self.HttpRequest.COOKIES.get('fbs_%i' % int(self.app_id), None):
+        logger.info(self.HttpRequest.COOKIES.get('fbsr_%i' % int(self.app_id), None))
+        if not self.HttpRequest.COOKIES.get('fbsr_%i' % int(self.app_id), None):
             return None
+        else:
+            sr = self.HttpRequest.COOKIES.get("fbsr_" + self.app_id, "")
+        access_token = None
+        parsed_request = parseSignedRequest(sr, self.app_secret)
+        if 'code' in parsed_request:
+            access_token = authenticate(parsed_request['code'], self.fb_session, self.application)
+        elif 'access_token' in parsed_request:
+            access_token = parsed_request['access_token']
+        logger.info(parsed_request)
+        
+        """
         cookie = facebook.get_user_from_cookie(self.HttpRequest.COOKIES, self.app_id, self.app_secret)
+        logger.info('Cookie: %s ' % cookie)
         access_token = cookie['access_token']
+        """
         if access_token:
             self.fb_session.store_token(access_token)  # TODO: Set expires
             self.access_token = access_token

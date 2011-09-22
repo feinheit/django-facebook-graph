@@ -19,7 +19,7 @@ from django.utils.http import same_origin
 
 _parse_json = lambda s: simplejson.loads(s)
 
-from utils import parseSignedRequest, get_app_dict, get_session
+from utils import parseSignedRequest, get_app_dict, get_session, authenticate
 from facebook.models import Request as AppRequest
 
 
@@ -74,23 +74,9 @@ class OAuth2ForCanvasMiddleware(object):
 
         # auth via callback from facebook
         elif 'code' in request.REQUEST and 'facebook' in request.META.get('HTTP_REFERER', u''):
-            args = dict(client_id=application['ID'],
-                        client_secret=application['SECRET'],
-                        code=request.REQUEST['code'],
-                        redirect_uri = request.build_absolute_uri()
-                            .split('?')[0]
-                            .replace(application['CANVAS-URL'], application['CANVAS-PAGE'])
-                        )
-
-            response = urllib.urlopen("https://graph.facebook.com/oauth/access_token?" + urllib.urlencode(args))
-            raw = response.read()
-            parsed = urlparse.parse_qs(raw)  # Python 2.6 parse_qs is now part of the urlparse module
-            if parsed.get('access_token', None):
-                expires = datetime.fromtimestamp(float(parsed['expires'][-1]))
-                fb.store_token(parsed["access_token"][-1], expires)
-                logger.debug('Got access token from callback: %s. Expires at %s' % (parsed, expires))
-            else:
-                logger.debug('facebook did not respond an accesstoken: %s' % raw)
+            authenticate(request.REQUEST['code'], fb, application,
+                         request.build_absolute_uri().split('?')[0] \
+                            .replace(application['CANVAS-URL'], application['CANVAS-PAGE']))
 
     def process_response(self, request, response):
         """ p3p headers for allowing cookies in Internet Explorer.

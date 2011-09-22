@@ -180,7 +180,7 @@ class GraphAPI(object):
             file = urllib2.urlopen(query, post_data)
             raw = file.read()
         except HTTPError as e:
-            raise GraphAPIError('HTTP ERROR', e.message)
+            raise GraphAPIError('HTTP ERROR', e)
         logger.debug('facebook response raw: %s, query: %s' % (raw, query))
         try:
             response = _parse_json(raw)
@@ -217,7 +217,7 @@ def get_user_from_cookie(cookies, app_id, app_secret):
     http://github.com/facebook/connect-js/. Read more about Facebook
     authentication at http://developers.facebook.com/docs/authentication/.
     """
-    cookie = cookies.get("fbs_" + app_id, "")
+    cookie = cookies.get("fbsr_" + app_id, "")
     if not cookie: return None
     args = dict((k, v[-1]) for k, v in cgi.parse_qs(cookie.strip('"')).items())
     payload = "".join(k + "=" + args[k] for k in sorted(args.keys())
