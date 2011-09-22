@@ -217,9 +217,6 @@ class FBSession(SessionBase):
     
     @access_token.setter
     def access_token(self, token):
-        if token and self.fb_session['access_token'] and len(token) < self.fb_session['access_token']:
-            logger.debug('trying to override access_token')
-            return
         self.fb_session['access_token'] = token
         self.modified('access_token.setter')
     
