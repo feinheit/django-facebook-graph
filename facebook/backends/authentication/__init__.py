@@ -1,14 +1,16 @@
 import hashlib
 
-from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, UNUSABLE_PASSWORD
 from django.db import IntegrityError, transaction
 from django.template.defaultfilters import slugify
 
 import facebook
 from facebook.models import User as FacebookUser
 from facebook.utils import get_graph
+from datetime import datetime
 
+import logging
+logger = logging.getLogger(__name__)
 
 @transaction.commit_on_success
 def get_or_create_user(username, defaults):
@@ -30,30 +32,34 @@ def get_or_create_user(username, defaults):
 class AuthenticationBackend(object):
     supports_anonymous_user = False
 
-    def authenticate(self, uid=None, graph=None):
+    def authenticate(self, graph=None):
         if not graph:
             raise AttributeError, 'Authentication Backend needs a valid graph.'
-
-        profile = graph.me
+   
+        # check if the access token is valid:
+        try:
+            me = graph.request('me')
+        except facebook.GraphAPIError as e:
+            logger.debug('Could not authenticate User: %s ' % e)
+            return None
 
         try:
-            facebook_user = FacebookUser.objects.get(id=uid)
-            facebook_user.access_token = graph.access_token
+            facebook_user = FacebookUser.objects.get(id=int(me['id']))
+        except FacebookUser.DoesNotExist:
+            facebook_user = FacebookUser(id=uid)
             facebook_user.get_from_facebook(graph=graph, save=True)
+        else:
             if isinstance(facebook_user.user, User):
                 return facebook_user.user
         
-        except ObjectDoesNotExist:
-            facebook_user = FacebookUser(id=uid)
-            facebook_user.get_from_facebook(graph=graph, save=True)
-
-        user = get_or_create_user(slugify(profile['id']), {
-                'email': profile.get('email', u''),
-                'first_name': profile.get('first_name', u''),
-                'last_name': profile.get('last_name', u''),
-                'password': hashlib.md5(uid).hexdigest(),
-                })
-
+        #we use the Facebook id as username because 'me.name' is not unique enough.
+        user = get_or_create_user(username = me['id']), {
+                'email': me.get('email', u''),
+                'first_name': me.get('first_name', u''),
+                'last_name': me.get('last_name', u''),
+                'password': UNUSABLE_PASSWORD,
+                'date_joined': datetime.now()
+                } 
         facebook_user.user = user
         facebook_user.save()
 

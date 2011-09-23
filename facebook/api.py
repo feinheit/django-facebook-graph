@@ -57,6 +57,17 @@ except ImportError:
 
 _parse_json = lambda s: json.loads(s)
 
+
+class GraphAPIError(Exception):
+    def __init__(self, type, message):
+        Exception.__init__(self)
+        self.type = type
+        self.message = message
+    
+    def __str__(self):
+        return '%s: %s' % (self.type, self.message)
+
+
 class GraphAPI(object):
     """A client for the Facebook Graph API.
 
@@ -182,8 +193,12 @@ class GraphAPI(object):
         try:
             file = urllib2.urlopen(query, post_data)
             raw = file.read()
-        except HTTPError as e:
-            raise GraphAPIError('HTTP ERROR', e)
+        except HTTPError as e:  # attrs: filename, code, msg, hdrs, fp
+            if e.fp is not None:
+                r = _parse_json(e.fp.read())
+                raise GraphAPIError(r['error']['type'], r['error']['message'])
+            else:
+                raise GraphAPIError('HTTP ERROR %s' % e.code, '%s, %s %s' % (e.msg, e.filename, e.fp.read()))
         logger.debug('facebook response raw: %s, query: %s' % (raw, query))
         try:
             response = _parse_json(raw)
@@ -196,13 +211,6 @@ class GraphAPI(object):
             file.close()
             
         return response
-
-
-class GraphAPIError(Exception):
-    def __init__(self, type, message):
-        Exception.__init__(self)
-        self.type = type
-        self.message = message        
 
 
 def base64_url_decode(s):
@@ -240,8 +248,9 @@ def parseSignedRequest(signed_request, secret=None, application=None):
 
 
 # Currently not in use. And not working
+"""
 def get_user_from_cookie(cookies, app_id, app_secret):
-    """Parses the cookie set by the official Facebook JavaScript SDK.
+    ""Parses the cookie set by the official Facebook JavaScript SDK.
 
     cookies should be a dictionary-like object mapping cookie names to
     cookie values.
@@ -254,11 +263,11 @@ def get_user_from_cookie(cookies, app_id, app_secret):
     Download the official Facebook JavaScript SDK at
     http://github.com/facebook/connect-js/. Read more about Facebook
     authentication at http://developers.facebook.com/docs/authentication/.
-    """
+    ""
     cookie = cookies.get("fbsr_" + app_id, "")
     if not cookie: return None
     parsed_request = parseSignedRequest(cookie, app_secret)
     
-    
+""" 
     
     

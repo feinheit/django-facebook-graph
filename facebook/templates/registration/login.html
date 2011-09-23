@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block extra-js %}
+{% if request.user.is_authenticated %}
+<script type="text/javascript">
+FQ.add(function(){
+    if(fb.status == 'connected')
+    {
+       window.location = '{% url fb_connect %}'
+    }
+    });
+</script>
+{% endif %}
+{{ block.super }}
+{% endblock %}

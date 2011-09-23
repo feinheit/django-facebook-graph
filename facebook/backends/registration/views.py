@@ -7,62 +7,49 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.forms import AuthenticationForm
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.template.context import RequestContext
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 
 import facebook
 from facebook.models import User as FacebookUser
-from facebook.utils import get_app_dict
+from facebook.utils import get_app_dict, get_graph, get_session
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 @csrf_protect
 @never_cache
 def login(request, template_name='registration/login.html',
           redirect_field_name=REDIRECT_FIELD_NAME,
           authentication_form=AuthenticationForm,
-          application=None):
+          app_name=None):
+    
+    fb_app=get_app_dict(app_name)
+    
+    graph = get_graph(request, app_name=app_name)
 
-    fb_app = get_app_dict(application)
-    fb = get_session(request)
-    """
-    cookie = facebook.get_user_from_cookie(request.COOKIES,
-                                           fb_app['ID'],
-                                           fb_app['SECRET'])
-    """
     redirect_to = request.REQUEST.get(redirect_field_name, '')
 
     # Because we override the login, we should check for POST data,
     #to give priority to the django auth view
-    if not request.method == "POST" and fb:
+    if not request.method == "POST":
         # Light security check -- make sure redirect_to isn't garbage.
         if not redirect_to or ' ' in redirect_to:
             redirect_to = fb_app['REDIRECT-URL']
-
-        # Heavier security check -- redirects to http://example.com should
-        # not be allowed, but things like /view/?param=http://example.com
-        # should be allowed. This regex checks if there is a '//' *before* a
-        # question mark.
+        
+        """
+        # TODO: Check only if the domain is in 'DOMAIN' or 'facebook.com' but without the protocol
+        
         elif '//' in redirect_to and re.match(r'[^\?]*//', redirect_to):
                 redirect_to = fb_app['REDIRECT-URL']
-
-        if request.user.is_authenticated():
-            # TODO: verify user is fb_user.
-            auth_logout(request)
-            
-        # if there is no signed request, get the user id from the cookie.
-        if not fb.user_id:
-            logger.debug('No UserID in session. Trying cookie...\n')
-            fb.cookie_info(fb_app)
-            if not fb.user_id:
-                args = {'client_id': fb_app['ID'], 'redirect_uri' : fb_app['CANVAS-URL'] }
-                auth_url = '%s?%s' % (FB_AUTH_URL,
-                        urllib.urlencode(args))
-                return HttpResponseRedirect(auth_url)
-            
-        new_user = authenticate(uid=fb.user_id, graph=graph)
+        """
+                        
+        new_user = authenticate(graph=graph)
 
         # Authentication might still fail -- new_user might be an
         # instance of AnonymousUser.
@@ -75,8 +62,9 @@ def login(request, template_name='registration/login.html',
                                          user=new_user,
                                          request=request)
 
-        return HttpResponseRedirect(redirect_to)
-
+        return redirect(redirect_to)
+    
+    logger.info('could not login user %s' % graph.user_id)
     return auth_views.login(request, template_name,
                             redirect_field_name, authentication_form)
 
@@ -84,68 +72,62 @@ def login(request, template_name='registration/login.html',
 def logout(request, next_page=None,
            template_name='registration/logged_out.html',
            redirect_field_name=REDIRECT_FIELD_NAME,
-           application=None):
-
-    fb_app = get_app_dict(application)
-    cookie = facebook.get_user_from_cookie(request.COOKIES,
-                                           fb_app['ID'],
-                                           fb_app['SECRET'])
+           app_name=None):
+    
+    fb_app=get_app_dict(app_name)
+    
     response = auth_views.logout(request, next_page,
                                  template_name, redirect_field_name)
-    if cookie:
-        response.delete_cookie("fbs_" + fb_app['ID'])
-    return response
 
-def connect(request, redirect_field_name=REDIRECT_FIELD_NAME,
-            application=None):
-    fb_app = get_app_dict(application)
-    cookie = facebook.get_user_from_cookie(request.COOKIES,
-                                           fb_app['ID'],
-                                           fb_app['SECRET'])
-    redirect_to = request.REQUEST.get(redirect_field_name, reverse('account'))
+    response.delete_cookie("fbsr_" + fb_app['ID'])
+    
+    redirect_to = next_page or request.REQUEST.get(redirect_field_name, '')
+    if not redirect_to or ' ' in redirect_to:
+        redirect_to = fb_app['REDIRECT-URL']
+    
+    return redirect(redirect_to)
 
-    if request.user.is_authenticated() and cookie:
+
+def connect(request, redirect_field_name=REDIRECT_FIELD_NAME, app_name=None):
+    """ Connects the Facebook Account to the current logged-in user. """
+    fb_app = get_app_dict(app_name)
+    graph = get_graph(request, app_name=app_name)
+    redirect_to = request.REQUEST.get(redirect_field_name, fb_app['REDIRECT_URL'])
+
+    if request.user.is_authenticated():
         try:
-            graph = facebook.GraphAPI(cookie["access_token"])
-            profile = graph.get_object("me")
+            me = graph.get_object("me")
         except facebook.GraphAPIError as e:
-            return render_to_response(
-                        'registration/facebook/graph_error.html', {'error': e},
-                        context_instance=RequestContext(request))
+            return HttpResponse(e)
 
         # if the user has already a facebook connection, abort and show
         # error message
-        if hasattr(request.user, 'facebookuser'):
-            connected_profile = graph.get_object("%s" % request.user.facebookuser.id)
-            ctx = {'fb_name' : connected_profile['name'],
-                   'fb_link' : connected_profile['link'],
-                   'username' : request.user.username}
-            return render_to_response(
-                        'registration/facebook/already_connected.html', ctx,
-                        context_instance=RequestContext(request))
-        try:
-            # if that facebook user already exists, abort and show error message
-            fb_user = FacebookUser.objects.get(id=cookie['uid'])
-            ctx = {'fb_name' : profile["name"],
-                   'user' : fb_user.user}
-            return render_to_response(
-                        'registration/facebook/user_exists.html', ctx,
-                        context_instance=RequestContext(request))
-        except FacebookUser.DoesNotExist:
-            fb_user = FacebookUser(id=cookie['uid'],
-                                   user=request.user,
-                                   profile_url=profile["link"],
-                                   access_token=cookie["access_token"])
-            fb_user.save()
-            return HttpResponseRedirect(redirect_to)
+        if hasattr(request.user, 'user'):
+            logger.debug('The logged in user is already connected.')
+            # check if the django user and FB user match:
+            if graph.user_id <> request.user.user.id:
+                logger.debug('User %s already connected with Facebook account %s' % (request.user.get_full_name, request.user.user._name))
+                auth_views.logout(request, next_page=reverse('fb_app'))
+            # Otherwise redirect
+            return redirect(redirect_to)
+        else:
+            # The User has no Facebook account attached. Connect him. 
+            try:
+                # if that facebook user already exists, abort and show error message
+                fb_user = FacebookUser.objects.get(id=graph.user_id)
+            except FacebookUser.DoesNotExist:
+                fb_user = FacebookUser(id=graph.user_id)
+                fb_user.get_from_facebook(graph=graph, save=True)
+            else:
+                if isinstance(fb_user.user, User):
+                    auth_views.logout(request, next_page=reverse('fb_login'))
+                else:
+                    fb_user.user = request.user
+                    fb_user.save()
+            finally:
+                return redirect(redirect_to)
 
-    elif request.user.is_authenticated():
-        ctx = {'username' : request.user.username}
-        # if no cookie is present, the user did not authorize the application
-        # in facebook. show the facebook connect button
-        return render_to_response('registration/facebook/connect.html', ctx,
-                                  context_instance=RequestContext(request))
     else:
-        # there is no facebook graph cookie and the user is not logged in
+        # The user is not logged in
         # -> redirect to login page
-        return HttpResponseRedirect(reverse('auth_login'))
+        return redirect('fb_login')

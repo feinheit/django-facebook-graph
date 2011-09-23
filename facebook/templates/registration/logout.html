@@ -1,0 +1,12 @@
+{% load i18n fb_tags %}
+<!doctype html>
+<html>
+<head>
+    <script type="text/javascript">
+        top.location.href = '{% fb_canvas_page %}'
+    </script>
+</head>
+<body>
+    <a href="{% fb_canvas_page %}" target="_top">{% trans "You are redirected automatically. If it doesnt work, click me" %}</a>
+</body>
+</html>

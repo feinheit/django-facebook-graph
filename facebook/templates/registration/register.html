@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load fb_tags i18n %}
+
+{% block avatar %}gitarre1{% endblock %}
+
+{% block content %}
+<script type="text/javascript">
+    function validate_async(form, cb) {
+        log('validating...');
+        if (form.teamname != '') {
+            $.getJSON('{% url teamname %}?team='+ form.teamname,
+            function(response) {
+                log(response);
+                if (response.error) {
+                    // Teamname isn't taken.
+                    cb ();
+                }
+                cb({teamname: 'Dieser Teamname ist schon vergeben.'});
+            });
+        }
+    }
+</script>
+{% if debug %} {% fb_app_settings %}{% endif %}
+<div id="headerbox" style="height: 100px;">
+    <h1 style="width: 320px;">Registriere dich und gib deinem Team einen Namen</h1>
+    {% if debug %}{% fb_app_settings %}{% endif %}
+</div>
+
+<div id="fb-login-button">
+    <fb:registration fields="[{'name':'name'},
+        {'name':'email'},{'name':'first_name'},
+        {'name':'last_name'},{'name':'password','view':'not_prefilled'},
+        {'name':'teamname', 'description':'Teamname', 'type':'text'}]"
+        onvalidate="validate_async" 
+        redirect-uri="{% fb_domain %}{% url registration_register %}" width="490"></fb:registration>
+</div>
+
+
+
+
+{% endblock %}

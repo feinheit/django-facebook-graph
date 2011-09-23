@@ -7,11 +7,11 @@ from views import login, logout, connect
 urlpatterns = patterns('',
                        url(r'^login/$', login,
                            {'template_name': 'registration/login.html'},
-                           name='auth_login'),
+                           name='fb_login'),
                        url(r'^logout/$',
                            logout,
                            {'template_name': 'registration/logout.html'},
-                           name='auth_logout'),
+                           name='fb_logout'),
                        url(r'^connect/$',
                            connect, {}, name='fb_connect'),
                        )

@@ -6,6 +6,7 @@ Features
 ========
 
  * Django wrapper for the Facebook Graph and FQL API.
+ * Fully supports Oauth 2
  * simple access to Facebook data. As in graph.request(user_id).
  * Django auth backend for Facebook connect.
  * Upload Photo and Videos to a user's account.
@@ -18,6 +19,7 @@ Features
 Read the documentation on:
 http://readthedocs.org/docs/django-facebook-graph/en/latest/
 
+This version works with OAuth 2.0 only!
 
 
 Graph helper tools:
