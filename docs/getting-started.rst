@@ -10,14 +10,14 @@ every functionality of ``django-facebook-graph``.
 
     https://developers.facebook.com/apps
 
-For detailed installation istructions check out the installation_ section.
+For detailed installation istructions check out the :ref:`installation` section.
 
 
 Facebook Connect support for your website
 =========================================
 
 Currently the framework supports user login with the facebook login button. It's fairly plug and play.
-Make sure you have added the auth.backend and login url as described in the installation_ instructions.
+Make sure you have added the auth.backend and login url as described in the :ref:`installation` instructions.
 
 Adding the Facebook login to your website
 -----------------------------------------
