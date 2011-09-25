@@ -66,11 +66,11 @@ window.fbAsyncInit = function() {
     canvas_resize();
     FB.getLoginStatus(function(response) {
       log(response);
+      fb['status'] = response.status;
       if (response.status === 'connected') {
         fb.authResponse = response.authResponse;
         fb.user = (function(){ return fb.authResponse; })(); // For backwards compatibility. Will be removed at some point.
         fb.user.warning = 'This property is deprecated and will be removed! Use fb.auth instead.';
-        fb['status'] = response.status;
       }
       FQ.run(); 
     }, 'json');

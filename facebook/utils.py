@@ -95,6 +95,7 @@ def authenticate(code, app_id, app_secret, redirect_uri=""):
             raise facebook.GraphAPIError('AUTHENTICATION ERROR', 'Facebook returned this: %s. Expected access token.' % raw)
         else:
             if isinstance(response, dict) and response.get("error"):
+                # The Code is invalid. Maybe the user logged out of Facebook or removed the app.
                 raise facebook.GraphAPIError(response["error"]["type"],
                                              response["error"]["message"])
             else:
@@ -391,7 +392,7 @@ class Graph(facebook.GraphAPI):
         else:
             cookie = self.get_user_from_cookie()
 
-        if cookie.get('access_token', False):
+        if cookie and cookie.get('access_token', False):
             self.fb_session.store_token(cookie.get('access_token'))
             self.access_token = cookie.get('access_token')
             self._user_id = cookie.get('uid')
@@ -448,8 +449,14 @@ class Graph(facebook.GraphAPI):
         if 'user_id' in parsed_request:
             self._user_id = int(parsed_request['user_id'])
         if 'code' in parsed_request:
-            response = authenticate(code=parsed_request['code'], 
+            try:
+                response = authenticate(code=parsed_request['code'], 
                               app_id=self.app_id, app_secret=self.app_secret)
+            except facebook.GraphApiError:
+                # The code is not valid. Maybe the user has uninstalled the app.
+                self.HttpRequest.session.flush()
+                self.fb_session.store_token(None)
+                return None
             logger.debug('Authenticate returned: %s' % response)
             if 'access_token' in response:
                 self.access_token = response['access_token'][0]

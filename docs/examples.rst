@@ -23,25 +23,14 @@ login.html template::
     {% endblock %}
 
 
-The problem here is that if there is no session, you won't get a signed request. 
-So you have to force it.
-Add the following code to your landing page. It checks if the login was successful::
+For views that require a logged in user you could either check the status on the server with `graph.me`, or better, on the client side with
+the following piece of code::
 
-    {% block extra-js %}
-    <script type="text/javascript">
-        FQ.add(function(){
-            if(fb.status == 'connected')
-            { 
-               {% if not request.user.is_authenticated %}
-                    {% if request.method == 'GET' %}
-                        force_signed_request(fb);
-                    {% else %}
-                        window.location = '{% url fb_connect %}';
-                    {% endif %}
-               {% endif %}
-            }
-        });
-    </script>
-    {% endblock %}
+    FQ.add(function(){  
+        if (fb.status == 'not_authorized'){
+            window.location = "{% url fb_logout %}";
+        }
+    }); 
     
+The advantage of checking the status in the browser is that the response time is usually shorter.
     

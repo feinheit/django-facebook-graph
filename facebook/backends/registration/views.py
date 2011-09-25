@@ -71,14 +71,17 @@ def login(request, template_name='registration/login.html',
 
 def logout(request, next_page=None,
            template_name='registration/logged_out.html',
-           redirect_field_name=REDIRECT_FIELD_NAME,
-           app_name=None):
+           redirect_field_name=REDIRECT_FIELD_NAME):
     
-    fb_app=get_app_dict(app_name)
+    fb_app=get_app_dict()  # TODO: Make this multi-app capable. Add app to login-url.
+    fb_session = get_session(request)
+    
+    fb_session.store_token(None)
     
     response = auth_views.logout(request, next_page,
                                  template_name, redirect_field_name)
 
+    # This might lead to unexpected results with multiple apps. 
     response.delete_cookie("fbsr_" + fb_app['ID'])
     
     redirect_to = next_page or request.REQUEST.get(redirect_field_name, '')
