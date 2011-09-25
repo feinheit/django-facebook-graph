@@ -10,6 +10,7 @@ import mimetypes
 
 import urllib
 import urllib2
+import urlparse
 
 import facebook
 
@@ -80,7 +81,15 @@ def authenticate(code, app_id, app_secret, redirect_uri=""):
             }  
     file = urllib.urlopen("https://graph.facebook.com/oauth/access_token?" + urllib.urlencode(args))
     raw = file.read()
+    file.close()
+    logger.info('Got Graph Response: %s' % raw)
+    # The raw response is a urlparsed string (access_token=xxxxxxxx&expires=6295).
+    # We convert it to a dict.
+    response = urlparse.parse_qs(raw)
+    logger.info('Returning Graph Response: %s' % response)
+    return response
     #  TODO: Duplicated code here (utils line 412ff)
+    """
     try:
         response = _parse_json(raw)
         if response.get("error"):
@@ -89,15 +98,18 @@ def authenticate(code, app_id, app_secret, redirect_uri=""):
         else:
             raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned json (%s), expected access_token' % response)
     except:
-        # if the response ist not json, it is the access token. Write it back to the session.
-        logger.debug('Got Graph Response: %s' % raw)
+        # if the response ist not json, it is the access token. Write it back to the session.      
+        
         if raw.find('=') > -1:
             access_token = raw.split('=')[1]
         else:
             raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected access_token' % response)
+        
+    
     finally:
         file.close()
-    return access_token
+    """
+    #return access_token
 
 """
 def get_REST(method, params):
@@ -210,7 +222,7 @@ class FBSession(SessionBase):
     @property
     def access_token(self):
         """ Returns the current access token or None. """
-        logger.info('token expires: %s, type: %s' % (self.token_expires, type(self.token_expires)))
+        logger.debug('token expires: %s, type: %s' % (self.token_expires, type(self.token_expires)))
         if self.token_expires and self.token_expires < datetime.now():  # TODO: Check if this is executed on every request.
             logger.debug('not returning expired access_token. %s' % self.fb_session.get('access_token'))
             return None
@@ -366,17 +378,20 @@ class Graph(facebook.GraphAPI):
             self.via = 'cookie'        
         elif self.get_token_from_app():
             self.via = 'application'
-        logger.info('Got token via %s.\n%s' % (self.via, self.access_token))
+        logger.info('Got %s token via %s for user id: %s.' % (self.type(), self.via, self._user_id))
 
     def get_token_from_session(self):
         if not self.fb_session.access_token:
             return None
-        self.access_token = self.fb_session.access_token
         self._user_id = self.fb_session.user_id
+        if self.type() <> 'user':
+            return None
+        self.access_token = self.fb_session.access_token
         return self.access_token
 
     def get_token_from_cookie(self):
-        #Client-side authentification writes the access token into the cookie.
+        #Client-side authentification writes the signed request into the cookie.
+        # Still needs verification from Facebook.
         if not self.HttpRequest.COOKIES.get('fbsr_%i' % int(self.app_id), None):
             return None
         else:
@@ -435,17 +450,21 @@ class Graph(facebook.GraphAPI):
         sr = self.HttpRequest.COOKIES.get("fbsr_" + self.app_id, "")
         if not sr: return None
         parsed_request = facebook.parseSignedRequest(sr, self.app_secret)
-        logger.info('Parsed request from cookie: ' % parsed_request)
+        logger.info('Parsed request from cookie: %s\n' % parsed_request)
         if 'user_id' in parsed_request:
             self._user_id = int(parsed_request['user_id'])
         if 'code' in parsed_request:
-            access_token = authenticate(code=parsed_request['code'], 
+            response = authenticate(code=parsed_request['code'], 
                               app_id=self.app_id, app_secret=self.app_secret)
-        elif 'access_token' in parsed_request:
-            logger.info('found access token in FB cookie.')
-            access_token = parsed_request['access_token']
+            logger.info('Authenticate returned: %s' % response)
+            if 'access_token' in response:
+                self.access_token = response['access_token'][0]
+            if 'expires' in response:
+                token_expires = datetime.now()+timedelta(seconds=int(response['expires'][0]))
+            else:
+                token_expires = None
 
-        return {'uid': self._user_id, 'access_token': self.access_token }
+        return {'uid': self._user_id, 'access_token': self.access_token, 'token_expires': token_expires }
         
 
     def _get_me(self, access_token=False):
@@ -499,6 +518,8 @@ class Graph(facebook.GraphAPI):
             return int(id) if id else None
         
     def type(self):
+        if not self.access_token:
+            return None
         return 'app' if len(self.access_token) < 80 else 'user'
 
     def revoke_auth(self):

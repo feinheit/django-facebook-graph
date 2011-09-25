@@ -67,8 +67,8 @@ window.fbAsyncInit = function() {
     FB.getLoginStatus(function(response) {
       log(response);
       if (response.status === 'connected') {
-        fb.auth = response.authResponse;
-        fb.user = (function(){ return fb.auth; })(); // For backwards compatibility. Will be removed at some point.
+        fb.authResponse = response.authResponse;
+        fb.user = (function(){ return fb.authResponse; })(); // For backwards compatibility. Will be removed at some point.
         fb.user.warning = 'This property is deprecated and will be removed! Use fb.auth instead.';
         fb['status'] = response.status;
       }
@@ -123,7 +123,7 @@ function post_to_url(path, params, method) {
 
 function force_signed_request(fb) {
     if (fb.status != 'connected') { return false; }
-    params = { 'signed_request' : fb.auth.signedRequest }
+    params = { 'signed_request' : fb.authResponse.signedRequest }
     post_to_url(window.location.toString(), params);
 }
 
