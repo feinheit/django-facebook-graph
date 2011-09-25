@@ -82,34 +82,27 @@ def authenticate(code, app_id, app_secret, redirect_uri=""):
     file = urllib.urlopen("https://graph.facebook.com/oauth/access_token?" + urllib.urlencode(args))
     raw = file.read()
     file.close()
-    logger.info('Got Graph Response: %s' % raw)
+    logger.debug('Got Graph Response: %s' % raw)
     # The raw response is a urlparsed string (access_token=xxxxxxxx&expires=6295).
     # We convert it to a dict.
     response = urlparse.parse_qs(raw)
-    logger.info('Returning Graph Response: %s' % response)
-    return response
-    #  TODO: Duplicated code here (utils line 412ff)
-    """
-    try:
-        response = _parse_json(raw)
-        if response.get("error"):
-            raise facebook.GraphAPIError(response["error"]["type"],
-                                         response["error"]["message"])
-        else:
-            raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned json (%s), expected access_token' % response)
-    except:
-        # if the response ist not json, it is the access token. Write it back to the session.      
-        
-        if raw.find('=') > -1:
-            access_token = raw.split('=')[1]
-        else:
-            raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected access_token' % response)
-        
     
-    finally:
-        file.close()
-    """
-    #return access_token
+    if response == {}:
+        # An error occured: The response is a JSON string containing the error.
+        try:
+            response = _parse_json(raw)
+        except ValueError:
+            raise facebook.GraphAPIError('AUTHENTICATION ERROR', 'Facebook returned this: %s. Expected access token.' % raw)
+        else:
+            if isinstance(response, dict) and response.get("error"):
+                raise facebook.GraphAPIError(response["error"]["type"],
+                                             response["error"]["message"])
+            else:
+                raise facebook.GraphAPIError('AUTHENTICATION ERROR', 'Facebook returned json (%s), expected access_token' % response)
+        
+    logger.debug('Authentication Graph Response: %s' % response)
+    return response
+
 
 """
 def get_REST(method, params):
@@ -188,10 +181,11 @@ class FBSession(SessionBase):
     
     def modified(self, who='unknown'):
         self.request.session.modified = True
-        logger.info('Session modified by %s: %s' % (who, self.fb_session))
+        logger.debug('Session modified by %s: %s' % (who, self.fb_session))
             
 
     # DEPRECATED FUNCTION:
+    # Maybe change this so it returns at least the user_id.
     def cookie_info(self, app_dict, store=True):
         graph = get_graph(self.request, app_dict=app_dict)
         cookie = graph.get_user_from_cookie()
@@ -378,7 +372,7 @@ class Graph(facebook.GraphAPI):
             self.via = 'cookie'        
         elif self.get_token_from_app():
             self.via = 'application'
-        logger.info('Got %s token via %s for user id: %s.' % (self.type(), self.via, self._user_id))
+        logger.debug('Got %s token via %s for user id: %s.' % (self.type(), self.via, self._user_id))
 
     def get_token_from_session(self):
         if not self.fb_session.access_token:
@@ -450,13 +444,13 @@ class Graph(facebook.GraphAPI):
         sr = self.HttpRequest.COOKIES.get("fbsr_" + self.app_id, "")
         if not sr: return None
         parsed_request = facebook.parseSignedRequest(sr, self.app_secret)
-        logger.info('Parsed request from cookie: %s\n' % parsed_request)
+        logger.debug('Parsed request from cookie: %s\n' % parsed_request)
         if 'user_id' in parsed_request:
             self._user_id = int(parsed_request['user_id'])
         if 'code' in parsed_request:
             response = authenticate(code=parsed_request['code'], 
                               app_id=self.app_id, app_secret=self.app_secret)
-            logger.info('Authenticate returned: %s' % response)
+            logger.debug('Authenticate returned: %s' % response)
             if 'access_token' in response:
                 self.access_token = response['access_token'][0]
             if 'expires' in response:
