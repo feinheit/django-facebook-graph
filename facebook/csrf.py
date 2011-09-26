@@ -6,6 +6,8 @@ from django.middleware.csrf import (CsrfViewMiddleware as DjangoCsrfViewMiddlewa
     REASON_NO_REFERER, REASON_BAD_REFERER, REASON_NO_COOKIE,
     REASON_NO_CSRF_COOKIE, REASON_BAD_TOKEN, _MAX_CSRF_KEY)
 
+from django.utils.crypto import constant_time_compare
+from django.utils.http import same_origin
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +71,9 @@ class CsrfViewMiddleware(DjangoCsrfViewMiddleware):
                 csrf_token = request.META["CSRF_COOKIE"]
 
             # check incoming token
-            request_csrf_token = request.POST.get('csrfmiddlewaretoken', None) or request.POST.get('state', '')
+            request_csrf_token = request.POST.get('csrfmiddlewaretoken', None) 
+            if not request_csrf_token:
+                request_csrf_token = request.POST.get('state', '')
             if request_csrf_token == "":
                 # Fall back to X-CSRFToken, to make things easier for AJAX
                 request_csrf_token = request.META.get('HTTP_X_CSRFTOKEN', '')

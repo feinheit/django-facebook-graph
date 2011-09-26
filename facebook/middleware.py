@@ -9,8 +9,6 @@ from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import redirect
 from django.utils import simplejson, translation
-from django.utils.crypto import constant_time_compare
-from django.utils.http import same_origin
 
 _parse_json = lambda s: simplejson.loads(s)
 

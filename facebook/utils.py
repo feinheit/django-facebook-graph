@@ -71,14 +71,16 @@ def get_app_dict(application=None):
     return application
 
 
-def authenticate(code, app_id, app_secret, redirect_uri=""):
+def authenticate(app_id, app_secret, code=None, redirect_uri="", type=None):
     access_token = None
     
     args = {'client_id': app_id,
             'client_secret': app_secret,
-            'code': code.replace("\"", ""),
             'redirect_uri': redirect_uri
-            }  
+            }
+    if code:  args['code'] =  code.replace("\"", "")
+    if type:  args['type'] = 'client_cred'
+    
     file = urllib.urlopen("https://graph.facebook.com/oauth/access_token?" + urllib.urlencode(args))
     raw = file.read()
     file.close()
@@ -402,31 +404,22 @@ class Graph(facebook.GraphAPI):
         return None        
 
     def get_token_from_app(self):
-        access_token = None
-        access_dict = {'type': 'client_cred', 'client_secret': self.app_secret, 'client_id': self.app_id}
-        file = urllib.urlopen('https://graph.facebook.com/oauth/access_token?%s'
-                              % urllib.urlencode(access_dict))
-        raw = file.read()
         try:
-            response = _parse_json(raw)
-            if response.get("error"):
-                raise facebook.GraphAPIError(response["error"]["type"],
-                                             response["error"]["message"])
-            else:
-                raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned json (%s), expected access_token' % response)
-        except:
-            # if the response ist not json, it is the access token. Write it back to the session.
-            logger.debug('Got Graph Response: %s' % raw)
-            if raw.find('=') > -1:
-                access_token = raw.split('=')[1]
-                self.fb_session.store_token(access_token, None)
-            else:
-                raise facebook.GraphAPIError('GET_GRAPH', 'Facebook returned bullshit (%s), expected access_token' % response)
-        finally:
-            file.close()
-        if access_token:
-            self.access_token = access_token
-        return access_token
+            response = authenticate(app_id=self.app_id, app_secret=self.app_secret, type='client_cred')
+        except facebook.GraphAPIError:
+        # The code is not valid. Maybe the user has uninstalled the app.
+            self.HttpRequest.session.flush()
+            self.fb_session.store_token(None)
+            return None
+        
+        if 'access_token' in response:
+            self.access_token = response['access_token'][0]
+        if 'expires' in response:
+            token_expires = datetime.now()+timedelta(seconds=int(response['expires'][0]))
+        else:
+            token_expires = None
+            self.fb_session.store_token(self.access_token, token_expires)
+        return self.access_token
     
     def get_user_from_cookie(self):
         """ Parses the cookie set by the official Facebook JavaScript SDK. Oauth2 version.
