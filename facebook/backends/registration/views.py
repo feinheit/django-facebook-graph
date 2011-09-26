@@ -95,13 +95,13 @@ def connect(request, redirect_field_name=REDIRECT_FIELD_NAME, app_name=None):
     """ Connects the Facebook Account to the current logged-in user. """
     fb_app = get_app_dict(app_name)
     graph = get_graph(request, app_name=app_name)
-    redirect_to = request.REQUEST.get(redirect_field_name, fb_app['REDIRECT_URL'])
+    redirect_to = request.REQUEST.get(redirect_field_name, fb_app['REDIRECT-URL'])
 
     if request.user.is_authenticated():
         try:
             me = graph.get_object("me")
         except facebook.GraphAPIError as e:
-            return HttpResponse(e)
+            return redirect('fb_login')
 
         # if the user has already a facebook connection, abort and show
         # error message
