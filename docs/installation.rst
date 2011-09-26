@@ -4,7 +4,7 @@
 Installation
 ============
 
-Add 'facebook' to your INSTALLED_APPS. 
+Add 'facebook' to your INSTALLED_APPS.
 --------------------------------------
 
 This will create django classes for the main facebook models. The classes synchronize to facebook only one-way.
@@ -13,7 +13,7 @@ This will create django classes for the main facebook models. The classes synchr
 Add the Middlewares
 -------------------
 
-The SignedRequestMiddleware is the main middleware that stores the signed request to a special session object 
+The SignedRequestMiddleware is the main middleware that stores the signed request to a special session object
 and allows your app to access it. Most of the framework expects this middleware to be installed to function correctly.
 
 The AppRequestMiddleware adds some tools to help dealing with app requests::
@@ -29,9 +29,9 @@ Add the urls
 ------------
 
 The basic url adds the channel url, the deauthorize view and some debug tools::
-    
+
     url(r'^facebook/', include('facebook.urls')),
-    
+
 The registration backend url activates the login through facebook connect::
 
     url(r'^accounts/', include('facebook.backends.registration.urls')),
@@ -64,7 +64,7 @@ The Facebook Javascript SDK
 For any client side facebook integration you need the Javascript SDK.
 
 Add the fb namespace to the html tag::
-    
+
     <html xmlns="http://www.w3.org/1999/xhtml" xmlns:fb="https://www.facebook.com/2008/fbml">
 
 Add this to the header section of your base template::
@@ -76,10 +76,19 @@ Add this to the header section of your base template::
         FACEBOOK_CHANNEL_URL = '{% url channel %}';
     </script>
     <script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>
-    
-    
+
+Or this if you don't use any FeinCMS extensions::
+
+    {% load fb_tags %}
+    <script type="text/javascript">
+        FACEBOOK_APP_ID = '{% fb_app_id %}';
+        FACEBOOK_REDIRECT_URL = '{% fb_redirect_url %}';
+        FACEBOOK_CHANNEL_URL = '{% url channel %}';
+    </script>
+    <script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>
+
 Add this to the bottom of your base template in the scripts section::
-   
+
     <div id="fb-root"></div>
     <script type="text/javascript">
     (function() {
@@ -90,7 +99,7 @@ Add this to the bottom of your base template in the scripts section::
     }());
     </script>
 
-The Facebook script is loaded asynchrounously. Therefore you have to use the FQ, a simple script que, for inline javascript code that 
+The Facebook script is loaded asynchrounously. Therefore you have to use the FQ, a simple script que, for inline javascript code that
 expects the facebook object. The FQ is run when the SDK has been loaded and the user login status determined.
 
 
@@ -109,7 +118,7 @@ Local Facebook development
 To develop locally, create a separate app and set http://localhost.local:8000/ as Site URL.
 Map localhost.local to 127.0.0.1 in your /etc/hosts file. (/private/etc/hosts on Mac.)
 Now you can open your app on Facebook and it will load the data from your runserver. On Firefox
-you can even chose 'Open Frame in new tab' for quicker page reloads, 
+you can even chose 'Open Frame in new tab' for quicker page reloads,
 once you've opened the page in Facebook and the cookie is set.
 
 For Facebook connect, make sure you use the URL localhost.local:8000 and not localhost:8000.
@@ -137,6 +146,6 @@ the login request::
         'django.contrib.auth.backends.ModelBackend',
         'facebook.backends.authentication.AuthenticationBackend',
     )
-    
+
 Currently django-facebook-graph only supports Facebook Connect with the Login Button.
 The Registration Widget is not supported.
