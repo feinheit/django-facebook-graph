@@ -244,7 +244,7 @@ class Base(models.Model):
 class UserBase(Base):
     id = models.BigIntegerField(primary_key=True, unique=True)
     access_token = models.CharField(max_length=250, blank=True, null=True)
-    user = models.OneToOneField(DjangoUser, blank=True, null=True)
+    user = models.OneToOneField(DjangoUser, blank=True, null=True, related_name='facebook%(class)s')
 
     # Cached Facebook Graph fields for db lookup
     _first_name = models.CharField(max_length=50, blank=True, null=True)
