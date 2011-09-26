@@ -10,35 +10,38 @@ every functionality of ``django-facebook-graph``.
 
     https://developers.facebook.com/apps
 
-For detailed installation istructions check out the :ref:`installation` section.
+For detailed installation instructions check out the :ref:`installation` section.
 
 
 Facebook Connect support for your website
 =========================================
 
-Currently the framework supports user login with the facebook login button. It's fairly plug and play.
-Make sure you have added the auth.backend and login url as described in the :ref:`installation` instructions.
+Currently the framework supports user login with the facebook login button.
+It's fairly plug and play. Make sure you have added the authentication backend
+and login URL as described :ref:`installation` instructions.
 
 Adding the Facebook login to your website
 -----------------------------------------
 
-FBML tags::
+Make sure your ``<html>`` tag contains the necessary XML namespace information
+and these FMBL tag to the place where you want the login button to appear::
 
     <fb:login-button scope="email" onlogin="window.location.href='{% url auth_login %}?next=/'"></fb:login-button>
 
-Checkout the facebook documentation on the login button: 
+Checkout the facebook documentation on the login button:
 http://developers.facebook.com/docs/reference/plugins/login/
 
 
-Using the graph API
+Using the Graph API
 ===================
 
-You can generate a graph instance with the following command::
+You can generate a Graph instance with the following command::
 
-    from facebook.utils import get_graph    
+    from facebook.utils import get_graph
     graph = get_graph(request)
-    
-To make a graph request to facebook, simply use graph.request(). I.e. to get a certain message object::
+
+To make a Graph request to Facebook, simply use ``graph.request()``. I.e. to get
+a certain message object::
 
     fb_message = graph.request('%s' % post_id)
 
@@ -48,9 +51,10 @@ You can also create facebook user objects like so::
     user = User(id=graph.me['id'])
     user.get_from_facebook(graph=graph, save=True)
 
-The app stores as much data as possible in the session to minimize requests to Facebook. You can access the session class directly 
-to get informations about the current user::
-  
+``django-facebook-graph`` stores as much data as possible in the session to
+minimize requests to Facebook. You can access the session class directly to
+get informations about the current user do this::
+
     from facebook.utils import get_session
     fb = get_session()
     signed_request = fb.signed_request
@@ -58,12 +62,16 @@ to get informations about the current user::
 
 About the Access Token
 ----------------------
-Facebook distinguishes between the app access token and the user access token. A user access token is needed for requests that need a user's
-permission. It's generally more powerfull thann an app access token. You should generally get the user access token when you pass the request
-argument to the get_graph(request=request) function.
 
-However, some operations require the app access token. Like deleting app requests or saving user score. You can implicitly get the app access 
-token by just calling graph=get_graph() without providing the request object, or explicitly by calling get_static_graph().
+Facebook distinguishes between the app access token and the user access token.
+A user access token is needed for requests that need a user's permission. It's
+generally more powerful than an app access token. You should generally get the
+user access token when you pass the request argument to the ``get_graph`` function.
+
+However, some operations require the app access token, like deleting app
+requests or saving user score. You can implicitly get the app access token by
+just calling ``graph = get_graph()`` without providing the request object,
+or explicitly by calling ``get_static_graph()``.
 
 
 Sending posts onto a Facebook wall
@@ -103,20 +111,22 @@ snippet::
 The second parameter, ``true`` causes a reload of the login status. This
 adds the permissions to the response too, which is very helpful for us.
 
-the perms are also loaded into the fb object on page load. So you could also just try::
-    
+The permissions are also loaded into the fb object on page load. So you could
+also just try::
+
     if (fb.perms.indexOf('publish_stream') != -1) {
         post_to_wall();
     } else {
         FB.login(function(response){
-                 }, 
+                 },
                  {perms: 'publish_stream' }
-        );      
+        );
     }
 
-The logical consequence if the if-statement fails would be to make a call to FB.login() to show a login window. The problem here is
-that most browsers block the popup if it doesn't follow an immediate user action. I therefore recommend to attach the above function to 
-a click event on a button.
+The logical consequence if the if-statement fails would be to make a call to
+``FB.login()`` to show a login window. The problem here is that most browsers
+block the popup if it doesn't follow an immediate user action. It is therefore
+recommended to attach the above function to a click event on a button.
 
 
 Actually create a Facebook wall post
@@ -136,8 +146,5 @@ post is easy::
 It might still be a good idea to enclose the ``put_wall_post`` call in
 ``try..except`` clause.
 
-Keep in mind that if too many users remove a wallpost that had been created through the Graph API, 
-your app will get classified as spam.
-
-
-
+Keep in mind that if too many users remove a wallpost that had been created
+through the Graph API your app will get classified as spam.
