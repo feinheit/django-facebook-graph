@@ -42,24 +42,23 @@ class AuthenticationBackend(object):
         except facebook.GraphAPIError as e:
             logger.debug('Could not authenticate User: %s ' % e)
             return None
-
+        
         try:
             facebook_user = FacebookUser.objects.get(id=int(me['id']))
         except FacebookUser.DoesNotExist:
             facebook_user = FacebookUser(id=int(me['id']))
             facebook_user.get_from_facebook(graph=graph, save=True)
         else:
-            if isinstance(facebook_user.user, User):
+            if isinstance(facebook_user.user, User) and facebook_user.user.is_authenticated():
                 return facebook_user.user
-        
         #we use the Facebook id as username because 'me.name' is not unique enough.
-        user = get_or_create_user(username = me['id']), {
+        user = get_or_create_user(me['id'], {
                 'email': me.get('email', u''),
                 'first_name': me.get('first_name', u''),
                 'last_name': me.get('last_name', u''),
                 'password': UNUSABLE_PASSWORD,
                 'date_joined': datetime.now()
-                } 
+                } )
         facebook_user.user = user
         facebook_user.save()
 

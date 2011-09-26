@@ -452,7 +452,7 @@ class Graph(facebook.GraphAPI):
             try:
                 response = authenticate(code=parsed_request['code'], 
                               app_id=self.app_id, app_secret=self.app_secret)
-            except facebook.GraphApiError:
+            except facebook.GraphAPIError:
                 # The code is not valid. Maybe the user has uninstalled the app.
                 self.HttpRequest.session.flush()
                 self.fb_session.store_token(None)

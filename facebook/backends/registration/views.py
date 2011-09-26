@@ -50,6 +50,7 @@ def login(request, template_name='registration/login.html',
         """
                         
         new_user = authenticate(graph=graph)
+        logger.info('new user: %s' %new_user)
 
         # Authentication might still fail -- new_user might be an
         # instance of AnonymousUser.
