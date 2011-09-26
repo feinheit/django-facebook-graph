@@ -5,11 +5,6 @@ logger = logging.getLogger(__name__)
 
 import urllib
 
-from django.middleware.csrf import CsrfViewMiddleware as DjangoCsrfViewMiddleware, _sanitize_token,\
-        _get_new_csrf_key, _make_legacy_session_token, REASON_NO_REFERER, \
-        REASON_BAD_REFERER, REASON_NO_COOKIE, \
-        REASON_NO_CSRF_COOKIE, REASON_BAD_TOKEN, _MAX_CSRF_KEY
-
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import redirect
@@ -32,8 +27,8 @@ class OAuth2ForCanvasMiddleware(object):
         fb = get_session(request)
         setattr(request, 'fb_session', fb)
         application = get_app_dict()
-        
-        logger.debug('Request Method = %s\n, AccessToken=%s' % (request.method, fb.access_token))      
+
+        logger.debug('Request Method = %s\n, AccessToken=%s' % (request.method, fb.access_token))
 
         if 'feincms' in settings.INSTALLED_APPS:
             # if feincms is installed, try to get the application from the page
@@ -41,11 +36,11 @@ class OAuth2ForCanvasMiddleware(object):
             page_app = get_application_from_request(request)
             if application:
                 application = get_app_dict(page_app)
-        
+
         # Temporary OAuth2.0 fix due to missing access_token in cookie sr:
         if 'access_token' in request.GET:
             fb.store_token(request.GET.get('access_token'))
-        
+
         # default POST/GET request from facebook with a signed request
         if 'signed_request' in request.POST:
             parsed_request = parseSignedRequest(request.POST['signed_request'], application['SECRET'])
@@ -167,89 +162,3 @@ class FakeSessionCookieMiddleware(object):
 
                 logger.debug('FakeSessionCookieMiddleware: changed redirect location from "%s" to "%s" ' % (location, response._headers['location'][1]))
         return response
-
-
-class CsrfViewMiddleware(DjangoCsrfViewMiddleware):
-
-    def process_view(self, request, callback, callback_args, callback_kwargs):
-        if getattr(request, 'csrf_processing_done', False):
-            return None
-
-        try:
-            request.META["CSRF_COOKIE"] = _sanitize_token(request.COOKIES[settings.CSRF_COOKIE_NAME])
-            cookie_is_new = False
-        except KeyError:
-            request.META["CSRF_COOKIE"] = _get_new_csrf_key()
-            cookie_is_new = True
-
-        if getattr(callback, 'csrf_exempt', False):
-            return None
-
-        if request.method == 'POST':
-            if getattr(request, '_dont_enforce_csrf_checks', False):
-                return self._accept(request)
-
-            if request.is_secure() and getattr(settings, 'HTTPS_REFERER_REQUIRED', True):
-                referer = request.META.get('HTTP_REFERER')
-                if referer is None :
-                    logger.warning('Forbidden (%s): %s' % (REASON_NO_REFERER, request.path),
-                        extra={
-                            'status_code': 403,
-                            'request': request,
-                        }
-                    )
-                    return self._reject(request, REASON_NO_REFERER)
-
-                # Note that request.get_host() includes the port
-                good_referer = 'https://%s/' % request.get_host()
-                if not same_origin(referer, good_referer):
-                    reason = REASON_BAD_REFERER % (referer, good_referer)
-                    logger.warning('Forbidden (%s): %s' % (reason, request.path),
-                        extra={
-                            'status_code': 403,
-                            'request': request,
-                        }
-                    )
-                    return self._reject(request, reason)
-
-            if cookie_is_new:
-                try:
-                    session_id = request.COOKIES[settings.SESSION_COOKIE_NAME]
-                    csrf_token = _make_legacy_session_token(session_id)
-                except KeyError:
-                    logger.warning('Forbidden (%s): %s' % (REASON_NO_COOKIE, request.path),
-                        extra={
-                            'status_code': 403,
-                            'request': request,
-                        }
-                    )
-                    return self._reject(request, REASON_NO_COOKIE)
-            else:
-                csrf_token = request.META["CSRF_COOKIE"]
-
-            # check incoming token
-            request_csrf_token = request.POST.get('csrfmiddlewaretoken', None) or request.POST.get('state', '')
-            if request_csrf_token == "":
-                # Fall back to X-CSRFToken, to make things easier for AJAX
-                request_csrf_token = request.META.get('HTTP_X_CSRFTOKEN', '')
-
-            if not constant_time_compare(request_csrf_token, csrf_token):
-                if cookie_is_new:
-                    # probably a problem setting the CSRF cookie
-                    logger.warning('Forbidden (%s): %s' % (REASON_NO_CSRF_COOKIE, request.path),
-                        extra={
-                            'status_code': 403,
-                            'request': request,
-                        }
-                    )
-                    return self._reject(request, REASON_NO_CSRF_COOKIE)
-                else:
-                    logger.warning('Forbidden (%s): %s' % (REASON_BAD_TOKEN, request.path),
-                        extra={
-                            'status_code': 403,
-                            'request': request,
-                        }
-                    )
-                    return self._reject(request, REASON_BAD_TOKEN)
-
-        return self._accept(request)
