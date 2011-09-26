@@ -19,8 +19,8 @@ from django.utils.http import same_origin
 
 _parse_json = lambda s: simplejson.loads(s)
 
-from utils import get_app_dict, get_session, authenticate
-from facebook.api import parseSignedRequest
+from utils import get_app_dict, get_session, authenticate, get_graph
+from facebook.api import parseSignedRequest, GraphAPIError
 from facebook.models import Request as AppRequest
 
 
@@ -130,15 +130,16 @@ class AppRequestMiddleware(object):
             request_ids = request_ids.split(',')
             logger.debug('Got app request ids: %s' % request_ids)
             for id in request_ids:
-                r = AppRequest(id=int(id))
-                if settings.DEBUG:
+                r, created = AppRequest.objects.get_or_create(id=int(id))
+                if settings.DEBUG and created:
                     try:
-                        r.save()
-                    except IntegrityError:
+                        graph = get_graph(request)
+                        r.get_from_facebook(graph, save=True)
+                    except GraphAPIError:
                         pass
                 app_requests.append(r.id)
-            fb.app_requests = app_requests
-            fb.modified('AppRequestMiddleware')
+            if len(app_requests) > 0:
+                fb.app_requests = app_requests
 
 
 class FakeSessionCookieMiddleware(object):

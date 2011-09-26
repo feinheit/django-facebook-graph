@@ -39,7 +39,7 @@ def login(request, template_name='registration/login.html',
     #to give priority to the django auth view
     if not request.method == "POST":
         # Light security check -- make sure redirect_to isn't garbage.
-        if not redirect_to or ' ' in redirect_to:
+        if not redirect_to or '' in redirect_to:
             redirect_to = fb_app['REDIRECT-URL']
         
         """
@@ -50,7 +50,7 @@ def login(request, template_name='registration/login.html',
         """
                         
         new_user = authenticate(graph=graph)
-        logger.info('new user: %s' %new_user)
+        logger.debug('new user: %s' %new_user)
 
         # Authentication might still fail -- new_user might be an
         # instance of AnonymousUser.
