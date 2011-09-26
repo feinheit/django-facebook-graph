@@ -31,3 +31,20 @@
              xfbml: true});
     }
 </script>
+
+<script type="text/javascript">
+window.log = function(){
+  log.history = log.history || [];   // store logs to an array for reference
+  log.history.push(arguments);
+  if(this.console){
+    console.log( Array.prototype.slice.call(arguments) );
+  }
+};
+
+(function() {
+    var e = document.createElement('script'); e.async = true;
+    e.src = document.location.protocol +
+    '//connect.facebook.net/de_DE/all.js';
+    document.getElementById('fb-root').appendChild(e);
+}());
+</script>
