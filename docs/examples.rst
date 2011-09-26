@@ -25,12 +25,13 @@ login.html template::
 
 For views that require a logged in user you could either check the status on the server with `graph.me`, or better, on the client side with
 the following piece of code::
-
+    {% if request.user.is_authenticated %}
     FQ.add(function(){  
         if (fb.status == 'not_authorized'){
             window.location = "{% url fb_logout %}";
         }
-    }); 
+    });
+    {% endif %}
     
 The advantage of checking the status in the browser is that the response time is usually shorter.
     

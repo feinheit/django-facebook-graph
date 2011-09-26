@@ -46,7 +46,7 @@ class AuthenticationBackend(object):
         try:
             facebook_user = FacebookUser.objects.get(id=int(me['id']))
         except FacebookUser.DoesNotExist:
-            facebook_user = FacebookUser(id=uid)
+            facebook_user = FacebookUser(id=int(me['id']))
             facebook_user.get_from_facebook(graph=graph, save=True)
         else:
             if isinstance(facebook_user.user, User):
