@@ -1,5 +1,6 @@
 import logging
 from urllib import urlencode
+import warnings
 logger = logging.getLogger(__name__)
 
 from datetime import datetime, timedelta, date
@@ -324,6 +325,15 @@ class UserBase(Base):
 class User(UserBase):
     class Meta:
         abstract=False
+
+
+# This code is for backwards compability only. Will be removed with verison 1.1.
+def user__facebookuser(self):
+    warnings.warn('Stop using `user`, use `facebookuser` instead.',
+    DeprecationWarning, stacklevel=2)
+    return self.facebookuser
+DjangoUser.user = property(user__facebookuser)
+
 
 
 class Photo(Base):
