@@ -35,3 +35,18 @@ piece of code::
 
 The advantage of checking the status in the browser is that the response time
 is usually shorter.
+
+
+App Tabs and Facebook login
+---------------------------
+
+It is not easy to do a deeplink into an app tab. Facebook doesn't really support it.
+The only workaround is using the `Redirect2AppDataMiddleware` and calling facebook/redirect
+with the url urlencoded as app_data parameter.
+
+That's how it looks::
+
+    'REDIRECT-URL': 'http://apps.facebook.com/<MY_APP_NAMESPACE>/facebook/redirect/?next=http%3A%2F%2Fwww.facebook.com%2F<FB_PAGE>%3Fsk%3Dapp_<APP_ID>%26app_data%3D%2<DEEPLINK_URL>%2F',
+    
+Make sure you have the `canvas url` parameters in the developer app set to the root
+or wherever facebook should fetch the redirect from.
