@@ -1,6 +1,7 @@
 #coding=utf-8
 
-from facebook.models import Score, User
+from facebook.models import User
+from models import Score
 
 """ Views for game-related task such as getting and settings scores and achievments. """
 from facebook.utils import get_static_graph

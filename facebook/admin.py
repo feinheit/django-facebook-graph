@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from models import User, Photo, Page, Event, Request, TestUser, Post, Score, Like
+from models import User, Photo, Page, Event, Request, TestUser, Post
 from utils import get_graph
 
 def delete_object(modeladmin, request, queryset):
@@ -127,28 +127,4 @@ class PostAdmin(AdminBase):
     
     
 admin.site.register(Post, PostAdmin)
-
-class ScoreAdmin(admin.ModelAdmin):
-    list_display = ('user', 'score')
-    readonly_fields = ('user', 'score')
-    search_fields = ('user',)
-    ordering = ['score']
-    
-""" Because Facebook does not yet correctly support score the score model is just experimental.
-    Import it in your project admin file:
-    
-    from facebook.models import Score
-    from facebook.admin import ScoreAdmin
-    admin.site.register(Score, ScoreAdmin)
-"""
-
-class LikeAdmin(admin.ModelAdmin):
-    list_display = ('user', '_name', '_category')
-    search_fields = ('user', '_name')
-    ordering = ['user', '_created_time']
-    
-admin.site.register(Like, LikeAdmin)
-
-
-
 

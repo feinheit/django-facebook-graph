@@ -1,8 +1,9 @@
 from django.http import Http404, HttpResponse
 
-from facebook.models import User as FBUser, Like
+from facebook.models import User as FBUser
 from facebook.utils import get_graph
 import facebook
+from models import Like
 
 from datetime import datetime
 
