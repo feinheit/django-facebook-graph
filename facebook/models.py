@@ -9,8 +9,6 @@ from django import forms
 from django.db import models, transaction
 from django.db.models import Q
 from django.contrib.auth.models import User as DjangoUser
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import simplejson as json
