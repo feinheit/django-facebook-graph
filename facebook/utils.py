@@ -36,8 +36,6 @@ except ImportError:
 
 _parse_json = lambda s: json.loads(s)
 
-import logging
-logger = logging.getLogger(__name__)
 
 """
 Example App Settings Entry:
