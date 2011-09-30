@@ -38,20 +38,20 @@ def login(request, template_name='registration/login.html',
 
     # Because we override the login, we should check for POST data,
     #to give priority to the django auth view
-    if not request.method == "POST":
+    if request.method == 'GET' and graph.via not in ('application',):
         # Light security check on redirect_to (lifted from django.contrib.auth.views)
         netloc = urlparse.urlparse(redirect_to)[1]
 
         if not redirect_to or netloc != request.get_host():
             redirect_to = fb_app['REDIRECT-URL']
-        
+
         """
         # TODO: Check only if the domain is in 'DOMAIN' or 'facebook.com' but without the protocol
-        
+
         elif '//' in redirect_to and re.match(r'[^\?]*//', redirect_to):
                 redirect_to = fb_app['REDIRECT-URL']
         """
-                        
+
         new_user = authenticate(graph=graph)
         logger.debug('new user: %s' %new_user)
 
@@ -67,7 +67,7 @@ def login(request, template_name='registration/login.html',
                                          request=request)
 
         return redirect(redirect_to)
-    
+
     logger.debug('could not login user %s' % graph.user_id)
     return auth_views.login(request, template_name,
                             redirect_field_name, authentication_form)
@@ -76,22 +76,22 @@ def login(request, template_name='registration/login.html',
 def logout(request, next_page=None,
            template_name='registration/logged_out.html',
            redirect_field_name=REDIRECT_FIELD_NAME):
-    
+
     fb_app=get_app_dict()  # TODO: Make this multi-app capable. Add app to login-url.
     fb_session = get_session(request)
-    
+
     fb_session.store_token(None)
-    
+
     response = auth_views.logout(request, next_page,
                                  template_name, redirect_field_name)
 
-    # This might lead to unexpected results with multiple apps. 
+    # This might lead to unexpected results with multiple apps.
     response.delete_cookie("fbsr_" + fb_app['ID'])
-    
+
     redirect_to = next_page or request.REQUEST.get(redirect_field_name, '')
     if not redirect_to or ' ' in redirect_to:
         redirect_to = fb_app['REDIRECT-URL']
-    
+
     return redirect(redirect_to)
 
 
@@ -118,7 +118,7 @@ def connect(request, redirect_field_name=REDIRECT_FIELD_NAME, app_name=None):
             # Otherwise redirect
             return redirect(redirect_to)
         else:
-            # The User has no Facebook account attached. Connect him. 
+            # The User has no Facebook account attached. Connect him.
             try:
                 # if that facebook user already exists, abort and show error message
                 fb_user = FacebookUser.objects.get(id=graph.user_id)
