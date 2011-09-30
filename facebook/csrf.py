@@ -5,12 +5,11 @@ from django.middleware.csrf import (CsrfViewMiddleware as DjangoCsrfViewMiddlewa
     _sanitize_token, _get_new_csrf_key, _make_legacy_session_token,
     REASON_NO_REFERER, REASON_BAD_REFERER, REASON_NO_COOKIE,
     REASON_NO_CSRF_COOKIE, REASON_BAD_TOKEN, _MAX_CSRF_KEY)
-
 from django.utils.crypto import constant_time_compare
 from django.utils.http import same_origin
+from django.utils.decorators import decorator_from_middleware
 
 logger = logging.getLogger(__name__)
-
 
 class CsrfViewMiddleware(DjangoCsrfViewMiddleware):
 
@@ -98,3 +97,13 @@ class CsrfViewMiddleware(DjangoCsrfViewMiddleware):
                     return self._reject(request, REASON_BAD_TOKEN)
 
         return self._accept(request)
+
+
+csrf_protect = decorator_from_middleware(CsrfViewMiddleware)
+csrf_protect.__name__ = "csrf_protect"
+csrf_protect.__doc__ = """
+This decorator adds CSRF protection in exactly the same way as
+CsrfViewMiddleware, but it can be used on a per view basis.  Using both, or
+using the decorator multiple times, is harmless and efficient.
+"""
+
