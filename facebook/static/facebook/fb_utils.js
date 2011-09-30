@@ -3,6 +3,16 @@
 http://readthedocs.org/docs/django-facebook-graph/en/latest/installation.html
 */
 
+if (typeof(window.log) == 'undefined') {
+    window.log = function(){
+      log.history = log.history || [];   // store logs to an array for reference
+      log.history.push(arguments);
+      if(this.console){
+        console.log( Array.prototype.slice.call(arguments) );
+      }
+    };
+}
+
 /* This is due to a bug in IE8 */
 function canvas_resize() {
     if (window.location.search.toString().indexOf('fb_xd_fragment') == -1) {
@@ -25,7 +35,7 @@ var fb = {
                         if (fb._perms) {
                             if(callback) {callback(fb._perms)};
                             return fb._perms;
-                        } 
+                        }
                         fb._perms = [];
                         FB.api('/me/permissions/', function(data){
                             for (var i in data['data'][0]) {fb._perms.push(i);}
