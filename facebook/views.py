@@ -152,10 +152,19 @@ def deauthorize_and_delete(request):
 
 
 @csrf_exempt
-def redirect(request):
+def parent_redirect(request):
     encoded_url = request.GET.get('next','')
     """ Forces a _parent redirect to the specified url. """
     return render(request, 'facebook/redirecter.html', {'destination': urllib2.unquote(encoded_url) })
+
+
+@csrf_exempt
+def internal_redirect(request):
+    """ Forces a GET redirect. Use this if you do a parent redirect to your view
+        if your view is csrf protected.
+    """
+    encoded_url = request.GET.get('page','')
+    return render(request, 'facebook/internalredirecter.html', {'destination': urllib2.unquote(encoded_url) })
 
 
 """ Allows to register client-side errors. """

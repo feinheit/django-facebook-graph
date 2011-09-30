@@ -44,6 +44,8 @@ window.fbAsyncInit = function() {
              channelUrl : document.location.protocol + '//' + document.location.host + FACEBOOK_CHANNEL_URL }
     );
     canvas_resize();
+    // This is needed so ID doesn't throw a permission denied exception.
+    FB.UIServer.setLoadedNode = function (a, b) {     FB.UIServer._loadedNodes[a.id] = b; };
     FB.getLoginStatus(function(response) {
       log(response);
       fb['status'] = response.status;
