@@ -1,3 +1,4 @@
+import urlparse
 import re
 
 from django.conf import settings
@@ -28,9 +29,9 @@ def login(request, template_name='registration/login.html',
           redirect_field_name=REDIRECT_FIELD_NAME,
           authentication_form=AuthenticationForm,
           app_name=None):
-    
-    fb_app=get_app_dict(app_name)
-    
+
+    fb_app = get_app_dict(app_name)
+
     graph = get_graph(request, app_name=app_name)
 
     redirect_to = request.REQUEST.get(redirect_field_name, '')
@@ -38,8 +39,10 @@ def login(request, template_name='registration/login.html',
     # Because we override the login, we should check for POST data,
     #to give priority to the django auth view
     if not request.method == "POST":
-        # Light security check -- make sure redirect_to isn't garbage.
-        if not redirect_to or '' in redirect_to:
+        # Light security check on redirect_to (lifted from django.contrib.auth.views)
+        netloc = urlparse.urlparse(redirect_to)[1]
+
+        if not redirect_to or netloc != request.get_host():
             redirect_to = fb_app['REDIRECT-URL']
         
         """
