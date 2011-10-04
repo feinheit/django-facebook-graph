@@ -9,8 +9,6 @@ from django.template.defaultfilters import urlencode
 from django.template import loader, RequestContext
 from django.core.urlresolvers import resolve, Resolver404, reverse
 from django.contrib.sites.models import Site
-from feinheit.newsletter.models import Subscription
-from feinheit.translations import short_language_code
 from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
 
