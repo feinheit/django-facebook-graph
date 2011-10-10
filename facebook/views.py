@@ -8,8 +8,7 @@ from django.shortcuts import render_to_response, redirect, get_object_or_404, re
 from django.template.defaultfilters import urlencode
 from django.template import loader, RequestContext
 from django.core.urlresolvers import resolve, Resolver404, reverse
-from feinheit.newsletter.models import Subscription
-from feinheit.translations import short_language_code
+
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
