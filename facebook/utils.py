@@ -690,7 +690,6 @@ def totimestamp(instance):
 
 def validate_redirect(url):
     """ validates the redirect url """
-    logger.info(url)
     
     valid = re.compile(r'^[a-zA-Z0-9_?=&.:/-]+$')
     
@@ -705,6 +704,7 @@ def validate_redirect(url):
     else:
         for APP in getattr(settings, 'FACEBOOK_APPS', []):
             parsed_canvas = urlparse.urlparse(settings.FACEBOOK_APPS[APP]['CANVAS-PAGE'])
-            if url.find(parsed_canvas.netloc + parsed_canvas.path ) <= 8:
+            if 0 < url.find(parsed_canvas.netloc + parsed_canvas.path ) <= 8:
+                logger.info(parsed_canvas)
                 return True
     return False
