@@ -49,6 +49,7 @@ var fb = {
 
 
 window.fbAsyncInit = function() {
+    FB._https = (window.location.protocol == "https:");
     FB.init({appId: FACEBOOK_APP_ID, status: true, cookie: true,
              xfbml: true, oauth: true,
              channelUrl : document.location.protocol + '//' + document.location.host + FACEBOOK_CHANNEL_URL }

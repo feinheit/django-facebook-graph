@@ -8,13 +8,15 @@ import itertools
 import mimetools
 import mimetypes
 
+import re
+
 import urllib
 import urllib2
-import urlparse
 
 import facebook
 
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.shortcuts import redirect
 from django.utils import simplejson
 from django.utils.http import urlquote
@@ -686,4 +688,23 @@ def totimestamp(instance):
     
 
 
-
+def validate_redirect(url):
+    """ validates the redirect url """
+    logger.info(url)
+    
+    valid = re.compile(r'^[a-zA-Z0-9_?=&.:/-]+$')
+    
+    if not valid.match(url):
+        return False
+        
+    domain = urlparse.urlparse(url).netloc
+    if domain.find('www.') == 0:
+        domain = domain[4:]
+    if Site.objects.filter(domain=domain):
+        return True
+    else:
+        for APP in getattr(settings, 'FACEBOOK_APPS', []):
+            parsed_canvas = urlparse.urlparse(settings.FACEBOOK_APPS[APP]['CANVAS-PAGE'])
+            if url.find(parsed_canvas.netloc + parsed_canvas.path ) <= 8:
+                return True
+    return False

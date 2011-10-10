@@ -1,17 +1,17 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect,\
     HttpResponseForbidden
 from django.conf import settings
-from facebook.utils import get_graph, parseSignedRequest, get_app_dict, get_session
+from facebook.utils import get_graph, parseSignedRequest, get_app_dict, get_session, validate_redirect
 import functools, sys, logging
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, redirect, get_object_or_404, render
 from django.template.defaultfilters import urlencode
 from django.template import loader, RequestContext
 from django.core.urlresolvers import resolve, Resolver404, reverse
-from django.contrib.sites.models import Site
 from feinheit.newsletter.models import Subscription
 from feinheit.translations import short_language_code
 from datetime import datetime, timedelta
+
 logger = logging.getLogger(__name__)
 
 import urllib2
@@ -153,9 +153,15 @@ def deauthorize_and_delete(request):
 
 @csrf_exempt
 def parent_redirect(request):
-    encoded_url = request.GET.get('next','')
     """ Forces a _parent redirect to the specified url. """
-    return render(request, 'facebook/redirecter.html', {'destination': urllib2.unquote(encoded_url) })
+    
+    encoded_url = request.GET.get('next','')
+    unquoted_url = urllib2.unquote(encoded_url)
+    
+    if validate_redirect(unquoted_url):
+        return render(request, 'facebook/redirecter.html', {'destination': unquoted_url })
+    else:
+        return HttpResponseForbidden('The next= paramater is not an allowed redirect url.')
 
 
 @csrf_exempt
@@ -163,8 +169,14 @@ def internal_redirect(request):
     """ Forces a GET redirect. Use this if you do a parent redirect to your view
         if your view is csrf protected.
     """
+    
     encoded_url = request.GET.get('page','')
-    return render(request, 'facebook/internalredirecter.html', {'destination': urllib2.unquote(encoded_url) })
+    unquoted_url = urllib2.unquote(encoded_url)
+    
+    if validate_redirect(unquoted_url):
+        return render(request, 'facebook/internalredirecter.html', {'destination': urllib2.unquote(unquoted_url) })
+    else:
+        return HttpResponseForbidden('The next= paramater is not an allowed redirect url.')
 
 
 """ Allows to register client-side errors. """
