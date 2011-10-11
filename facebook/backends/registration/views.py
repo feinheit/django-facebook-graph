@@ -71,7 +71,6 @@ def login(request, template_name='registration/login.html',
 
         return redirect(redirect_to)
 
-    logger.debug('could not login user %s' % graph.user_id)
     return auth_views.login(request, template_name,
                             redirect_field_name, authentication_form)
 
