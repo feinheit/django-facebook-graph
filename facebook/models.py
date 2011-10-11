@@ -268,7 +268,7 @@ class UserBase(Base):
         member_fields = ['link', 'third_party_id', 'updated_time', 'verified']
 
     def __unicode__(self):
-        return '%s (%s)' % (self._name, self.id)
+        return u'%s (%s)' % (self._name, self.id)
 
 
     def get_friends(self, graph, save=False):
