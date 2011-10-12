@@ -23,6 +23,15 @@ TEST_APP = 'FB_Unittest'
 
 class UserTestCase(DatabaseSessionTests):
     
+    def firefox(self, testuser):
+        driver = webdriver.Firefox()
+        driver.get(testuser.login_url)
+        # Sometimes it needs two calls to the URL.
+        if driver.title <> testuser._name:
+            driver.get(testuser.login_url)
+        return driver
+        
+    
     def setUp(self):
         super(UserTestCase, self).setUp()
         self.factory = RequestFactory()
@@ -42,31 +51,22 @@ class UserTestCase(DatabaseSessionTests):
         testusers = TestUsers(graph)
         users = testusers.get_test_users()
         self.assertEqual(users[0]._name, self.testusers[0]['name'])
-        self.assertEqual(users[0].id, int(self.testusers[0]['id']))
+        self.assertEqual(int(users[0].id), self.testusers[0]['id'])
         self.assertEqual(users[1]._name, self.testusers[1]['name'])
-        self.assertEqual(users[1].id, int(self.testusers[1]['id']))
+        self.assertEqual(int(users[1].id), self.testusers[1]['id'])
         
-        # Test if the access tokens are valid.
         user1 = users[0]
-        driver1 = webdriver.Firefox()
-        driver1.get(user1.login_url)
-        # Usually it needs two calls to the URL.
-        if driver1.title <> user1._name:
-            driver1.get(user1.login_url)
+        self.driver1 = self.firefox(user1)
         # Check if the Facebook login was successfull:
-        self.assertEqual(driver.title, user1._name)
-        if driver1.title <> user1._name:
-            driver1.close()
-            return  # No point of testing further.
+        self.assertEqual(self.driver1.title, user1._name)
         
         # Try a login:
-        driver1.get('https://www.facebook.com/dialog/oauth?client_id=%s&redirect_uri=%s' % (self.app['ID'], 
+        self.driver1.get('https://www.facebook.com/dialog/oauth?client_id=%s&redirect_uri=%s' % (self.app['ID'], 
                                                                         self.app['REDIRECT-URL']))
-        self.assertEqual(driver.title, u'Unittest auf Facebook')
-        driver1.get('%scanvas/' % app['CANVAS-PAGE'])
+        self.assertEqual(self.driver1.title, u'Unittest auf Facebook')
+        self.driver1.get('%scanvas/' % self.app['CANVAS-PAGE'])
         
-        
-        driver1.close()
+        self.driver1.close()
         """
         user2 = users[1]
         driver2 = webdriver.Firefox()
