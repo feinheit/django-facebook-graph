@@ -69,10 +69,10 @@ class OAuth2ForCanvasMiddleware(object):
                 logger.debug("Signed Request didn't contain public user info.")
             if expires:
                 logger.debug('Signed Request issued at: %s' % datetime.fromtimestamp(float(parsed_request['issued_at'])))
-        else:
-            fb.signed_request = None
+
+
         # auth via callback from facebook
-        if 'code' in request.GET and 'facebook' in request.META.get('HTTP_REFERER', u''):
+        elif 'code' in request.GET and 'facebook' in request.META.get('HTTP_REFERER', u''):
             authenticate(request.REQUEST['code'], fb, application,
                          request.build_absolute_uri().split('?')[0] \
                             .replace(application['CANVAS-URL'], application['CANVAS-PAGE']))

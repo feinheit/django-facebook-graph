@@ -49,8 +49,11 @@ class AuthenticationBackend(object):
             facebook_user = FacebookUser(id=int(me['id']))
             facebook_user.get_from_facebook(graph=graph, save=True)
         else:
-            if isinstance(facebook_user.user, User) and facebook_user.user.is_authenticated():
-                return facebook_user.user
+            try:
+                if isinstance(facebook_user.user, User) and facebook_user.user.is_authenticated():
+                    return facebook_user.user
+            except User.DoesNotExist:
+                pass
         #we use the Facebook id as username because 'me.name' is not unique enough.
         user = get_or_create_user(me['id'], {
                 'email': me.get('email', u''),

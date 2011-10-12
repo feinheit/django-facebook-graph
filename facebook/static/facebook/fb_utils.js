@@ -3,6 +3,16 @@
 http://readthedocs.org/docs/django-facebook-graph/en/latest/installation.html
 */
 
+if (typeof(window.log) == 'undefined') {
+    window.log = function(){
+      log.history = log.history || [];   // store logs to an array for reference
+      log.history.push(arguments);
+      if(this.console){
+        console.log( Array.prototype.slice.call(arguments) );
+      }
+    };
+}
+
 /* This is due to a bug in IE8 */
 function canvas_resize() {
     if (window.location.search.toString().indexOf('fb_xd_fragment') == -1) {
@@ -25,7 +35,7 @@ var fb = {
                         if (fb._perms) {
                             if(callback) {callback(fb._perms)};
                             return fb._perms;
-                        } 
+                        }
                         fb._perms = [];
                         FB.api('/me/permissions/', function(data){
                             for (var i in data['data'][0]) {fb._perms.push(i);}
@@ -39,11 +49,14 @@ var fb = {
 
 
 window.fbAsyncInit = function() {
+    FB._https = (window.location.protocol == "https:");
     FB.init({appId: FACEBOOK_APP_ID, status: true, cookie: true,
              xfbml: true, oauth: true,
              channelUrl : document.location.protocol + '//' + document.location.host + FACEBOOK_CHANNEL_URL }
     );
     canvas_resize();
+    // This is needed so ID doesn't throw a permission denied exception.
+    FB.UIServer.setLoadedNode = function (a, b) {     FB.UIServer._loadedNodes[a.id] = b; };
     FB.getLoginStatus(function(response) {
       log(response);
       fb['status'] = response.status;

@@ -1,0 +1,12 @@
+{% load i18n %}
+<!doctype html>
+<html>
+<head>
+    <script type="text/javascript">
+        window.location.href = '{{ destination|safe }}'
+    </script>
+</head>
+<body>
+    <a href="{{ destination|safe }}">{% trans "You are redirected automatically. If it doesnt work, click me" %}</a>
+</body>
+</html>

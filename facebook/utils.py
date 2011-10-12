@@ -8,13 +8,15 @@ import itertools
 import mimetools
 import mimetypes
 
+import re
+
 import urllib
 import urllib2
-import urlparse
 
 import facebook
 
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.shortcuts import redirect
 from django.utils import simplejson
 from django.utils.http import urlquote
@@ -379,7 +381,7 @@ class Graph(facebook.GraphAPI):
         if not self.fb_session.access_token:
             return None
         self._user_id = self.fb_session.user_id
-        if self.type() <> 'user':
+        if self.type(token=self.fb_session.access_token) <> 'user':
             return None
         self.access_token = self.fb_session.access_token
         return self.access_token
@@ -509,10 +511,11 @@ class Graph(facebook.GraphAPI):
             id = getattr(me, 'id', None)
             return int(id) if id else None
         
-    def type(self):
-        if not self.access_token:
+    def type(self, token=None):
+        access_token = token or self.access_token
+        if not access_token:
             return None
-        return 'app' if len(self.access_token) < 80 else 'user'
+        return 'app' if len(access_token) < 80 else 'user'
 
     def revoke_auth(self):
         return self.request('me/permissions', post_args={"method": "delete"})
@@ -686,4 +689,23 @@ def totimestamp(instance):
     
 
 
-
+def validate_redirect(url):
+    """ validates the redirect url """
+    
+    valid = re.compile(r'^[a-zA-Z0-9_?=&.:/-]+$')
+    
+    if not valid.match(url):
+        return False
+        
+    domain = urlparse.urlparse(url).netloc
+    if domain.find('www.') == 0:
+        domain = domain[4:]
+    if Site.objects.filter(domain=domain):
+        return True
+    else:
+        for APP in getattr(settings, 'FACEBOOK_APPS', []):
+            parsed_canvas = urlparse.urlparse(settings.FACEBOOK_APPS[APP]['CANVAS-PAGE'])
+            if 0 < url.find(parsed_canvas.netloc + parsed_canvas.path ) <= 8:
+                logger.info(parsed_canvas)
+                return True
+    return False
