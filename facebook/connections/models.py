@@ -9,39 +9,6 @@ from django.contrib.contenttypes import generic
 from facebook.models import User, Page
 from facebook.utils import get_graph
 from datetime import datetime
-
-
-
-class Score(models.Model):
-    """ The score object stores a game score for a user. It is automatically
-        posted in the user's activity feed. """
-    user = models.ForeignKey(User)
-    score = models.PositiveIntegerField(_('Score'))
-    
-    class Meta:
-        verbose_name = _('Score')
-        verbose_name_plural = _('Scores')
-        ordering = ['-score']
-    
-    def __unicode__(self):
-        return u'%s, %s' % (self.user, self.score)
-    
-    def send_to_facebook(self, app_name=None, graph=None):
-        if not graph:
-            graph = get_graph(request=None, app_name=app_name)
-        if self.score < 0:
-            raise AttributeError, 'The score must be an integer >= 0.'
-        return graph.request('%s/scores' % self.user.id ,'', {'score': str(self.score) })
-
-    def save(self, facebook=True, app_name=None, graph=None, *args, **kwargs):
-        super(Score, self).save(*args, **kwargs)
-        if facebook:
-            return self.send_to_facebook(app_name=app_name, graph=graph) 
-
-    def delete(self, app_name=None, *args, **kwargs):
-        graph = get_static_graph(app_name=app_name)
-        graph.request('%s/scores' % self.user.id, post_args={'method': 'delete'})
-        super(Score, self).delete(*args, **kwargs)
         
         
 class Like(models.Model):

@@ -2,16 +2,7 @@
 from django.contrib import admin
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from models import Score, Like
-from utils import get_graph
-
-class ScoreAdmin(admin.ModelAdmin):
-    list_display = ('user', 'score')
-    readonly_fields = ('user', 'score')
-    search_fields = ('user',)
-    ordering = ['score']
-    
-admin.site.register(Score, ScoreAdmin)
+from models import Like
 
 class LikeAdmin(admin.ModelAdmin):
     list_display = ('user', '_name', '_category')
