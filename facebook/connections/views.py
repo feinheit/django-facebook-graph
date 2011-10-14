@@ -7,6 +7,7 @@ from datetime import datetime
 
 
 def get_likes(graph, fb_user):
+    # TODO: Also query URL Likes.
     if graph.type == 'app':
         raise AttributeError, 'Need user graph for get_likes.'
     try:

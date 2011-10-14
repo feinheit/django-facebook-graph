@@ -26,9 +26,9 @@ FACEBOOK_APPS_CHOICE = tuple((v['ID'], unicode(k)) for k,v in settings.FACEBOOK_
 class Base(models.Model):
     # Last Lookup JSON
     _graph = JSONField(blank=True, null=True)
-
+    
     slug = models.SlugField(unique=True, blank=True, null=True)
-
+    
     created = models.DateTimeField(auto_now_add=True, default=datetime.now)
     updated = models.DateTimeField(auto_now=True, default=datetime.now)
 
@@ -222,10 +222,10 @@ class Base(models.Model):
         self.updated = datetime.now()
 
     def __unicode__(self):
-        if hasattr(self, '_name'):
-            return '%s (%s)' % (self._name, self.id)
+        if hasattr(self, '_name') and self._name:
+            return u'%s (%s)' % (self._name, self.id)
         else:
-            return str(self.id)
+            return unicode(self.id)
     
     def delete(self, facebook=False, graph=None, *args, **kwargs):
         """ Deletes the local model and if facebook is true, also the facebook instance."""
@@ -235,6 +235,28 @@ class Base(models.Model):
         super(Base, self).delete(*args, **kwargs)
     delete.alters_data = True
 
+class Profile(Base):
+    """ Base Class for user, group, page, event and application. """
+    id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook page ID'))
+    _name = models.CharField(max_length=200, blank=True, null=True)
+    _link = models.URLField(max_length=255, verify_exists=False, blank=True, null=True, verify_exists=False)
+    _picture = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, help_text=_('Cached picture of the page'))
+    _pic_square = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
+    _pic_small = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
+    _pic_large = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
+    _pic_crop = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
+    
+    class Meta:
+        abstract = True
+    
+    @property
+    def _username(self):
+        return self.slug
+    
+    @_username.setter
+    def _username(self, name):
+        self.slug = slugify(name)
+
 
 # it crashes my python instance on mac os x without proper error message, so may we shoudn't use that handy shortcut
 # maybe its only, that the admin should'nt use these computed fields
@@ -242,19 +264,16 @@ class Base(models.Model):
 #        """ the cached fields (starting with "_") should be accessible by get-method """
 #        if hasattr(self, '_%s' % name):
 #            return getattr(self, '_%s' % name)
-#        return super(Base, self).__getattr_(name)
+#        return super(Base, self).__getattr__(name)
 
 
-class UserBase(Base):
-    id = models.BigIntegerField(primary_key=True, unique=True)
+class UserBase(Profile):
     access_token = models.CharField(max_length=250, blank=True, null=True)
     user = models.OneToOneField(DjangoUser, blank=True, null=True, related_name='facebook%(class)s')
 
     # Cached Facebook Graph fields for db lookup
     _first_name = models.CharField(max_length=50, blank=True, null=True)
     _last_name = models.CharField(max_length=50, blank=True, null=True)
-    _name = models.CharField(max_length=100, blank=True, null=True)
-    _link = models.URLField(verify_exists=False, blank=True, null=True)
     _birthday = models.DateField(blank=True, null=True)
     _email = models.EmailField(blank=True, null=True, max_length=100)
     _location = models.CharField(max_length=70, blank=True, null=True)
@@ -263,9 +282,13 @@ class UserBase(Base):
 
     friends = models.ManyToManyField('self')
     
+    class Meta:
+        abstract=True
+    
     class Facebook:
         public_fields = ['id', 'name', 'first_name', 'last_name', 'gender', 'locale', 'username']
         member_fields = ['link', 'third_party_id', 'updated_time', 'verified']
+        type = 'user'
 
     def __unicode__(self):
         return u'%s (%s)' % (self._name, self.id)
@@ -301,14 +324,15 @@ class UserBase(Base):
         if 'access_token' in response.iterkeys():
             self.access_token = response['access_token']
         super(UserBase, self).save_from_facebook(response, update_slug)
-
-    class Meta:
-        abstract=True
     
     def picture_url(self, type='large'):
-        if type not in ['large', 'small', 'square']:
-            raise AttributeError, 'type must be one of large, small or square.'
-        return u'https://graph.facebook.com/%s/picture?type=%s' % (self.id, type)
+        if type not in ['large', 'small', 'square', 'crop']:
+            raise AttributeError, 'type must be one of large, small, crop or square.'
+        cached = getattr(self, '_pic_%s' % type, None)
+        if cached:
+            return cached
+        else:
+            return u'https://graph.facebook.com/%s/picture?type=%s' % (self.id, type)
 
     @property
     def square_picture_url(self):
@@ -383,18 +407,10 @@ class Photo(Base):
         return response['id']
 
 
-class Page(Base):
-    id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook page ID'))
-
+class Page(Profile):
     # Cached Facebook Graph fields for db lookup
-    _name = models.CharField(max_length=255, blank=True, null=True, help_text=_('Cached name of the page'))
-    _picture = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, help_text=_('Cached picture of the page'))
     _likes = models.IntegerField(blank=True, null=True, help_text=_('Cached fancount of the page'))
-    _link = models.CharField(max_length=255, blank=True, null=True)
     _access_token = models.CharField(max_length=255, blank=True, null=True)
-    # TODO:
-    # format: { app_name, app_id, access_token }
-    #access_token = JSONField(_('access token'), blank=True, null=True)
 
     @property
     def name(self):
@@ -420,7 +436,7 @@ class Page(Base):
                          'website', 'username', 'founded', 'products']
         member_fields = []
         connections = ['feed', 'posts', 'tagged', 'statuses', 'links', 'notes', 'photos', 'albums', 'events', 'videos']
-
+        type = 'page'
 
     #@models.permalink
     #def get_absolute_url(self):
@@ -429,9 +445,7 @@ class Page(Base):
 """
 Applications are by default stored in the settings.
 
-class Application(Page):
-    # The Application inherits the Page, because every application has a Page
-    api_key = models.CharField(max_length=32, help_text=_('The applications API Key'))
+class Application(Profile):
     secret = models.CharField(max_length=32, help_text=_('The applications Secret'))
 """    
 
@@ -452,12 +466,10 @@ class EventManager(models.Manager):
         
         return self.filter(Q(_start_time__lt=today) & Q(_end_time__lt=today))
 
-class Event(Base):
-    id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook event ID'))
-
+class Event(Profile):
     # Cached Facebook Graph fields for db lookup
     _owner = JSONField(blank=True, null=True)
-    _name = models.CharField(max_length=200, blank=True, null=True)
+   
     _description = models.TextField(blank=True, null=True)
     _start_time = models.DateTimeField(blank=True, null=True)
     _end_time = models.DateTimeField(blank=True, null=True)
@@ -491,6 +503,7 @@ class Event(Base):
                        'invited' : {'field' : 'invited', 'extra_fields' : ['rsvp_status',]},}
         publish = 'events'
         arguments = ['name', 'start_time', 'end_time']
+        type = 'event'
     
     def save_rsvp_status(self, user_id, status):
         user, created = User.objects.get_or_create(id=user_id)
