@@ -7,4 +7,5 @@
 .project
 .pydevproject
 .hg
+*.sdocml
 /docs/_build

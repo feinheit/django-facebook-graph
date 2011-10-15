@@ -7,5 +7,7 @@ class ScoreAdmin(admin.ModelAdmin):
     readonly_fields = ('user', 'score')
     search_fields = ('user',)
     ordering = ['score']
-    
+
+
+# TODO: Create a admin model manager that registers models on demand.
 admin.site.register(Score, ScoreAdmin)

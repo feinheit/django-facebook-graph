@@ -1,25 +1,19 @@
 import logging
-from urllib import urlencode
-import warnings
+from facebook.utils import post_image
 logger = logging.getLogger(__name__)
 
-from datetime import datetime, timedelta, date
+from datetime import datetime
 from django.conf import settings
-from django import forms
-from django.db import models, transaction
-from django.db.models import Q
-from django.contrib.auth.models import User as DjangoUser
+from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import simplejson as json
 from django.utils.translation import ugettext_lazy as _
 from django.template.defaultfilters import slugify
 
-from facebook import GraphAPIError
-import re
+from facebook import GraphAPIError, get_graph, FbUser
 
 from fields import JSONField
-from utils import get_graph, post_image, get_FQL
 
 FACEBOOK_APPS_CHOICE = tuple((v['ID'], unicode(k)) for k,v in settings.FACEBOOK_APPS.items())
 
@@ -235,27 +229,7 @@ class Base(models.Model):
         super(Base, self).delete(*args, **kwargs)
     delete.alters_data = True
 
-class Profile(Base):
-    """ Base Class for user, group, page, event and application. """
-    id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook page ID'))
-    _name = models.CharField(max_length=200, blank=True, null=True)
-    _link = models.URLField(max_length=255, verify_exists=False, blank=True, null=True, verify_exists=False)
-    _picture = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, help_text=_('Cached picture of the page'))
-    _pic_square = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
-    _pic_small = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
-    _pic_large = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
-    _pic_crop = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
-    
-    class Meta:
-        abstract = True
-    
-    @property
-    def _username(self):
-        return self.slug
-    
-    @_username.setter
-    def _username(self, name):
-        self.slug = slugify(name)
+
 
 
 # it crashes my python instance on mac os x without proper error message, so may we shoudn't use that handy shortcut
@@ -267,102 +241,6 @@ class Profile(Base):
 #        return super(Base, self).__getattr__(name)
 
 
-class UserBase(Profile):
-    access_token = models.CharField(max_length=250, blank=True, null=True)
-    user = models.OneToOneField(DjangoUser, blank=True, null=True, related_name='facebook%(class)s')
-
-    # Cached Facebook Graph fields for db lookup
-    _first_name = models.CharField(max_length=50, blank=True, null=True)
-    _last_name = models.CharField(max_length=50, blank=True, null=True)
-    _birthday = models.DateField(blank=True, null=True)
-    _email = models.EmailField(blank=True, null=True, max_length=100)
-    _location = models.CharField(max_length=70, blank=True, null=True)
-    _gender = models.CharField(max_length=10, blank=True, null=True)
-    _locale = models.CharField(max_length=6, blank=True, null=True)
-
-    friends = models.ManyToManyField('self')
-    
-    class Meta:
-        abstract=True
-    
-    class Facebook:
-        public_fields = ['id', 'name', 'first_name', 'last_name', 'gender', 'locale', 'username']
-        member_fields = ['link', 'third_party_id', 'updated_time', 'verified']
-        type = 'user'
-
-    def __unicode__(self):
-        return u'%s (%s)' % (self._name, self.id)
-
-
-    def get_friends(self, graph, save=False):
-        """ this function needs a valid access token."""
-        response = graph.request('%s/friends' % self.id)
-        friends = response['data']
-
-        if save:
-            self.save_friends(friends)
-
-        return friends
-
-    def save_friends(self, friends):
-        for jsonfriend in friends:
-            friend, created = User.objects.get_or_create(id=jsonfriend['id'])
-            if created:
-                friend._name = jsonfriend['name']
-                friend.save()
-            all_friends = list(self.friends.all().values_list('id'));
-            if not friend in all_friends:
-                self.friends.add(friend)
-        self.save()
-        return friends
-
-    @property
-    def facebook_link(self):
-        return self._link
-
-    def save_from_facebook(self, response, update_slug=False):
-        if 'access_token' in response.iterkeys():
-            self.access_token = response['access_token']
-        super(UserBase, self).save_from_facebook(response, update_slug)
-    
-    def picture_url(self, type='large'):
-        if type not in ['large', 'small', 'square', 'crop']:
-            raise AttributeError, 'type must be one of large, small, crop or square.'
-        cached = getattr(self, '_pic_%s' % type, None)
-        if cached:
-            return cached
-        else:
-            return u'https://graph.facebook.com/%s/picture?type=%s' % (self.id, type)
-
-    @property
-    def square_picture_url(self):
-        return self.picture_url(type='square')
-    
-    @property
-    def large_picture_url(self):
-        return self.picture_url(type='large')
-            
-    def get_absolute_url(self):
-        if self._link:
-            return self._link
-        else:
-            return 'http://www.facebook.com/profile.php?id=%s' % self.id
-
-
-class User(UserBase):
-    class Meta:
-        abstract=False
-
-
-# This code is for backwards compability only. Will be removed with verison 1.1.
-def user__facebookuser(self):
-    warnings.warn('Stop using `user`, use `facebookuser` instead.',
-    DeprecationWarning, stacklevel=2)
-    return self.facebookuser
-DjangoUser.user = property(user__facebookuser)
-
-
-
 class Photo(Base):
     fb_id = models.BigIntegerField(unique=True, null=True, blank=True)
     image = models.ImageField(upload_to='uploads/')
@@ -370,7 +248,7 @@ class Photo(Base):
 
     # Cached Facebook Graph fields for db lookup
     _name = models.CharField(max_length=100, blank=True, null=True)
-    _likes = models.ManyToManyField(User, related_name='photo_likes')
+    _likes = models.ManyToManyField(FbUser, related_name='photo_likes')
     _like_count = models.PositiveIntegerField(blank=True, null=True)
     _from_id = models.BigIntegerField(null=True, blank=True)
 
@@ -407,40 +285,7 @@ class Photo(Base):
         return response['id']
 
 
-class Page(Profile):
-    # Cached Facebook Graph fields for db lookup
-    _likes = models.IntegerField(blank=True, null=True, help_text=_('Cached fancount of the page'))
-    _access_token = models.CharField(max_length=255, blank=True, null=True)
 
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def picture(self):
-        return self._picture
-
-    @property
-    def fan_count(self):
-        return self._likes
-
-    @property
-    def facebook_link(self):
-        return self._link
-
-    def __unicode__(self):
-        return '%s (%s)' % (self._name, self.id)
-    
-    class Facebook:
-        public_fields = ['id', 'name', 'picture', 'link', 'category', 'likes', 'location', 'phone', 'checkins', 
-                         'website', 'username', 'founded', 'products']
-        member_fields = []
-        connections = ['feed', 'posts', 'tagged', 'statuses', 'links', 'notes', 'photos', 'albums', 'events', 'videos']
-        type = 'page'
-
-    #@models.permalink
-    #def get_absolute_url(self):
-    #    return ('page', (), {'portal' : self.portal.slug, 'page' : self.slug})
 
 """
 Applications are by default stored in the settings.
@@ -449,164 +294,9 @@ class Application(Profile):
     secret = models.CharField(max_length=32, help_text=_('The applications Secret'))
 """    
 
-class EventManager(models.Manager):
-    def upcoming(self):
-        """ returns all upcoming and ongoing events """
-        today = date.today()
-        if datetime.now().hour < 6:
-            today = today-timedelta(days=1)
-        
-        return self.filter(Q(_start_time__gte=today) | Q(_end_time__gte=today))
-    
-    def past(self):
-        """ returns all past events """
-        today = date.today()
-        if datetime.now().hour < 6:
-            today = today-timedelta(days=1)
-        
-        return self.filter(Q(_start_time__lt=today) & Q(_end_time__lt=today))
-
-class Event(Profile):
-    # Cached Facebook Graph fields for db lookup
-    _owner = JSONField(blank=True, null=True)
-   
-    _description = models.TextField(blank=True, null=True)
-    _start_time = models.DateTimeField(blank=True, null=True)
-    _end_time = models.DateTimeField(blank=True, null=True)
-    _location = models.CharField(max_length=500, blank=True, null=True)
-    _venue = JSONField(blank=True, null=True)
-    _privacy = models.CharField(max_length=10, blank=True, null=True, choices=(('OPEN', 'OPEN'), ('CLOSED', 'CLOSED'), ('SECRET', 'SECRET')))
-    _updated_time = models.DateTimeField(blank=True, null=True)
-    
-    invited = models.ManyToManyField(User, through='EventUser')
-
-    objects = EventManager()
-
-    @property
-    def facebook_link(self):
-        return 'http://www.facebook.com/event.php?eid=%s' % self.id
-    
-    def get_description(self):
-        return self._description
-    
-    def get_name(self):
-        return self._name
-    
-    class Meta:
-        ordering = ('_start_time',)
-    
-    class Facebook:  # TODO: refactoring here.
-        connections = {'attending' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'attending'}},
-                       'maybe' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'unsure'}},
-                       'declined' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'declined'}},
-                       'noreply' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'not_replied'}},
-                       'invited' : {'field' : 'invited', 'extra_fields' : ['rsvp_status',]},}
-        publish = 'events'
-        arguments = ['name', 'start_time', 'end_time']
-        type = 'event'
-    
-    def save_rsvp_status(self, user_id, status):
-        user, created = User.objects.get_or_create(id=user_id)
-        if created:
-            user.save()
-        connection, created = self.invited.through.objects.get_or_create(user=user, event=self)
-        connection.status = status
-        connection.save()
-        return connection
-    
-    def update_rsvp_status(self, user_id, access_token=None):
-        if not access_token: access_token=get_graph().access_token
-        response = get_FQL('SELECT rsvp_status FROM event_member WHERE uid=%s AND eid=%s' % (user_id, self.id),
-                           access_token=access_token)
-        if len(response):
-            self.save_rsvp_status(user_id, response[0]['rsvp_status'])
-            return response[0]['rsvp_status']
-        else:
-            return 'not invited'
-    
-    def respond(self, graph, status='attending'):
-        fb_response = graph.put_object(str(self.id), status)
-        self.save_rsvp_status(graph.user_id, status)
-        return fb_response
 
 
-class EventUser(models.Model):
-    event = models.ForeignKey(Event)
-    user = models.ForeignKey(User)
-    rsvp_status = models.CharField(max_length=10, default="attending", 
-                              choices=(('attending', _('attending')),
-                                       ('unsure', _('unsure')),
-                                       ('declined', _('declined')),
-                                       ('not_replied', _('not_replied'))))
-    
-    class Meta:
-        unique_together = [('event', 'user'),]
 
-
-class Request(Base):
-    """ App request model. Must be deleted manually by the app."""
-    id = models.BigIntegerField(primary_key=True, unique=True)
-    
-    # Cached Facebook Graph fields for db lookup
-    _application_id = models.BigIntegerField('Application', max_length=30, choices=FACEBOOK_APPS_CHOICE, blank=True, null=True)
-    _to = models.ForeignKey(User, blank=True, null=True, related_name='request_to_set')
-    _from = models.ForeignKey(User, blank=True, null=True, related_name='request_from_set')
-    _data = models.TextField(blank=True, null=True)
-    _message = models.TextField(blank=True, null=True)
-    _created_time = models.DateTimeField(blank=True, null=True)
-    
-    def delete(self, facebook=True, graph=None, app_name=None, *args, **kwargs):
-        if not graph:
-            graph = get_graph(request=None, app_name=app_name) # Method needs static graph
-        try:
-            super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
-        except GraphAPIError:
-            graph = get_graph(request=None, app_name=app_name)
-            try:
-                super(Request, self).delete(facebook=facebook, graph=graph, *args, **kwargs)
-            except GraphAPIError:
-                super(Request, self).delete(facebook=False, graph=None, *args, **kwargs)
-
-    def get_from_facebook(self, graph=None, save=settings.DEBUG, quick=True):
-        """ Only saves the request to the db if DEBUG is True."""
-        if quick and save and self._graph:
-            return self
-        if not graph:
-            graph = get_graph() # get app graph only
-        super(Request, self).get_from_facebook(graph=graph, save=True)
-    
-    def __unicode__(self):
-        return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)
-
-
-class TestUser(UserBase):
-    login_url = models.URLField('Login URL', blank=True, max_length=160)
-    password = models.CharField('Password', max_length=30, blank=True)
-    belongs_to = models.BigIntegerField(_('Belongs to'), help_text=_('The app the testuser has been created with.'))
-    
-    def __unicode__(self):
-        return 'Testuser: %s (%s)' % (self._email, self.id)
-    
-    def set_password(self, graph, new_password):
-        if graph.request('%s' % self.id, None, {'password': new_password, 'access_token': graph.access_token }):
-            self.password = new_password
-            self.save()
-    
-    def save_from_facebook(self, response, update_slug=False, app_id=None):
-        if app_id:
-            self.belongs_to = int(app_id)
-        if 'login_url' in response.keys():
-            self.login_url = response['login_url']
-        if 'password' in response.keys():
-            self.password = response['password']
-        if 'access_token' in response.keys():
-            self.access_token = response['access_token']
-        self.id = response['id']
-        super(TestUser, self).save_from_facebook(response, update_slug)
-        
-    class Meta:
-        verbose_name = _('Test user')
-        verbose_name_plural = _('Test users')
 
 POST_TYPES = (('status', _('Status message')),
               ('link', _('Link')),
@@ -616,9 +306,10 @@ POST_TYPES = (('status', _('Status message')),
               # Umfrage
 )
 
+
 class PostBase(Base):
     id = models.CharField(_('id'), max_length=40, primary_key=True)
-    _from = models.ForeignKey(User, blank=True, null=True, verbose_name=_('from'),
+    _from = models.ForeignKey(FbUser, blank=True, null=True, verbose_name=_('from'),
                               related_name='%(app_label)s_%(class)s_posts_sent')
     _to = JSONField(_('to'), blank=True, null=True)  # could be M2M but nees JSON processor.
     _message = models.TextField(_('message'), blank=True)
@@ -692,16 +383,10 @@ class PostBase(Base):
             except AttributeError:
                 return ''
 
-class Post(PostBase):
 
+class Post(PostBase):
     class Meta:
         verbose_name = _('Post')
         verbose_name_plural = _('Posts')
         abstract = False
 
-
-
-    
-    
-    
-    
