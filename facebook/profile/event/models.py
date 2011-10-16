@@ -2,7 +2,9 @@
 
 from django.db import models
 from facebook.profile import Profile
-from facebook import FbUser, get_graph, get_FQL
+from facebook.profile.user.models import User as FbUser
+from facebook.graph import get_graph
+from facebook.fql import get_FQL
 from django.db.models import Q
 from datetime import datetime, timedelta, date
 

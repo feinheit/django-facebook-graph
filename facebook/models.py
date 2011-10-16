@@ -1,9 +1,7 @@
 import logging
-from facebook.utils import post_image
 logger = logging.getLogger(__name__)
 
 from datetime import datetime
-from django.conf import settings
 from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
@@ -11,11 +9,10 @@ from django.utils import simplejson as json
 from django.utils.translation import ugettext_lazy as _
 from django.template.defaultfilters import slugify
 
-from facebook import GraphAPIError, get_graph, FbUser
+from facebook.graph import GraphAPIError, get_graph
+from facebook.profile.user.models import User as FbUser
 
 from fields import JSONField
-
-FACEBOOK_APPS_CHOICE = tuple((v['ID'], unicode(k)) for k,v in settings.FACEBOOK_APPS.items())
 
 class Base(models.Model):
     # Last Lookup JSON
@@ -239,62 +236,6 @@ class Base(models.Model):
 #        if hasattr(self, '_%s' % name):
 #            return getattr(self, '_%s' % name)
 #        return super(Base, self).__getattr__(name)
-
-
-class Photo(Base):
-    fb_id = models.BigIntegerField(unique=True, null=True, blank=True)
-    image = models.ImageField(upload_to='uploads/')
-    message = models.TextField(_('message'), blank=True)
-
-    # Cached Facebook Graph fields for db lookup
-    _name = models.CharField(max_length=100, blank=True, null=True)
-    _likes = models.ManyToManyField(FbUser, related_name='photo_likes')
-    _like_count = models.PositiveIntegerField(blank=True, null=True)
-    _from_id = models.BigIntegerField(null=True, blank=True)
-
-    @property
-    def like_count(self):
-        self._like_count = self._likes.all().count()
-        self.save()
-        return self._like_count
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def from_object(self):
-        return self._from_id
-
-    @property
-    def facebook_link(self):
-        return 'http://www.facebook.com/photo.php?fbid=%s' % self.id
-
-    def send_to_facebook(self, object='me', save=False, graph=None, message=None, app_name=None):
-
-        if not graph:
-            graph = get_graph(app_name=app_name)
-        if not message:
-            message = self.message
-
-        response = post_image(graph.access_token, self.image.file, message, object=object)
-
-        if save:
-            self.fb_id = response['id']
-            self.save()
-        return response['id']
-
-
-
-
-"""
-Applications are by default stored in the settings.
-
-class Application(Profile):
-    secret = models.CharField(max_length=32, help_text=_('The applications Secret'))
-"""    
-
-
 
 
 

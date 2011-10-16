@@ -1,8 +1,11 @@
 from django.contrib import admin
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from models import User, Photo, Page, Event, Request, TestUser, Post
-from utils import get_graph
+from facebook.graph import get_graph
+
+from facebook import FbPhoto, FbPost, FbUser, FbTestUser, FbPage, \
+                     FbEvent, FbRequest, FbScore
+
 
 def delete_object(modeladmin, request, queryset):
     graph = get_graph(request)
@@ -18,10 +21,10 @@ class AdminBase(admin.ModelAdmin):
         graph = get_graph(request, force_refresh=True, prefer_cookie=True)
         obj.get_from_facebook(save=True, graph=graph)
     
-    
     def profile_link(self, obj):
         if obj.facebook_link:
-            return '<a href="%s" target="_blank"><img src="%s/picture?type=square" /></a>' % (obj.facebook_link, obj.graph_url)
+            return '<a href="%s" target="_blank"><img src="%s/picture?type=square" /></a>'\
+                 % (obj.facebook_link, obj.graph_url)
         else:
             return '<img src="http://graph.facebook.com/%s/picture" />' % (obj.id)
     profile_link.allow_tags = True
@@ -33,23 +36,23 @@ class AdminBase(admin.ModelAdmin):
         }
         return super(AdminBase, self).change_view(request, object_id,
             extra_context=fb_context)
-    
+
+
+class PhotoAdmin(AdminBase):
+    list_display = ('_id', '_name', 'like_count', '_from_id')
+    readonly_fields = ('fb_id', '_name', '_likes', '_graph', '_from_id', '_like_count')
+
 
 class UserAdmin(AdminBase):
     list_display = ('id', 'profile_link', 'access_token', 'user', '_name', 'created', 'updated',)
     readonly_fields = ('friends', '_name', '_first_name', '_last_name', '_link', '_birthday', '_email', '_location', '_gender', '_graph')
     search_fields = ('id', '_name')
-    
-admin.site.register(User, UserAdmin)
+ 
 
-if settings.DEBUG:
-    admin.site.register(TestUser, UserAdmin)
-    
-
-class PhotoAdmin(AdminBase):
-    list_display = ('_id', '_name', 'like_count', '_from_id')
-    readonly_fields = ('fb_id', '_name', '_likes', '_graph', '_from_id', '_like_count')
-admin.site.register(Photo, PhotoAdmin)
+class EventAdmin(AdminBase):
+    list_display = ('id', 'profile_link', '_owner', '_name', '_description', '_start_time', '_end_time', '_location', '_venue', '_privacy')
+    readonly_fields = ('_graph', '_owner', '_name', '_description', '_start_time', '_end_time', '_location', '_venue', '_privacy', '_updated_time')
+    list_display_links = ('id',)
 
 
 class PageAdmin(AdminBase):
@@ -85,27 +88,18 @@ class PageAdmin(AdminBase):
             self.message_user(request, 'There was an error: %s' % response )
     
     get_page_access_token.short_description = _('Get an access token for the selected page(s)')
-  
-admin.site.register(Page, PageAdmin)
-
-"""
-class ApplicationAdmin(AdminBase):
-    list_display = ('id', 'profile_link', 'slug', '_name', '_picture', '_likes','api_key', 'secret')
-    readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link')
-admin.site.register(Application, ApplicationAdmin)
-"""
-
-class EventAdmin(AdminBase):
-    list_display = ('id', 'profile_link', '_owner', '_name', '_description', '_start_time', '_end_time', '_location', '_venue', '_privacy')
-    readonly_fields = ('_graph', '_owner', '_name', '_description', '_start_time', '_end_time', '_location', '_venue', '_privacy', '_updated_time')
-    list_display_links = ('id',)
-admin.site.register(Event, EventAdmin)
 
 
 class RequestAdmin(AdminBase):
     list_display = ('id', '_application_id', '_to', '_from', '_data', '_message', '_created_time')
     readonly_fields = ('_graph', '_application_id', '_to', '_from', '_data', '_message', '_created_time')
-admin.site.register(Request, RequestAdmin)
+
+class ScoreAdmin(admin.ModelAdmin):
+    list_display = ('user', 'score')
+    readonly_fields = ('user', 'score')
+    search_fields = ('user',)
+    ordering = ['score']
+
 
 class PostAdmin(AdminBase):
     def picture_link(self, obj):
@@ -125,6 +119,31 @@ class PostAdmin(AdminBase):
     date_hierarchy = '_updated_time'
     list_filter = ('_type',)
     
-    
-admin.site.register(Post, PostAdmin)
 
+if hasattr(settings, 'FACEBOOK_ADMIN'):
+    FACEBOOK_ADMIN = getattr(settings, 'FACEBOOK_ADMIN')
+    if 'user' in FACEBOOK_ADMIN:
+        admin.site.register(FbUser, UserAdmin)
+    if 'page' in FACEBOOK_ADMIN:
+        admin.site.register(FbPage, PageAdmin)
+    if 'event' in FACEBOOK_ADMIN:
+        admin.site.register(FbEvent, EventAdmin)
+    if 'request' in FACEBOOK_ADMIN:
+        admin.site.register(FbRequest, RequestAdmin)
+    if 'score' in FACEBOOK_ADMIN:
+        admin.site.register(FbScore, ScoreAdmin)
+    if 'post' in FACEBOOK_ADMIN:
+        admin.site.register(FbPost, PostAdmin)
+    if 'photo' in FACEBOOK_ADMIN:
+        admin.site.register(FbPhoto, PhotoAdmin)
+
+else:
+    admin.site.register(FbUser, UserAdmin)
+    admin.site.register(FbPhoto, PhotoAdmin)
+    admin.site.register(FbPage, PageAdmin)
+    admin.site.register(FbEvent, EventAdmin)
+    admin.site.register(FbRequest, RequestAdmin)
+    admin.site.register(FbPost, PostAdmin)
+
+if settings.DEBUG:
+    admin.site.register(FbTestUser, UserAdmin)

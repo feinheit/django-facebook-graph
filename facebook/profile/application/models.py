@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.conf import settings
 from facebook.models import Base
 from django.utils.translation import ugettext_lazy as _
-from facebook.models import User, FACEBOOK_APPS_CHOICE
-from facebook.utils import get_graph, get_static_graph
+from facebook.profile.user.models import User
+from facebook.graph import get_graph, get_static_graph, GraphAPIError
 from facebook.fields import JSONField
+
+
+FACEBOOK_APPS_CHOICE = tuple((v['ID'], unicode(k)) for k,v in settings.FACEBOOK_APPS.items())
 
 class Request(Base):
     """ App request model. Must be deleted manually by the app."""

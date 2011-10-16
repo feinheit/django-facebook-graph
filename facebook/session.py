@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime, timedelta
+from facebook.profile.application.models import Request
+import logging
+logger = logging.getLogger(__name__)
+
+
 class SessionBase(object):    
     def __init__(self):
         self.app_is_authenticated, self.access_token, self.signed_request = True, None, None
@@ -39,22 +45,6 @@ class FBSession(SessionBase):
     def modified(self, who='unknown'):
         self.request.session.modified = True
         logger.debug('Session modified by %s: %s' % (who, self.fb_session))
-            
-
-    # DEPRECATED FUNCTION:
-    # Maybe change this so it returns at least the user_id.
-    def cookie_info(self, app_dict, store=True):
-        graph = get_graph(self.request, app_dict=app_dict)
-        cookie = graph.get_user_from_cookie()
-        if cookie:
-            if store:
-                if cookie['uid']:
-                    self.fb_session['user_id'] = cookie['uid']
-                if cookie['access_token']:
-                    self.access_token = cookie['access_token']
-            return {'user_id': cookie['uid'], 'access_token': cookie['access_token']}
-        else:
-            return None
 
     
     @property
@@ -167,7 +157,7 @@ class FBSession(SessionBase):
     def app_requests(self, item):
         if isinstance(item, list):
             self.fb_session['app_requests'] = ','.join(str(i) for i in item)
-        elif isinstance(item, facebook.models.Request):
+        elif isinstance(item, Request):
             ar = self.fb_session.get('app_requests', []).split(',')
             ar.append(str(item.id))
             self.fb_session['app_requests'] = ','.join(ar)

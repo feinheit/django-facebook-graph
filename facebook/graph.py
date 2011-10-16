@@ -5,15 +5,18 @@ import urllib2
 import warnings
 from urllib2 import HTTPError
 
-import logging
-from facebook.utils import MultiPartForm
-logger = logging.getLogger(__name__)
+import mimetools
+import mimetypes
+import itertools
 
+import logging
+logger = logging.getLogger(__name__)
 
 from datetime import datetime, timedelta
 
-from facebook import get_session, authenticate, GraphAPIError,\
-    parseSignedRequest, get_app_dict
+from facebook.oauth2 import authenticate, parseSignedRequest
+from facebook.profile.application import get_app_dict
+from facebook.session import get_session
 
 # Find a JSON parser
 try:
@@ -36,6 +39,71 @@ class GraphAPIError(Exception):
     def __str__(self):
         return '%s: %s' % (self.type, self.message)
     
+
+# from http://www.doughellmann.com/PyMOTW/urllib2/
+class MultiPartForm(object):
+    """Accumulate the data to be used when posting a form."""
+
+    def __init__(self):
+        self.form_fields = []
+        self.files = []
+        self.boundary = mimetools.choose_boundary()
+        return
+
+    def get_content_type(self):
+        return 'multipart/form-data; boundary=%s' % self.boundary
+
+    def add_field(self, name, value):
+        """Add a simple field to the form data."""
+        self.form_fields.append((name, value))
+        return
+
+    def add_file(self, fieldname, filename, fileHandle, mimetype=None):
+        """Add a file to be uploaded."""
+        body = fileHandle.read()
+        if mimetype is None:
+            mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        self.files.append((fieldname, filename, mimetype, body))
+        return
+
+    def __str__(self):
+        """Return a string representing the form data, including attached files."""
+        # Build a list of lists, each containing "lines" of the
+        # request.  Each part is separated by a boundary string.
+        # Once the list is built, return a string where each
+        # line is separated by '\r\n'.
+        parts = []
+        part_boundary = '--' + self.boundary
+
+        # Add the form fields
+        parts.extend(
+            [part_boundary,
+              'Content-Disposition: form-data; name="%s"' % name,
+              '',
+              str(value),
+            ]
+            for name, value in self.form_fields
+            )
+
+        # Add the files to upload
+        parts.extend(
+            [part_boundary,
+              'Content-Disposition: file; name="%s"; filename="%s"' % \
+                 (field_name, filename),
+              'Content-Type: %s' % content_type,
+              '',
+              str(body)
+            ]
+            for field_name, filename, content_type, body in self.files
+            )
+
+        # Flatten the list and add closing boundary marker,
+        # then return CR+LF separated data
+        flattened = list(itertools.chain(*parts))
+        flattened.append('--' + self.boundary + '--')
+        flattened.append('')
+        return '\r\n'.join(flattened)
+
 
 class GraphAPI(object):
     """A client for the Facebook Graph API.
