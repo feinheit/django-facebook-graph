@@ -102,6 +102,8 @@ def redirect_to_page(view):
             return original_view.func(request, *original_view.args, **original_view.kwargs)
         else:
             #check if the app is inside the specified page.
+            app_dict = get_app_dict()
+            page_id = app_dict['PAGE-ID']
             try:
                 page = signed_request['page']['id']
             except KeyError:
