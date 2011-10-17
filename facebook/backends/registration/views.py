@@ -32,13 +32,16 @@ def login(request, template_name='registration/login.html',
 
     fb_app = get_app_dict(app_name)
 
-    graph = get_graph(request, app_name=app_name)
+    try:
+        graph = get_graph(request, app_name=app_name)
+    except IOError:
+        graph = None
 
     redirect_to = request.REQUEST.get(redirect_field_name, '')
 
     # Because we override the login, we should check for POST data,
     #to give priority to the django auth view
-    if request.method == 'GET' and graph.via not in ('application',):
+    if request.method == 'GET' and graph and graph.via not in ('application',):
         # Light security check on redirect_to (lifted from django.contrib.auth.views)
         netloc = urlparse.urlparse(redirect_to)[1]
 
@@ -68,7 +71,6 @@ def login(request, template_name='registration/login.html',
 
         return redirect(redirect_to)
 
-    logger.debug('could not login user %s' % graph.user_id)
     return auth_views.login(request, template_name,
                             redirect_field_name, authentication_form)
 

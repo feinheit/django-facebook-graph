@@ -381,7 +381,7 @@ class Graph(facebook.GraphAPI):
         if not self.fb_session.access_token:
             return None
         self._user_id = self.fb_session.user_id
-        if self.type() <> 'user':
+        if self.type(token=self.fb_session.access_token) <> 'user':
             return None
         self.access_token = self.fb_session.access_token
         return self.access_token
@@ -511,10 +511,11 @@ class Graph(facebook.GraphAPI):
             id = getattr(me, 'id', None)
             return int(id) if id else None
         
-    def type(self):
-        if not self.access_token:
+    def type(self, token=None):
+        access_token = token or self.access_token
+        if not access_token:
             return None
-        return 'app' if len(self.access_token) < 80 else 'user'
+        return 'app' if len(access_token) < 80 else 'user'
 
     def revoke_auth(self):
         return self.request('me/permissions', post_args={"method": "delete"})
