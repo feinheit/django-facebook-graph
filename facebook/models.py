@@ -21,7 +21,7 @@ from facebook import GraphAPIError
 import re
 
 from fields import JSONField
-from utils import get_graph, post_image, get_FQL
+from utils import get_graph, post_image, get_FQL, get_app_dict
 
 FACEBOOK_APPS_CHOICE = tuple((v['ID'], unicode(k)) for k,v in settings.FACEBOOK_APPS.items())
 
@@ -225,9 +225,9 @@ class Base(models.Model):
 
     def __unicode__(self):
         if hasattr(self, '_name'):
-            return '%s (%s)' % (self._name, self.id)
+            return u'%s (%s)' % (self._name, self.id)
         else:
-            return str(self.id)
+            return unicode(self.id)
     
     def delete(self, facebook=False, graph=None, *args, **kwargs):
         """ Deletes the local model and if facebook is true, also the facebook instance."""
@@ -369,6 +369,10 @@ class Photo(Base):
     @property
     def from_object(self):
         return self._from_id
+    
+    @property
+    def _id(self):
+        return self.fb_id
 
     @property
     def facebook_link(self):
@@ -380,11 +384,18 @@ class Photo(Base):
             graph = get_graph(app_name=app_name)
         if not message:
             message = self.message
+        app_dict = get_app_dict(app_name)
 
-        response = post_image(graph.access_token, self.image.file, message, object=object)
-
+        #response = post_image(graph.access_token, self.image.file, message, object=object)
+        #response = graph.put_photo(self.image.file, message=message)
+        image_url = 'http://%s%s' % (app_dict['DOMAIN'], self.image.url)
+        logger.debug('image_url: %s' % image_url )
+        response = graph.put_photo_url(image_url, message, object)
+        logger.debug('response: %s' % response )
+        
         if save:
             self.fb_id = response['id']
+            self.slug = response['id']
             self.save()
         return response['id']
 
