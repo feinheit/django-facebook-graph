@@ -234,7 +234,11 @@ class Base(models.Model):
         if facebook:
             if not graph: graph = get_graph()
             graph.delete_object(str(self.id))
-        super(Base, self).delete(*args, **kwargs)
+        try:
+            # if the model is abstract, it cannot be saved, but thats ok
+            super(Base, self).delete(*args, **kwargs)
+        except: # AssertionError
+            pass
     delete.alters_data = True
 
 
