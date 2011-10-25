@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta
 
 from facebook.oauth2 import authenticate, parseSignedRequest
-#from facebook.session import get_session
+from facebook.session import get_session
 
 # Find a JSON parser
 try:
@@ -484,7 +484,7 @@ class Graph(GraphAPI):
 def get_graph(request=None, app_name=None, app_dict=None, *args, **kwargs):
     """ This is the main factory function that returns a graph class. """
     if not app_dict:
-        from facebook.modules.profile.application import get_app_dict
+        from facebook.modules.profile.application.utils import get_app_dict
         app_dict = get_app_dict(app_name)
     return Graph(app_dict=app_dict, request=request, *args, **kwargs)
 
