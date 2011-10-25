@@ -144,18 +144,6 @@ class Base(models.Model):
         response = graph.put_object(parent_object=str(target), connection_name=self.Facebook.publish, **args)
         return response
     
-    def save(self, *args, **kwargs):
-        # try to generate a slug, but only the first time (because the slug should be more persistent)
-        if not self.slug:
-            try:
-                if self._name:
-                    self.slug = slugify(self._name)[:50]
-                else:
-                    self.slug = slugify(self.id)
-            except:
-                self.slug = self.id
-        super(Base, self).save(*args, **kwargs)
-    
     def get_connections(self, connection_name, graph, save=False):
         response = graph.request('%s/%s' % (self._id, connection_name))
         connections = response['data']
@@ -211,6 +199,16 @@ class Base(models.Model):
         if not self.id:
             self.created = datetime.now()
         self.updated = datetime.now()
+
+        # try to generate a slug, but only the first time (because the slug should be more persistent)
+        if not self.slug:
+            try:
+                if self._name:
+                    self.slug = slugify(self._name)[:50]
+                else:
+                    self.slug = slugify(self.id)
+            except:
+                self.slug = self.id
 
     def __unicode__(self):
         if hasattr(self, '_name') and self._name:
