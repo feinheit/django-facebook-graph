@@ -3,8 +3,8 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 from facebook.graph import get_graph
-from facebook import FbPhoto, FbPost, FbUser, FbTestUser, FbPage, \
-                     FbEvent, FbRequest, FbScore
+#from facebook import FbPhoto, FbPost, FbUser, FbTestUser, FbPage, \
+#                     FbEvent, FbRequest, FbScore
 
 
 def delete_object(modeladmin, request, queryset):
@@ -42,12 +42,6 @@ class PhotoAdmin(AdminBase):
     list_display = ('_id', '_name', 'like_count', '_from_id')
     readonly_fields = ('fb_id', '_name', '_likes', '_graph', '_from_id', '_like_count')
 
-
-class UserAdmin(AdminBase):
-    list_display = ('id', 'profile_link', 'access_token', 'user', '_name', 'created', 'updated',)
-    readonly_fields = ('friends', '_name', '_first_name', '_last_name', '_link', '_birthday', '_email', '_location', '_gender', '_graph')
-    search_fields = ('id', '_name')
- 
 
 class EventAdmin(AdminBase):
     list_display = ('id', 'profile_link', '_owner', '_name', '_description', '_start_time', '_end_time', '_location', '_venue', '_privacy')
@@ -101,23 +95,6 @@ class ScoreAdmin(admin.ModelAdmin):
     ordering = ['score']
 
 
-class PostAdmin(AdminBase):
-    def picture_link(self, obj):
-            return '<img src="%s" />' % (obj._picture)
-    picture_link.allow_tags = True
-    picture_link.short_description = u'picture'
-    
-    def icon_link(self, obj):
-            return '<img src="%s" alt="%s" width="16" height="16"/>' % (obj._icon, obj._type)
-    icon_link.allow_tags = True
-    icon_link.short_description = u'icon'
-    
-    list_display = ('icon_link', 'id', '_from', '_message', '_type', 'picture_link')
-    list_display_links = ('id',)
-    readonly_fields = ('_graph', '_application', '_to', '_from', '_message', '_picture', '_subject',
-                       '_properties', '_actions', '_privacy', '_likes', '_comments', '_targeting')
-    date_hierarchy = '_updated_time'
-    list_filter = ('_type',)
     
 
 if hasattr(settings, 'FACEBOOK_ADMIN'):
@@ -137,13 +114,13 @@ if hasattr(settings, 'FACEBOOK_ADMIN'):
     if 'photo' in FACEBOOK_ADMIN:
         admin.site.register(FbPhoto, PhotoAdmin)
 
-else:
-    admin.site.register(FbUser, UserAdmin)
-    admin.site.register(FbPhoto, PhotoAdmin)
-    admin.site.register(FbPage, PageAdmin)
-    admin.site.register(FbEvent, EventAdmin)
-    admin.site.register(FbRequest, RequestAdmin)
-    admin.site.register(FbPost, PostAdmin)
+#else:
+    #admin.site.register(FbUser, UserAdmin)
+    #admin.site.register(FbPhoto, PhotoAdmin)
+    #admin.site.register(FbPage, PageAdmin)
+    #admin.site.register(FbEvent, EventAdmin)
+    #admin.site.register(FbRequest, RequestAdmin)
+    #admin.site.register(FbPost, PostAdmin)
 
-if settings.DEBUG:
-    admin.site.register(FbTestUser, UserAdmin)
+#if settings.DEBUG:
+#    admin.site.register(FbTestUser, UserAdmin)
