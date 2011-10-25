@@ -12,17 +12,17 @@ This library is adapted to work with the current SDK and Graph API.
 
 """
 
-from graph import GraphAPIError, get_graph, get_static_graph, get_public_graph
-from session import get_session
-from modules.profile.application.__init__ import get_app_dict
-from fql import get_FQL
+#from graph import GraphAPIError, get_graph, get_static_graph, get_public_graph
+#from session import get_session
+#from modules.profile.application.__init__ import get_app_dict
+#from fql import get_FQL
 
-from modules.profile.user.models import User as FbUser, TestUser as FbTestUser
-from modules.profile.page.models import Page as FbPage
-from modules.profile.event.models import Event as FbEvent
-from modules.profile.application.models import Request as FbRequest, Score as FbScore
-from media.models import Photo as FbPhoto
-from models import Post as FbPost
+#from modules.profile.user.models import User as FbUser, TestUser as FbTestUser
+#from modules.profile.page.models import Page as FbPage
+#from modules.profile.event.models import Event as FbEvent
+#from modules.profile.application.models import Request as FbRequest, Score as FbScore
+#from media.models import Photo as FbPhoto
+#from models import Post as FbPost
 
 
 """

@@ -2,17 +2,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 from datetime import datetime
+
 from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import simplejson as json
-from django.utils.translation import ugettext_lazy as _
 from django.template.defaultfilters import slugify
 
 from facebook.graph import GraphAPIError, get_graph
-from facebook.profile.user.models import User as FbUser
 
 from fields import JSONField
+
 
 class Base(models.Model):
     # Last Lookup JSON

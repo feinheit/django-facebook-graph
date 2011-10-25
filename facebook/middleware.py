@@ -13,7 +13,7 @@ from django.utils import simplejson, translation
 _parse_json = lambda s: simplejson.loads(s)
 
 from utils import get_app_dict, get_session, authenticate, get_graph
-from facebook.api import parseSignedRequest, GraphAPIError
+from facebook.graph import parseSignedRequest, GraphAPIError
 from facebook.models import Request as AppRequest
 
 

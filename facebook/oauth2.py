@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
+import logging
+logger = logging.getLogger(__name__)
 
 import hmac
 import hashlib
 import urllib
 import base64
-from facebook.modules.profile.application import get_app_dict
-import logging
 import urlparse
-logger = logging.getLogger(__name__)
+
 import facebook
 
 # Find a JSON parser
@@ -34,6 +34,7 @@ def parseSignedRequest(signed_request, secret=None, application=None):
     """
 
     if not secret:
+        from facebook.modules.profile.application import get_app_dict
         app_dict = get_app_dict(application)
         secret = app_dict['SECRET']
     

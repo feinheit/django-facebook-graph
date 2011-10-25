@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.db import models
-from facebook.profile import Profile
+from django.utils.translation import ugettext_lazy as _
+
+from facebook.modules.profile.models import Profile
 
 class Page(Profile):
     # Cached Facebook Graph fields for db lookup

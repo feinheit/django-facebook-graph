@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-
-from datetime import datetime, timedelta
-from facebook.modules.profile.application.models import Request
 import logging
 logger = logging.getLogger(__name__)
+
+from datetime import datetime, timedelta
 
 
 class SessionBase(object):    
@@ -155,6 +154,8 @@ class FBSession(SessionBase):
     
     @app_requests.setter
     def app_requests(self, item):
+        from facebook.modules.profile.application.models import Request
+        
         if isinstance(item, list):
             self.fb_session['app_requests'] = ','.join(str(i) for i in item)
         elif isinstance(item, Request):

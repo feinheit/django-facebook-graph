@@ -3,6 +3,7 @@ import warnings
 
 from django.contrib.auth.models import User as DjangoUser
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 
 from facebook.modules.profile.models import Profile
 

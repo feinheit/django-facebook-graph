@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 """ To use any of those models, add facebook.connections to your INSTALLED_APPS. """
 
+from datetime import datetime
+
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from facebook.models import User, Page
-from facebook.utils import get_graph
-from datetime import datetime
-        
+from facebook.fields import JSONField
+from facebook.models import Base
+from facebook.modules.profile.user.models import User
+from facebook.modules.profile.page.models import Page
+
         
 class Like(models.Model):
     """ The users likes. Uses a generic foreign key to Page so it doesn't need
@@ -76,7 +79,7 @@ class PostBase(Base):
               )
 
     id = models.CharField(_('id'), max_length=40, primary_key=True)
-    _from = models.ForeignKey(FbUser, blank=True, null=True, verbose_name=_('from'),
+    _from = models.ForeignKey(User, blank=True, null=True, verbose_name=_('from'),
                               related_name='%(app_label)s_%(class)s_posts_sent')
     _to = JSONField(_('to'), blank=True, null=True)  # could be M2M but nees JSON processor.
     _message = models.TextField(_('message'), blank=True)

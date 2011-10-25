@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from facebook.graph import get_graph
 
+from facebook.graph import get_graph
 from facebook import FbPhoto, FbPost, FbUser, FbTestUser, FbPage, \
                      FbEvent, FbRequest, FbScore
 
