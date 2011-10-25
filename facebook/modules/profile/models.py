@@ -20,9 +20,9 @@ class Profile(Base):
         abstract = True
 
     @property
-    def _username(self):
+    def username(self):
         return self.slug
 
-    @_username.setter
-    def _username(self, name):
+    @username.setter
+    def username(self, name):
         self.slug = slugify(name)
