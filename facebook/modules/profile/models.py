@@ -16,7 +16,7 @@ class Profile(Base):
     _pic_large = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
     _pic_crop = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
 
-    class Meta:
+    class Meta(Base.Meta):
         abstract = True
 
     @property

@@ -1,13 +1,17 @@
 #coding=utf-8
+import re
+from datetime import datetime
+
 from django import template
 from django.conf import settings
-from facebook.utils import get_app_dict, get_static_graph, get_graph
 from django.template.defaultfilters import escapejs, capfirst, stringfilter
-import re
 register = template.Library()
 from django.utils.safestring import mark_safe
-from facebook.testusers import TestUsers
-from datetime import datetime
+
+from facebook.modules.profile.user.models import TestUser
+from facebook.modules.profile.application.utils import get_app_dict
+from facebook.graph import get_static_graph, get_graph
+
 
 @register.simple_tag
 def fb_app_settings(app_id=None):

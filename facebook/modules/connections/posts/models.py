@@ -38,7 +38,7 @@ class PostBase(Base):
     _targeting = JSONField(_('targeting'), blank=True, null=True)
     _subject = models.CharField(_('subject'), blank=True, max_length=255)
 
-    class Meta:
+    class Meta(Base.Meta):
         abstract=True
 
     class Facebook:
@@ -90,7 +90,7 @@ class PostBase(Base):
 
 
 class Post(PostBase):
-    class Meta:
+    class Meta(PostBase.Meta):
         verbose_name = _('Post')
         verbose_name_plural = _('Posts')
         abstract = False
