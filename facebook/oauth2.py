@@ -4,7 +4,7 @@ import hmac
 import hashlib
 import urllib
 import base64
-from facebook.profile.application import get_app_dict
+from facebook.modules.profile.application import get_app_dict
 import logging
 import urlparse
 logger = logging.getLogger(__name__)

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta
 
 from facebook.oauth2 import authenticate, parseSignedRequest
-from facebook.profile.application import get_app_dict
+from facebook.modules.profile.application import get_app_dict
 from facebook.session import get_session
 
 # Find a JSON parser

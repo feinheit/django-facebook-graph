@@ -12,14 +12,14 @@ class Profile(Base):
     _pic_small = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
     _pic_large = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
     _pic_crop = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
-    
+
     class Meta:
         abstract = True
-    
+
     @property
     def _username(self):
         return self.slug
-    
+
     @_username.setter
     def _username(self, name):
         self.slug = slugify(name)

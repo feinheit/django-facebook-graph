@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime, timedelta
-from facebook.profile.application.models import Request
+from facebook.modules.profile.application.models import Request
 import logging
 logger = logging.getLogger(__name__)
 

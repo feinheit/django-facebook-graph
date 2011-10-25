@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-from django.db import models
-from facebook.profile import Profile
-from django.contrib.auth.models import User as DjangoUser
 import warnings
+
+from django.contrib.auth.models import User as DjangoUser
+from django.db import models
+
+from facebook.modules.profile.models import Profile
 
 
 class UserBase(Profile):
