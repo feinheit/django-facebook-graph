@@ -1,21 +1,23 @@
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect,\
-    HttpResponseForbidden
+import functools, sys, logging, urllib2
+from datetime import datetime, timedelta
+
 from django.conf import settings
-from facebook.utils import get_graph, parseSignedRequest, get_app_dict, get_session, validate_redirect
-import functools, sys, logging
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, redirect, get_object_or_404, render
 from django.template.defaultfilters import urlencode
 from django.template import loader, RequestContext
 from django.core.urlresolvers import resolve, Resolver404, reverse
 
-from datetime import datetime, timedelta
+from facebook.utils import validate_redirect
+from facebook.graph import get_graph
+from facebook.oauth2 import parseSignedRequest
+from facebook.session import get_session
+from facebook.modules.profile.application.utils import get_app_dict
+from facebook.modules.profile.user.models import User
+
 
 logger = logging.getLogger(__name__)
-
-import urllib2
-
-from models import User
 
 runserver = ('runserver' in sys.argv)
 
