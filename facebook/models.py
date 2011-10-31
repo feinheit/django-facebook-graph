@@ -546,9 +546,17 @@ class EventUser(models.Model):
     class Meta:
         unique_together = [('event', 'user'),]
 
+        
+class RequestManager(models.Manager):
+    def get_query_set(self):
+        killerdate = datetime.now()-timedelta(days=14)
+        return super(RequestManager, self).get_query_set().filter(created__gte=killerdate)
+
 
 class Request(Base):
-    """ App request model. Must be deleted manually by the app."""
+    """ App request model. Must be deleted manually by the app.
+        Facebook automatically deletes requests after 14 days.
+    """
     id = models.BigIntegerField(primary_key=True, unique=True)
     
     # Cached Facebook Graph fields for db lookup
@@ -558,6 +566,8 @@ class Request(Base):
     _data = models.TextField(blank=True, null=True)
     _message = models.TextField(blank=True, null=True)
     _created_time = models.DateTimeField(blank=True, null=True)
+    
+    objects = RequestManager()
     
     def delete(self, facebook=True, graph=None, app_name=None, *args, **kwargs):
         if not graph:
