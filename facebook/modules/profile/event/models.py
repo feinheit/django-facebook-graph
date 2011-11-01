@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from django.db import models
-from facebook.profile import Profile
-from facebook.profile.user.models import User as FbUser
+from facebook.modules.profile.models import Profile
+from facebook.modules.profile.user.models import User as FbUser
 from facebook.graph import get_graph
 from facebook.fql import get_FQL
 from django.db.models import Q
 from datetime import datetime, timedelta, date
+from django.utils.translation import ugettext_lazy as _
 
 from facebook.fields import JSONField
 

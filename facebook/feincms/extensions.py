@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from facebook.models import Page
+from facebook.modules.profile.page.models import Page
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 

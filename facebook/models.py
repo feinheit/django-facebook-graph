@@ -224,6 +224,8 @@ class Base(models.Model):
             graph.delete_object(str(self.id))
         super(Base, self).delete(*args, **kwargs)
     delete.alters_data = True
+    
+    
 # it crashes my python instance on mac os x without proper error message, so may we shoudn't use that handy shortcut
 # maybe its only, that the admin should'nt use these computed fields
 #    def __getattr__(self, name):
