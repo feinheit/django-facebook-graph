@@ -147,7 +147,7 @@ def deauthorize_and_delete(request):
             user.delete()
             logger.info('Deleting User: %s' % user)
         else:
-            logger.info('User %s asked for deauthorization. Not deleted in Debug mode.')
+            logger.info('User %s asked for deauthorization. Not deleted in Debug mode.' % user)
         return HttpResponse('ok')
     raise Http404
 
