@@ -8,9 +8,6 @@ import urllib
 import base64
 import urlparse
 
-import facebook
-from facebook.graph import GraphAPIError
-
 # Find a JSON parser
 try:
     import simplejson as json
@@ -59,6 +56,7 @@ def parseSignedRequest(signed_request, secret=None, application=None):
 
 
 def authenticate(app_id, app_secret, code=None, redirect_uri="", type=None):
+    from facebook.graph import GraphAPIError
     
     args = {'client_id': app_id,
             'client_secret': app_secret,
