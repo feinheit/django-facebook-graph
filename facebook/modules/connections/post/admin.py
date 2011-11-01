@@ -1,9 +1,4 @@
-from django.contrib import admin
-
-from facebook.admin import AdminBase
-
-from .models import Post
-
+from facebook.modules.base import AdminBase
 
 class PostAdmin(AdminBase):
     def picture_link(self, obj):
@@ -22,4 +17,3 @@ class PostAdmin(AdminBase):
                        '_properties', '_actions', '_privacy', '_likes', '_comments', '_targeting')
     date_hierarchy = '_updated_time'
     list_filter = ('_type',)
-admin.site.register(Post, PostAdmin)

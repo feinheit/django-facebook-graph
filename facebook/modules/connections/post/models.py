@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from facebook.fields import JSONField
-from facebook.models import Base
+from facebook.modules.base import Base
 from facebook.modules.profile.user.models import User
 
 class PostBase(Base):

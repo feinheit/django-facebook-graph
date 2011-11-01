@@ -3,39 +3,12 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 from facebook.graph import get_graph
-#from facebook import FbPhoto, FbPost, FbUser, FbTestUser, FbPage, \
-#                     FbEvent, FbRequest, FbScore
+from modules.profile.application.admin import ScoreAdmin
+from modules.profile.user.admin import UserAdmin
+from modules.connections.post.admin import PostAdmin
+from modules.base import AdminBase
 
-
-def delete_object(modeladmin, request, queryset):
-    graph = get_graph(request)
-    for obj in queryset:
-        obj.delete(graph=graph, facebook=True)
-delete_object.short_description = _("Delete selected objects (also on Facebook)")
-
-
-class AdminBase(admin.ModelAdmin):    
-    search_fields = ['id']
-    actions = [delete_object]
-    def save_model(self, request, obj, form, change):
-        graph = get_graph(request, force_refresh=True, prefer_cookie=True)
-        obj.get_from_facebook(save=True, graph=graph)
-    
-    def profile_link(self, obj):
-        if obj.facebook_link:
-            return '<a href="%s" target="_blank"><img src="%s/picture?type=square" /></a>'\
-                 % (obj.facebook_link, obj.graph_url)
-        else:
-            return '<img src="http://graph.facebook.com/%s/picture" />' % (obj.id)
-    profile_link.allow_tags = True
-    
-    def change_view(self, request, object_id, extra_context=None):
-        fb_context = {
-            'facebook_apps': settings.FACEBOOK_APPS.keys(),
-            'graph' : get_graph(request, force_refresh=True, prefer_cookie=True)
-        }
-        return super(AdminBase, self).change_view(request, object_id,
-            extra_context=fb_context)
+from all.models import *
 
 
 class PhotoAdmin(AdminBase):
@@ -88,39 +61,35 @@ class RequestAdmin(AdminBase):
     list_display = ('id', '_application_id', '_to', '_from', '_data', '_message', '_created_time')
     readonly_fields = ('_graph', '_application_id', '_to', '_from', '_data', '_message', '_created_time')
 
-class ScoreAdmin(admin.ModelAdmin):
-    list_display = ('user', 'score')
-    readonly_fields = ('user', 'score')
-    search_fields = ('user',)
-    ordering = ['score']
 
 
-    
 
 if hasattr(settings, 'FACEBOOK_ADMIN'):
     FACEBOOK_ADMIN = getattr(settings, 'FACEBOOK_ADMIN')
     if 'user' in FACEBOOK_ADMIN:
-        admin.site.register(FbUser, UserAdmin)
+        admin.site.register(User, UserAdmin)
+        if settings.DEBUG:
+            admin.site.register(TestUser, UserAdmin)
     if 'page' in FACEBOOK_ADMIN:
-        admin.site.register(FbPage, PageAdmin)
+        admin.site.register(Page, PageAdmin)
     if 'event' in FACEBOOK_ADMIN:
-        admin.site.register(FbEvent, EventAdmin)
+        admin.site.register(Event, EventAdmin)
     if 'request' in FACEBOOK_ADMIN:
-        admin.site.register(FbRequest, RequestAdmin)
+        admin.site.register(Request, RequestAdmin)
     if 'score' in FACEBOOK_ADMIN:
-        admin.site.register(FbScore, ScoreAdmin)
+        admin.site.register(Score, ScoreAdmin)
     if 'post' in FACEBOOK_ADMIN:
-        admin.site.register(FbPost, PostAdmin)
+        admin.site.register(Post, PostAdmin)
     if 'photo' in FACEBOOK_ADMIN:
-        admin.site.register(FbPhoto, PhotoAdmin)
+        admin.site.register(Photo, PhotoAdmin)
 
-#else:
-    #admin.site.register(FbUser, UserAdmin)
-    #admin.site.register(FbPhoto, PhotoAdmin)
-    #admin.site.register(FbPage, PageAdmin)
-    #admin.site.register(FbEvent, EventAdmin)
-    #admin.site.register(FbRequest, RequestAdmin)
-    #admin.site.register(FbPost, PostAdmin)
+else:
+    admin.site.register(User, UserAdmin)
+    #admin.site.register(Photo, PhotoAdmin)
+    #admin.site.register(Page, PageAdmin)
+    #admin.site.register(Event, EventAdmin)
+    #admin.site.register(Request, RequestAdmin)
+    admin.site.register(Post, PostAdmin)
 
-#if settings.DEBUG:
-#    admin.site.register(FbTestUser, UserAdmin)
+    if settings.DEBUG:
+        admin.site.register(TestUser, UserAdmin)
