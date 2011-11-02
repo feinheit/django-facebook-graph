@@ -158,13 +158,13 @@ class Base(models.Model):
     def save(self, *args, **kwargs):
         # try to generate a slug, but only the first time (because the slug should be more persistent)
         if not self.slug:
-            try:
-                if self._name:
-                    self.slug = slugify(self._name)[:50]
-                else:
-                    self.slug = slugify(self.id)
-            except:
-                self.slug = self.id
+            #try:
+                #if self._name:
+                #    self.slug = slugify(self._name)[:50]
+                #else:
+                #    self.slug = slugify(self.id)
+            #except:
+            self.slug = slugify(self.id)
         super(Base, self).save(*args, **kwargs)
     
     def get_connections(self, connection_name, graph, save=False):
