@@ -1,10 +1,9 @@
 #coding=utf-8
 from django.core.management.base import BaseCommand, CommandError
 from facebook.testusers import TestUsers
-from facebook.models import TestUser
-from facebook.utils import get_static_graph
-from optparse import make_option
-from django.conf import settings
+from facebook.modules.profile.user.models import TestUser
+from facebook.graph import get_static_graph
+
 
 class Command(BaseCommand):
     args = '<id1>, [<id2>], [<app name>]'

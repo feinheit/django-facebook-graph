@@ -64,9 +64,34 @@ http url the redirect will be to the http url as well.
     function login_redirect(){
         window.location = ('https:' == location.protocol ? 'https://' : 'http://')+'yourdomain.com{% url join_team %}{% if request.GET.request_ids %}?request_ids={{ request.GET.request_ids }}{% endif %}';
     }
-    
 
 
+Fetch a user's newsfeed
+-----------------------
+
+This one is tricky due to Facebook's new privacy policy.
+You could might want to use::
+
+    graph.request('me/feed')
+
+Unfortunately this returns only your own posts as well as friend's posts that have
+been marked as public. Posts from friends that have been marked as 'Friends only' won't show up.
+
+Your only option is to query the mighty `stream`table using the follwoin FQL statement::
+
+    since = datetime.datetime.now()-datetime.timedelta(days=10)
+    limit = 100
+    since = int(totimestamp(since))
+    query = "SELECT post_id, actor_id, message, updated_time, created_time, app_data, \
+             action_links, attachment, comments, likes, permalink FROM stream \
+             WHERE source_id IN (SELECT uid2 FROM friend WHERE uid1 = me()) \
+             AND created_time > %i AND filter_key in \
+             (SELECT filter_key FROM stream_filter WHERE uid=me() AND type='newsfeed') \
+             LIMIT %i" % (since, limit)
+    return fb.get_FQL(query, access_token = graph.access_token)
+
+This example returns a maximum of 100 posts which are not older than 10 days.
+Keep in mind that most fql attributes differ from the graph attributes.
 
 
 

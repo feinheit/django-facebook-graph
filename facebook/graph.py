@@ -278,7 +278,7 @@ class Graph(GraphAPI):
             self.via = 'access_token'
         elif request and not force_refresh and self.get_token_from_session():
             self.via = 'session'
-        elif request and (not force_refresh and self.get_token_from_cookie()) or \
+        elif request and (self.get_token_from_cookie()) or \
                           (prefer_cookie and self.get_token_from_cookie()):
             self.via = 'cookie'        
         elif self.get_token_from_app():

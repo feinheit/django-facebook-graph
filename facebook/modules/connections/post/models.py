@@ -40,23 +40,31 @@ class PostBase(Base):
 
     class Meta(Base.Meta):
         abstract=True
+        ordering = ['-_created_time']
 
     class Facebook:
         publish = 'feed'
         connections = {'likes': None, 'comments': None }  # TODO: Create models for reference
         arguments = ['message', 'picture', 'link', 'name', 'caption', 'description', 'source', 'actions', 'privacy']
 
+    class Fql(Base.Fql):
+        id = 'post_id'
+        _from = 'actor_id'
+        _to = 'target_id'
+
+
     def __unicode__(self):
         return u'%s, %s %s' % (self.id, self._message[:50], self._picture)
 
     # Note has no type attribute.
     def get_from_facebook(self, graph=None, save=False, *args, **kwargs):
-        super(PostBase, self).get_from_facebook(graph=graph, save=True, *args, **kwargs)
+        super(PostBase, self).get_from_facebook(graph=graph, save=save, *args, **kwargs)
         if self._subject:
             self._type = 'note'
         elif not self._type:
             self._type = 'status'
-        self.save()
+        if save:
+            self.save()
 
     def get_post_uid(self):
         ids = self.id.split('_')

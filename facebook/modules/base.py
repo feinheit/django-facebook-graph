@@ -30,7 +30,11 @@ class Base(models.Model):
         app_label = 'facebook'
 
     class Facebook:
-        pass
+        """ The exact function of this class is not clear yet.
+            I use it for all kinds of facebook related properties."""
+
+    class Fql:
+        """ This class is for creating an adapter to fql objects. """
 
     @property
     def _id(self):
@@ -87,7 +91,7 @@ class Base(models.Model):
                 self.save()
             return None
 
-    def save_from_facebook(self, response, update_slug=False):
+    def to_django(self, response, graph=None, save_related=True):
         """ update the local model with the response (JSON) from facebook
         big magic in here: it tries to convert the data from facebook in appropriate django fields inclusive foreign keys"""
 
@@ -110,8 +114,10 @@ class Base(models.Model):
                     related_modelclass = fieldclass.related.parent_model
                     obj, created = related_modelclass.objects.get_or_create(id=val['id'])
                     setattr(self, field, obj)
-                    if created:
-                        obj.get_from_facebook(save=True)
+                    if created and save_related:
+                        obj.get_from_facebook(graph=graph, save=True)
+                    elif created and not save_related and 'name' in val:
+                        obj._name = val['name']
                 elif isinstance(fieldclass, models.DateField):
                     # Check for Birthday:
                     setattr(self, field, datetime.strptime(val, "%m/%d/%Y").date())
@@ -120,6 +126,11 @@ class Base(models.Model):
             if prop == 'from' and hasattr(self, '_%s_id' % prop):
                 setattr(self, '_%s_id' % prop, val['id'])
 
+
+    def save_from_facebook(self, response, update_slug=False, save_related=True):
+        self.to_django(response, save_related)
+        if update_slug:
+            self.slug = slugify(self.id)
         self.save()
     save_from_facebook.alters_data = True
 

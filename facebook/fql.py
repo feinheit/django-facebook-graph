@@ -3,7 +3,7 @@
 import logging
 import urllib
 logger = logging.getLogger(__name__)
-import facebook
+from facebook.graph import GraphAPIError
 
 # Find a JSON parser
 try:
@@ -34,5 +34,5 @@ def get_FQL(fql, access_token=None):
     finally:
         file.close()
     if isinstance(response, dict) and response.get('error_code', False):
-        raise facebook.GraphAPIError(response['error_code'], response['error_msg'])
+        raise GraphAPIError(response['error_code'], response['error_msg'])
     return response
