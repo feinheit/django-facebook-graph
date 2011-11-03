@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from facebook.testusers import TestUsers
-from facebook.modules.profile.user.models import TestUser
-from facebook.fb import get_static_graph
+from facebook import get_static_graph
 from optparse import make_option
 from django.conf import settings
 

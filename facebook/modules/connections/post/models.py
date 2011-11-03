@@ -48,9 +48,29 @@ class PostBase(Base):
         arguments = ['message', 'picture', 'link', 'name', 'caption', 'description', 'source', 'actions', 'privacy']
 
     class Fql(Base.Fql):
-        id = 'post_id'
-        _from = 'actor_id'
-        _to = 'target_id'
+        # TODO: Create this dict dynamically in the constructor as soon as the base class
+        #       has this property.
+        to_graph = {
+            'id': 'post_id',
+            '_from': 'actor_id',
+            '_to': 'target_id',
+            '_message': 'message',
+            '_picture': 'attachment.media.0.src', # Thumbnail url
+            '_link': 'attachment.href',
+            '_name': 'attachment.name',
+            '_caption': 'attachment.caption',
+            '_description': 'attachment.description',
+            '_source': 'attachment.href', # TODO: To confirm
+            '_icon': 'attachment.icon',
+            #'_actions': 'actions',
+            '_likes': 'likes',
+            '_comments': 'comments',
+            '_application': {'id':'app_id', 'name': 'attribution'},
+            '_created_time': 'created_time',
+            '_updated_time': 'updated_time',
+        }
+
+
 
 
     def __unicode__(self):
