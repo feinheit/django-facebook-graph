@@ -76,22 +76,10 @@ You could might want to use::
 
 Unfortunately this returns only your own posts as well as friend's posts that have
 been marked as public. Posts from friends that have been marked as 'Friends only' won't show up.
+But you can use::
 
-Your only option is to query the mighty `stream`table using the follwoin FQL statement::
+    graph.request('me/home')
 
-    since = datetime.datetime.now()-datetime.timedelta(days=10)
-    limit = 100
-    since = int(totimestamp(since))
-    query = "SELECT post_id, actor_id, message, updated_time, created_time, app_data, \
-             action_links, attachment, comments, likes, permalink FROM stream \
-             WHERE source_id IN (SELECT uid2 FROM friend WHERE uid1 = me()) \
-             AND created_time > %i AND filter_key in \
-             (SELECT filter_key FROM stream_filter WHERE uid=me() AND type='newsfeed') \
-             LIMIT %i" % (since, limit)
-    return fb.get_FQL(query, access_token = graph.access_token)
-
-This example returns a maximum of 100 posts which are not older than 10 days.
-Keep in mind that most fql attributes differ from the graph attributes.
-
-
+This returns the last 25 posts from the user's wall. Unfortunately this does not really work
+with test users.
 
