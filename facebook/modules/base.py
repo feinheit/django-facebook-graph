@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 from datetime import datetime
 
 from django.db import models
+from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import simplejson as json
