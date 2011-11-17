@@ -4,7 +4,7 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 from facebook.fields import JSONField
-from facebook.models import Base
+from facebook.modules.base import Base
 from facebook.modules.profile.user.models import User
 from facebook.graph import get_graph, get_static_graph, GraphAPIError
 

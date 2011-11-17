@@ -86,6 +86,6 @@ def authenticate(app_id, app_secret, code=None, redirect_uri="", type=None):
                                              response["error"]["message"])
             else:
                 raise GraphAPIError('AUTHENTICATION ERROR', 'Facebook returned json (%s), expected access_token' % response)
-        
+
     logger.debug('Authentication Graph Response: %s' % response)
     return response

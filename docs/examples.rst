@@ -64,9 +64,22 @@ http url the redirect will be to the http url as well.
     function login_redirect(){
         window.location = ('https:' == location.protocol ? 'https://' : 'http://')+'yourdomain.com{% url join_team %}{% if request.GET.request_ids %}?request_ids={{ request.GET.request_ids }}{% endif %}';
     }
-    
 
 
+Fetch a user's newsfeed
+-----------------------
 
+This one is tricky due to Facebook's new privacy policy.
+You could might want to use::
 
+    graph.request('me/feed')
+
+Unfortunately this returns only your own posts as well as friend's posts that have
+been marked as public. Posts from friends that have been marked as 'Friends only' won't show up.
+But you can use::
+
+    graph.request('me/home')
+
+This returns the last 25 posts from the user's wall. Unfortunately this does not really work
+with test users.
 

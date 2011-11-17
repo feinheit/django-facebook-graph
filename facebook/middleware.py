@@ -12,9 +12,12 @@ from django.utils import simplejson, translation
 
 _parse_json = lambda s: simplejson.loads(s)
 
-from utils import get_app_dict, get_session, authenticate, get_graph
-from facebook.graph import parseSignedRequest, GraphAPIError
-from facebook.models import Request as AppRequest
+from oauth2 import authenticate, parseSignedRequest
+from session import get_session
+from graph import get_graph
+from modules.profile.application.utils import get_app_dict
+from facebook.graph import GraphAPIError
+from facebook.modules.profile.application.models import Request as AppRequest
 
 
 class OAuth2ForCanvasMiddleware(object):
