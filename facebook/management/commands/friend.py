@@ -33,12 +33,12 @@ class Command(BaseCommand):
         graph = get_static_graph(app_dict=app)
         testusers = TestUsers(graph)
         try:
-            user1 = TestUser.objects.get(id=arg1)
+            user1 = TestUser.objects.get(id=int(arg1))
         except TestUser.DoesNotExist:
             raise CommandError('User1 does not exist.')
         if arg2:
             try:
-                user2 = TestUser.objects.get(id=arg2)
+                user2 = TestUser.objects.get(id=int(arg2))
             except TestUser.DoesNotExist:
                 raise CommandError('User2 does not exist.')
             response = testusers.make_friends_with(user1, user2)

@@ -18,6 +18,7 @@ class PostBase(Base):
                               related_name='%(app_label)s_%(class)s_posts_sent')
     _to = JSONField(_('to'), blank=True, null=True)  # could be M2M but nees JSON processor.
     _message = models.TextField(_('message'), blank=True)
+    _story = models.TextField(_('story'), blank=True)
     _picture = models.URLField(_('picture url'), max_length=255, blank=True)
     _link = models.URLField(_('link url'), max_length=255, blank=True)
     _name = models.CharField(_('link name'), max_length=255, blank=True)
@@ -50,14 +51,19 @@ class PostBase(Base):
 
     def __unicode__(self):
         return u'%s, %s %s' % (self.id, self._message[:50], self._picture)
-
+    
     # Note has no type attribute.
-    def get_from_facebook(self, graph=None, save=False, *args, **kwargs):
-        super(PostBase, self).get_from_facebook(graph=graph, save=save, *args, **kwargs)
+    def guess_type(self):
         if self._subject:
             self._type = 'note'
+        elif self._story and self._picture:
+            self._type = 'photo'
         elif not self._type:
             self._type = 'status'
+
+    def get_from_facebook(self, graph=None, save=False, *args, **kwargs):
+        super(PostBase, self).get_from_facebook(graph=graph, save=save, *args, **kwargs)
+        self.guess_type()
         if save:
             self.save()
 
