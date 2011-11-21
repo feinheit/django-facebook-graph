@@ -55,8 +55,8 @@ window.fbAsyncInit = function() {
              channelUrl : document.location.protocol + '//' + document.location.host + FACEBOOK_CHANNEL_URL }
     );
     canvas_resize();
-    // This is needed so ID doesn't throw a permission denied exception.
-    FB.UIServer.setLoadedNode = function (a, b) {     FB.UIServer._loadedNodes[a.id] = b; };
+    // This is needed so IE doesn't throw a permission denied exception.
+    FB.UIServer.setLoadedNode = function (a, b) { FB.UIServer._loadedNodes[a.id] = b; };
     FB.getLoginStatus(function(response) {
       log(response);
       fb['status'] = response.status;
@@ -72,9 +72,11 @@ window.fbAsyncInit = function() {
 FQ.add(function(){
     FB.Event.subscribe('auth.login', function(response){
         if (fb.status != 'connected') {
+            /*
             var url = window.location.toString();
             url.match(/\?(.+)$/);
             var params = RegExp.$1;
+            */
             top.location.href = FACEBOOK_REDIRECT_URL ;
         }
     });
