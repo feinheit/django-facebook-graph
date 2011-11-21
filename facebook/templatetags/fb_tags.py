@@ -11,6 +11,7 @@ from django.utils.safestring import mark_safe
 from facebook.modules.profile.user.models import TestUser
 from facebook.modules.profile.application.utils import get_app_dict
 from facebook.graph import get_static_graph, get_graph
+from facebook.testusers import TestUsers
 
 
 @register.simple_tag
