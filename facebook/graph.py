@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta
 
 from facebook.oauth2 import authenticate, parseSignedRequest
-from facebook.profile.application import get_app_dict
 from facebook.session import get_session
 
 # Find a JSON parser
@@ -279,7 +278,7 @@ class Graph(GraphAPI):
             self.via = 'access_token'
         elif request and not force_refresh and self.get_token_from_session():
             self.via = 'session'
-        elif request and (not force_refresh and self.get_token_from_cookie()) or \
+        elif request and (self.get_token_from_cookie()) or \
                           (prefer_cookie and self.get_token_from_cookie()):
             self.via = 'cookie'        
         elif self.get_token_from_app():
@@ -485,6 +484,7 @@ class Graph(GraphAPI):
 def get_graph(request=None, app_name=None, app_dict=None, *args, **kwargs):
     """ This is the main factory function that returns a graph class. """
     if not app_dict:
+        from facebook.modules.profile.application.utils import get_app_dict
         app_dict = get_app_dict(app_name)
     return Graph(app_dict=app_dict, request=request, *args, **kwargs)
 

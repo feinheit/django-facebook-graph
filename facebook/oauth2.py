@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
+import logging
+logger = logging.getLogger(__name__)
 
 import hmac
 import hashlib
 import urllib
 import base64
-from facebook.profile.application import get_app_dict
-import logging
 import urlparse
-logger = logging.getLogger(__name__)
+
 import facebook
 
 # Find a JSON parser
@@ -34,6 +34,7 @@ def parseSignedRequest(signed_request, secret=None, application=None):
     """
 
     if not secret:
+        from facebook.modules.profile.application import get_app_dict
         app_dict = get_app_dict(application)
         secret = app_dict['SECRET']
     
@@ -78,14 +79,14 @@ def authenticate(app_id, app_secret, code=None, redirect_uri="", type=None):
         try:
             response = _parse_json(raw)
         except ValueError:
-            raise facebook.GraphAPIError('AUTHENTICATION ERROR', 'Facebook returned this: %s. Expected access token.' % raw)
+            raise facebook.graph.GraphAPIError('AUTHENTICATION ERROR', 'Facebook returned this: %s. Expected access token.' % raw)
         else:
             if isinstance(response, dict) and response.get("error"):
                 # The Code is invalid. Maybe the user logged out of Facebook or removed the app.
-                raise facebook.GraphAPIError(response["error"]["type"],
+                raise facebook.graph.GraphAPIError(response["error"]["type"],
                                              response["error"]["message"])
             else:
-                raise facebook.GraphAPIError('AUTHENTICATION ERROR', 'Facebook returned json (%s), expected access_token' % response)
+                raise facebook.graph.GraphAPIError('AUTHENTICATION ERROR', 'Facebook returned json (%s), expected access_token' % response)
         
     logger.debug('Authentication Graph Response: %s' % response)
     return response

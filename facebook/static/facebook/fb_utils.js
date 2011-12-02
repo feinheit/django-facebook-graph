@@ -55,13 +55,13 @@ window.fbAsyncInit = function() {
              channelUrl : document.location.protocol + '//' + document.location.host + FACEBOOK_CHANNEL_URL }
     );
     canvas_resize();
-    // This is needed so ID doesn't throw a permission denied exception.
-    FB.UIServer.setLoadedNode = function (a, b) {     FB.UIServer._loadedNodes[a.id] = b; };
+    // This is needed so IE doesn't throw a permission denied exception.
+    FB.UIServer.setLoadedNode = function (a, b) { FB.UIServer._loadedNodes[a.id] = b; };
     FB.getLoginStatus(function(response) {
       log(response);
       fb['status'] = response.status;
       if (response.status === 'connected') {
-        fb.authResponse = response.authResponse;
+        fb.authResponse = response.authResponse | response.auth ;
         fb.user = (function(){ return fb.authResponse; })(); // For backwards compatibility. Will be removed at some point.
         fb.user.warning = 'This property is deprecated and will be removed! Use fb.auth instead.';
       }
@@ -72,9 +72,11 @@ window.fbAsyncInit = function() {
 FQ.add(function(){
     FB.Event.subscribe('auth.login', function(response){
         if (fb.status != 'connected') {
+            /*
             var url = window.location.toString();
             url.match(/\?(.+)$/);
             var params = RegExp.$1;
+            */
             top.location.href = FACEBOOK_REDIRECT_URL ;
         }
     });

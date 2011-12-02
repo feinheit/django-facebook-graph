@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.conf import settings
-from facebook.models import Base
 from django.utils.translation import ugettext_lazy as _
-from facebook.profile.user.models import User
-from facebook.graph import get_graph, get_static_graph, GraphAPIError
+
 from facebook.fields import JSONField
+from facebook.modules.base import Base
+from facebook.modules.profile.user.models import User
+from facebook.graph import get_graph, get_static_graph, GraphAPIError
 
 
 FACEBOOK_APPS_CHOICE = tuple((v['ID'], unicode(k)) for k,v in settings.FACEBOOK_APPS.items())

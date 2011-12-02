@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-from django.db import models
-from facebook.profile import Profile
-from django.contrib.auth.models import User as DjangoUser
 import warnings
+
+from django.contrib.auth.models import User as DjangoUser
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
+
+from facebook.modules.profile.models import Profile
 
 
 class UserBase(Profile):
@@ -20,7 +23,7 @@ class UserBase(Profile):
 
     friends = models.ManyToManyField('self')
     
-    class Meta:
+    class Meta(Profile.Meta):
         abstract=True
     
     class Facebook:
@@ -88,8 +91,7 @@ class UserBase(Profile):
 
 
 class User(UserBase):
-    class Meta:
-        abstract=False
+    pass
 
 
 # This code is for backwards compability only. Will be removed with verison 1.1.
@@ -125,6 +127,6 @@ class TestUser(UserBase):
         self.id = response['id']
         super(TestUser, self).save_from_facebook(response, update_slug)
         
-    class Meta:
+    class Meta(UserBase.Meta):
         verbose_name = _('Test user')
         verbose_name_plural = _('Test users')

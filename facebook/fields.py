@@ -5,6 +5,12 @@ from django import forms
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils import simplejson as json
+from django.conf import settings
+
+if 'south' in settings.INSTALLED_APPS:
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules([], ["^facebook\.fields\.JSONField"])
+
 
 class JSONFormField(forms.fields.CharField):
     def clean(self, value, *args, **kwargs):

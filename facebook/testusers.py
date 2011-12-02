@@ -1,6 +1,6 @@
 #coding=utf-8
-from facebook.models import TestUser
-from facebook.api import GraphAPIError
+from facebook.modules.profile.user.models import TestUser
+from facebook.graph import GraphAPIError
 from django.utils import simplejson
 
 

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from django.db import models
-from facebook.models import Base
-from facebook.profile.user.models import User
+from facebook.modules.base import Base
+from facebook.modules.profile.user.models import User
 from facebook.graph import get_graph
+from django.utils.translation import ugettext_lazy as _
 
 class Photo(Base):
     fb_id = models.BigIntegerField(unique=True, null=True, blank=True)

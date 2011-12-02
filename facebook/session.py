@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-
-from datetime import datetime, timedelta
-from facebook.profile.application.models import Request
 import logging
 logger = logging.getLogger(__name__)
+
+from datetime import datetime, timedelta
 
 
 class SessionBase(object):    
@@ -80,15 +79,20 @@ class FBSession(SessionBase):
         return self.fb_session.get('access_token_expires', None)
     
     # expires can be datetime or None (i.e. an Application token has no known expiration date.
+    # or a sting containing seconds to expiration.
     @token_expires.setter
     def token_expires(self, expires):
         if isinstance(expires, datetime) or isinstance(expires, type(None)):
             logger.debug('token expires: %s' % expires)
-            self.fb_session['access_token_expires'] = expires
-            self.modified('token_expires setter')  # Is usually used with token setter.
+        elif isinstance(expires, basestring):
+            seconds = int(expires)
+            logger.debug('token expires in %s seconds.' % seconds)
+            expires = datetime.now()+timedelta(seconds=seconds)
         else:
             raise TypeError('Token Expires requires a datetime instance or None. Got %s instead.' %type(expires))        
-    
+        self.fb_session['access_token_expires'] = expires
+        self.modified('token_expires setter')  # Is usually used with token setter.
+
     def store_token(self, token=None, expires=None):
         if token == None:
             self._clear_token()
@@ -155,6 +159,8 @@ class FBSession(SessionBase):
     
     @app_requests.setter
     def app_requests(self, item):
+        from facebook.modules.profile.application.models import Request
+        
         if isinstance(item, list):
             self.fb_session['app_requests'] = ','.join(str(i) for i in item)
         elif isinstance(item, Request):

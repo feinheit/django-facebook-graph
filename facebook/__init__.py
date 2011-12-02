@@ -10,22 +10,6 @@ JavaScript SDK at http://github.com/facebook/connect-js/.
 
 This library is adapted to work with the current SDK and Graph API.
 
-"""
-
-from graph import GraphAPIError, get_graph, get_static_graph, get_public_graph
-from session import get_session
-from profile.application.__init__ import get_app_dict
-from fql import get_FQL
-
-from profile.user.models import User as FbUser, TestUser as FbTestUser
-from profile.page.models import Page as FbPage
-from profile.event.models import Event as FbEvent
-from profile.application.models import Request as FbRequest, Score as FbScore
-from media.models import Photo as FbPhoto
-from models import Post as FbPost
-
-
-"""
 Example App Settings Entry:
 
 FACEBOOK_APPS = {
@@ -42,5 +26,8 @@ FACEBOOK_APPS = {
 
 """
 
-
+from graph import GraphAPIError, get_graph, get_static_graph, get_public_graph
+from session import get_session
+from modules.profile.application.utils import get_app_dict
+from fql import get_FQL
 

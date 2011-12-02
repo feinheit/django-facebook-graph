@@ -3,7 +3,7 @@
 import logging
 import urllib
 logger = logging.getLogger(__name__)
-import facebook
+from facebook.graph import GraphAPIError
 
 # Find a JSON parser
 try:
@@ -17,14 +17,16 @@ except ImportError:
 _parse_json = lambda s: json.loads(s)
 
 def get_FQL(fql, access_token=None):
-    query = 'https://api.facebook.com/method/fql.query?format=json'
+    #query = 'https://api.facebook.com/method/fql.query?format=json'
+    query = 'https://graph.facebook.com/fql?'
 
-    params = {'query': fql}
+
+    params = {'q': fql}
 
     if access_token:
         params.update({'access_token': access_token})
 
-    file = urllib.urlopen(query, urllib.urlencode(params))
+    file = urllib.urlopen(query+urllib.urlencode(params))
     raw = file.read()
 
     logger.debug('facebook FQL response raw: %s, query: %s, FQL: %s' % (raw, query, fql))
@@ -34,5 +36,5 @@ def get_FQL(fql, access_token=None):
     finally:
         file.close()
     if isinstance(response, dict) and response.get('error_code', False):
-        raise facebook.GraphAPIError(response['error_code'], response['error_msg'])
+        raise GraphAPIError(response['error_code'], response['error_msg'])
     return response

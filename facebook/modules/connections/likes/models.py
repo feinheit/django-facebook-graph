@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 """ To use any of those models, add facebook.connections to your INSTALLED_APPS. """
 
+from datetime import datetime
+
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from facebook.models import User, Page
-from facebook.utils import get_graph
-from datetime import datetime
-        
+from facebook.fields import JSONField
+from facebook.models import Base
+from facebook.modules.profile.user.models import User
+from facebook.modules.profile.page.models import Page
+
         
 class Like(models.Model):
     """ The users likes. Uses a generic foreign key to Page so it doesn't need
@@ -66,6 +69,4 @@ class URLLike(models.Model):
     def __unicode__(self):
         return unicode(self.url)
     
-    
-    
-    
+
