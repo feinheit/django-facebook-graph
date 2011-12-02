@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 import urllib
 
 from django.conf import settings
-from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponseForbidden
 from django.shortcuts import redirect
 from django.utils import simplejson, translation
 
@@ -41,7 +41,10 @@ class OAuth2ForCanvasMiddleware(object):
 
         # default POST/GET request from facebook with a signed request
         if 'signed_request' in request.POST:
-            parsed_request = parseSignedRequest(request.POST['signed_request'], application['SECRET'])
+            try:
+                parsed_request = parseSignedRequest(request.POST['signed_request'], application['SECRET'])
+            except ValueError:
+                return HttpResponseForbidden()
             logger.debug(u'got signed_request from facebook: %s' % parsed_request)
             if 'user' in parsed_request:
                 language = parsed_request['user']['locale']
