@@ -100,6 +100,7 @@ class PostBase(Base):
 
 class Post(PostBase):
     class Meta(PostBase.Meta):
+        app_label = 'facebook'
         verbose_name = _('Post')
         verbose_name_plural = _('Posts')
         abstract = False

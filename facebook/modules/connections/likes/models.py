@@ -33,6 +33,7 @@ class Like(models.Model):
     class Meta:
         verbose_name = _('Profile Like')
         verbose_name_plural = _('Profile Likes')
+        app_label = 'facebook'
     
     def __unicode__(self):
         return u'%s likes %s' % (self.user, self._name)
@@ -65,6 +66,7 @@ class URLLike(models.Model):
     class Meta:
         verbose_name = _('URL Like')
         verbose_name_plural = _('URL Likes')
+        app_label = 'facebook'
         
     def __unicode__(self):
         return unicode(self.url)

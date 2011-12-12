@@ -23,6 +23,14 @@ class Request(Base):
     _message = models.TextField(blank=True, null=True)
     _created_time = models.DateTimeField(blank=True, null=True)
     
+    
+    class Meta:
+        app_label = 'facebook'
+        abstract = False
+    
+    def __unicode__(self):
+        return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)
+    
     def delete(self, facebook=True, graph=None, app_name=None, *args, **kwargs):
         if not graph:
             graph = get_graph(request=None, app_name=app_name) # Method needs static graph
@@ -43,9 +51,6 @@ class Request(Base):
             graph = get_graph() # get app graph only
         super(Request, self).get_from_facebook(graph=graph, save=True)
     
-    def __unicode__(self):
-        return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)
-    
     
 
 class Score(models.Model):
@@ -61,6 +66,7 @@ class Score(models.Model):
         verbose_name = _('Score')
         verbose_name_plural = _('Scores')
         ordering = ['-score']
+        app_label = 'facebook'
         
     class Facebook:
         access_token_type = 'app'
@@ -100,6 +106,7 @@ class Achievment(models.Model):
     class Meta:
         verbose_name = _('Achievment')
         verbose_name_plural = _('Achievments')
+        app_label = 'facebook'
         
     class Facebook:
         type = 'games.achievement'

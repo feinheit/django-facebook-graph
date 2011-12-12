@@ -5,7 +5,7 @@
 {% include 'admin/facebook/login-button.html' %}
 <script type="text/javascript">
     function parse_event_url(source, target){
-        var exp = /(eid=)(\d+)/;
+        var exp = /(events\/)(\d+)/;
         exp.exec(source.val());
         target.val(RegExp.$2);
     }

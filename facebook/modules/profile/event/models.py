@@ -56,6 +56,7 @@ class Event(Profile):
     
     class Meta:
         ordering = ('_start_time',)
+        app_label = 'facebook'
     
     class Facebook:  # TODO: refactoring here.
         connections = {'attending' : {'field' : 'invited', 'filter' : {'rsvp_status' : 'attending'}},
@@ -103,4 +104,5 @@ class EventUser(models.Model):
     
     class Meta:
         unique_together = [('event', 'user'),]
+        app_label = 'facebook'
 

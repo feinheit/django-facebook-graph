@@ -17,6 +17,10 @@ class Photo(Base):
     _like_count = models.PositiveIntegerField(blank=True, null=True)
     _from_id = models.BigIntegerField(null=True, blank=True)
 
+    class Meta:
+        abstract = False
+        app_label = 'facebook'
+
     @property
     def like_count(self):
         self._like_count = self._likes.all().count()

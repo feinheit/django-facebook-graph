@@ -18,6 +18,7 @@ class Profile(Base):
 
     class Meta(Base.Meta):
         abstract = True
+        app_label = 'facebook'
 
     @property
     def username(self):
