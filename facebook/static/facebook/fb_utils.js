@@ -47,6 +47,12 @@ var fb = {
     };
 
 
+function addTabToPage() {
+    window.open("http://www.facebook.com/dialog/pagetab?app_id="
+    +FACEBOOK_APP_ID+"&next="+FACEBOOK_REDIRECT_URL,
+    "PageTab", "width=500,height=200");
+}
+
 
 window.fbAsyncInit = function() {
     FB._https = (window.location.protocol == "https:");

@@ -33,3 +33,18 @@ attributes if the user is logged in:
     * ``status``
       The status of the User. One of ``connected``, ``notConnected`` or
       ``unknown``.
+
+
+Helper functions
+================
+
+addTabToPage()
+--------------
+
+Opens the 'Add this tab to your Facebook Page' dialog.
+
+
+canvas_resize()
+---------------
+
+FB.UI.resize() wrapper that works in IE without flash.
