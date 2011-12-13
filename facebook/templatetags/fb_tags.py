@@ -1,6 +1,6 @@
 #coding=utf-8
 import re
-from datetime import datetime
+from datetime import datetime, time
 
 from django import template
 from django.conf import settings
