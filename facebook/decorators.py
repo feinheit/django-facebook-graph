@@ -44,8 +44,8 @@ def redirect_to_page(app_name=None):
                     original_view = resolve(app_data)
                 except Resolver404:
                     logger.debug('Did not find view for %s.' %app_data)
-                    url = u'%s?sk=app_%s' % (app_dict['REDIRECT_URL'], app_dict['ID'])
-                    return render_to_response('redirecter.html', {'destination': url }, RequestContext(request))
+                    url = u'%s?sk=app_%s' % (app_dict['REDIRECT-URL'], app_dict['ID'])
+                    return render_to_response('facebook/redirecter.html', {'destination': url }, RequestContext(request))
     
                 logger.debug('found original view url: %s' %original_view)
                 setattr(request, 'avoid_redirect' ,  True)
@@ -58,10 +58,10 @@ def redirect_to_page(app_name=None):
                 except KeyError:
                     page = None
 
-                if page <> app_dict['PAGE_ID'] and not runserver:
+                if int(page) <> app_dict['PAGE_ID'] and not runserver:
                     logger.debug('Tab is not in original Page. Redirecting...')
-                    url = u'%s?sk=app_%s&app_data=%s' % (app_dict['REDIRECT_URL'], app_dict['ID'], urlencode(request.path))
-                    return render_to_response('redirecter.html', {'destination': url }, RequestContext(request))
+                    url = u'%s?sk=app_%s&app_data=%s' % (app_dict['REDIRECT-URL'], app_dict['ID'], urlencode(request.path))
+                    return render_to_response('facebook/redirecter.html', {'destination': url }, RequestContext(request))
 
             return view(*args, **kwargs)
     
