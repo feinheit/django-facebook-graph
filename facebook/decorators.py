@@ -22,14 +22,17 @@ def redirect_to_page(app_name=None):
             # if this is already the callback, do not wrap.
             if getattr(request, 'avoid_redirect', False):
                 logger.debug('entered calback. View: %s, kwargs: %s' %(view, kwargs))
-                return view(*args, **kwargs)
-    
+                return view(request, *args, **kwargs)
+
+            if 'facebook' in request.META['HTTP_USER_AGENT']:
+                return view(request, *args, **kwargs)
+            
             session = request.session.get('facebook', dict())
             try:
                 signed_request = session['signed_request']
             except KeyError:
                 logger.debug('No signed_request in current session. Returning View.')
-                return view(*args, **kwargs)
+                return view(request, *args, **kwargs)
             
             app_dict = get_app_dict(app_name)
     
