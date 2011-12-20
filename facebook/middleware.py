@@ -110,6 +110,9 @@ class Redirect2AppDataMiddleware(object):
             # only execute first time (Facebook will POST the tab with signed_request parameter)
             if request.method == 'POST' and request.POST.has_key('signed_request'):
                 target_url = request.session['facebook']['signed_request']['app_data']
+                logger.debug('got target url: %s' % target_url)
+                del request.session['facebook']['signed_request']['app_data']
+                request.session.modified = True
                 return redirect(target_url)
             else:
                 return None
