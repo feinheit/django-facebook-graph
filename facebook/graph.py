@@ -5,11 +5,10 @@ import urllib2
 import warnings
 from urllib2 import HTTPError
 
-import mimetools
-import mimetypes
-import itertools
+from facebook.utils import MultipartPostHandler
 
 import logging
+from django.http import HttpResponseServerError
 logger = logging.getLogger(__name__)
 
 from datetime import datetime, timedelta
@@ -37,71 +36,6 @@ class GraphAPIError(Exception):
     
     def __str__(self):
         return '%s: %s' % (self.type, self.message)
-    
-
-# from http://www.doughellmann.com/PyMOTW/urllib2/
-class MultiPartForm(object):
-    """Accumulate the data to be used when posting a form."""
-
-    def __init__(self):
-        self.form_fields = []
-        self.files = []
-        self.boundary = mimetools.choose_boundary()
-        return
-
-    def get_content_type(self):
-        return 'multipart/form-data; boundary=%s' % self.boundary
-
-    def add_field(self, name, value):
-        """Add a simple field to the form data."""
-        self.form_fields.append((name, value))
-        return
-
-    def add_file(self, fieldname, filename, fileHandle, mimetype=None):
-        """Add a file to be uploaded."""
-        body = fileHandle.read()
-        if mimetype is None:
-            mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-        self.files.append((fieldname, filename, mimetype, body))
-        return
-
-    def __str__(self):
-        """Return a string representing the form data, including attached files."""
-        # Build a list of lists, each containing "lines" of the
-        # request.  Each part is separated by a boundary string.
-        # Once the list is built, return a string where each
-        # line is separated by '\r\n'.
-        parts = []
-        part_boundary = '--' + self.boundary
-
-        # Add the form fields
-        parts.extend(
-            [part_boundary,
-              'Content-Disposition: form-data; name="%s"' % name,
-              '',
-              str(value),
-            ]
-            for name, value in self.form_fields
-            )
-
-        # Add the files to upload
-        parts.extend(
-            [part_boundary,
-              'Content-Disposition: file; name="%s"; filename="%s"' % \
-                 (field_name, filename),
-              'Content-Type: %s' % content_type,
-              '',
-              str(body)
-            ]
-            for field_name, filename, content_type, body in self.files
-            )
-
-        # Flatten the list and add closing boundary marker,
-        # then return CR+LF separated data
-        flattened = list(itertools.chain(*parts))
-        flattened.append('--' + self.boundary + '--')
-        flattened.append('')
-        return '\r\n'.join(flattened)
 
 
 class GraphAPI(object):
@@ -428,19 +362,19 @@ class Graph(GraphAPI):
     def revoke_auth(self):
         return self.request('me/permissions', post_args={"method": "delete"})
     
-    def put_photo(self, image, message=None, album_id=None, **kwargs):
+    def put_photo(self, image, message='', album_id=None, **kwargs):
         """
         Shortcut for put_media to upload a photo
         """
-        self.put_media(image, message, album_id, fxtype='photos', kwargs=kwargs)
+        return self.put_media(image, message, album_id, mediatype='photos', kwargs=kwargs)
 
-    def put_video(self, image, message=None, album_id=None, **kwargs):
+    def put_video(self, image, message='', album_id=None, **kwargs):
         """
         Shortcut for put_media to upload a video
         """
-        self.put_media(image, message, album_id, fxtype='videos', kwargs=kwargs)
+        return self.put_media(image, message, album_id, mediatype='videos', kwargs=kwargs)
     
-    def put_media(self, mediafile, message=None, album_id=None, mediatype=None, **kwargs):
+    def put_media(self, mediafile, message='', album_id=None, mediatype=None, **kwargs):
         """ Uploads a file using multipart/form-data
             mediafile: File like object for the image
             message: Caption for your image
@@ -450,22 +384,20 @@ class Graph(GraphAPI):
         """
         object = album_id or "me"
         
-        form = MultiPartForm()
-        form.add_field('access_token', self.access_token)
-        form.add_field('message', message)
-        form.add_file('source', mediafile.name, mediafile)
-        if kwargs:
-            for k,v in kwargs.items():
-                form.add_field(k, v)
-    
-        request = urllib2.Request('https://graph.facebook.com/%s/%s' % (object, mediatype))
-        logger.debug('posting photo to: https://graph.facebook.com/%s/photos %s' % (object, mediafile.name))
-        body = str(form)
-        request.add_header('Content-type', form.get_content_type())
-        request.add_header('Content-length', len(body))
-        request.add_data(body)
-    
-        raw = urllib2.urlopen(request).read()
+        opener = urllib2.build_opener(MultipartPostHandler)
+        try:
+            source = open(mediafile.name, 'rb')
+            source.seek(0)
+            params = {'source' : source, 'message': message }
+            upload = opener.open('https://graph.facebook.com/%s/%s?access_token=%s' % 
+                              (object, mediatype, self.access_token), params)
+            raw = upload.fp.read()
+            upload.close()
+        except IOError as e:
+            return HttpResponseServerError(e)
+        finally:
+            source.close()
+
         logger.debug('facebook response raw (post image): %s' % raw)
     
         try:
