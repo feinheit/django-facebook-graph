@@ -66,7 +66,7 @@ def redirect_to_page(app_name=None):
     
                 if int(page) <> app_dict['PAGE_ID']: # and not runserver:
                     url = u'%s?sk=app_%s&app_data=%s' % (app_dict['REDIRECT-URL'], app_dict['ID'], urlencode(request.path))
-                    logger.debug('Tab is not in original Page (id: %s, should be: %s. Redirecting to: %s' %(page, app_dict['PAGE_ID'], url))
+                    logger.debug('Tab is not in original Page (id: %s, should be: %s. Redirecting to: %s' %(page, app_dict['PAGES'][0], url))
                     return render_to_response('facebook/redirecter.html', {'destination': url }, RequestContext(request))
 
             return view(request, *args, **kwargs)
