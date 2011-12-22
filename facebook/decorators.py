@@ -1,6 +1,7 @@
 #coding=utf-8
 
-import functools, logging, sys
+import functools, logging
+from django.conf import settings
 from facebook.modules.profile.application.utils import get_app_dict
 from django.core.urlresolvers import resolve, Resolver404
 from django.shortcuts import render_to_response
@@ -9,7 +10,7 @@ from django.template.defaultfilters import urlencode
 from django.http import HttpResponseRedirect
 logger = logging.getLogger(__name__)
 
-runserver = ('runserver' in sys.argv)
+#runserver = ('runserver' in sys.argv)
 
 
 def redirect_to_page(app_name=None):
@@ -64,7 +65,7 @@ def redirect_to_page(app_name=None):
                 except KeyError:
                     page = 0
     
-                if int(page) <> app_dict['PAGE_ID']: # and not runserver:
+                if int(page) not in app_dict['PAGES'] and getattr(settings, 'FB_REDIRECT', True):
                     url = u'%s?sk=app_%s&app_data=%s' % (app_dict['REDIRECT-URL'], app_dict['ID'], urlencode(request.path))
                     logger.debug('Tab is not in original Page (id: %s, should be: %s. Redirecting to: %s' %(page, app_dict['PAGES'][0], url))
                     return render_to_response('facebook/redirecter.html', {'destination': url }, RequestContext(request))

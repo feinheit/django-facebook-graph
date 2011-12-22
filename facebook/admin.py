@@ -12,8 +12,9 @@ from all.models import *
 
 
 class PhotoAdmin(AdminBase):
-    list_display = ('_id', '_name', 'like_count', '_from_id')
-    readonly_fields = ('fb_id', '_name', '_likes', '_graph', '_from_id', '_like_count')
+    list_display = ('_id', '_name', 'like_count', '_from')
+    readonly_fields = ('fb_id', '_name', '_tags', '_graph', '_from', '_like_count',
+                       '_icon', '_picture', '_source', '_height', '_width', '_link', '_position')
 
 
 class EventAdmin(AdminBase):

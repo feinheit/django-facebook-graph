@@ -83,3 +83,30 @@ But you can use::
 This returns the last 25 posts from the user's wall. Unfortunately this does not really work
 with test users.
 
+
+Deeplinks into Facebook Tabs
+----------------------------
+
+Getting a static URL that is shareable on Facebook of a page within a Tab is tricky.
+The only way to do deeplinking is to add the path as app_data parameter to the URL and then parse it.
+Unfortunately a URL like this will not be accessible by the Facebook linter since it cuts off all GET 
+parameters of facebook URLs.
+
+A workaround for this is using the canvas URL and top-redirecting into the tab using the path as 
+app_data parameter.
+
+That's where the redirect_to_page decorator comes in. Decorate your index view and every view that might
+get called directly and it checks if the page is correctly embedded within a Facebook page.
+If it's not it will redirect the user into the tab.
+
+The decorator needs a new value in the app_dict. A list of allowed Facebook Page IDs for the tab:
+PAGES=[<page_id>,...]. The decorator needs to be called with the app name as parameter::
+
+    from facebook.decorators import redirect_to_page
+
+    @redirect_to_page('myapp')
+    def index(request):
+        more code here.
+        
+
+
