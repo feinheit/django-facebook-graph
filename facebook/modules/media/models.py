@@ -17,6 +17,7 @@ class Tag(models.Model):
     class Meta:
         verbose_name = _('Tag')
         verbose_name_plural = _('Tags')
+        app_label = 'facebook'
     
     def __unicode__(self):
         return u'Tag %s' % self.to
