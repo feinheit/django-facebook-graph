@@ -557,7 +557,7 @@ class Request(Base):
     """ App request model. Must be deleted manually by the app.
         Facebook automatically deletes requests after 14 days.
     """
-    id = models.BigIntegerField(primary_key=True, unique=True)
+    id = models.CharField(max_length=60, primary_key=True, unique=True)
     
     # Cached Facebook Graph fields for db lookup
     _application_id = models.BigIntegerField('Application', max_length=30, choices=FACEBOOK_APPS_CHOICE, blank=True, null=True)

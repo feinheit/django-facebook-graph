@@ -2,6 +2,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from django import forms
+from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils import simplejson as json
@@ -76,3 +77,7 @@ class JSONField(models.TextField):
         assert isinstance(value, basestring)
 
         return value
+
+if 'south' in settings.INSTALLED_APPS:
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules([], ['^facebook\.fields\.JSONField'])
