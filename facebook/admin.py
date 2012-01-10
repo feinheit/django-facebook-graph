@@ -85,12 +85,12 @@ if hasattr(settings, 'FACEBOOK_ADMIN'):
         admin.site.register(Photo, PhotoAdmin)
 
 else:
-    admin.site.register(User, UserAdmin)
+    #admin.site.register(User, UserAdmin)
     #admin.site.register(Photo, PhotoAdmin)
     #admin.site.register(Page, PageAdmin)
     #admin.site.register(Event, EventAdmin)
     #admin.site.register(Request, RequestAdmin)
-    admin.site.register(Post, PostAdmin)
+    #admin.site.register(Post, PostAdmin)
 
     if settings.DEBUG:
         admin.site.register(TestUser, UserAdmin)
