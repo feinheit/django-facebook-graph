@@ -1,14 +1,15 @@
-from django.contrib import admin
-from django.utils.translation import ugettext_lazy as _
 import logging
 logger = logging.getLogger(__name__)
 
 from datetime import datetime
 
+from django.conf import settings
 from django.db import models
+from django.contrib import admin
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import simplejson as json
+from django.utils.translation import ugettext_lazy as _
 from django.template.defaultfilters import slugify
 
 from facebook.graph import GraphAPIError, get_graph
