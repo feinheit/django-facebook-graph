@@ -16,8 +16,10 @@ from django.views.decorators.csrf import csrf_protect
 from django.http import HttpResponseRedirect, HttpResponse
 
 import facebook
-from facebook.models import User as FacebookUser
-from facebook.utils import get_app_dict, get_graph, get_session
+from facebook.graph import get_graph
+from facebook.modules.profile.application.utils import get_app_dict
+from facebook.modules.profile.user.models import User as FacebookUser
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -48,12 +50,12 @@ def login(request, template_name='registration/login.html',
         if not redirect_to or netloc != request.get_host():
             redirect_to = fb_app['REDIRECT-URL']
 
-        """
-        # TODO: Check only if the domain is in 'DOMAIN' or 'facebook.com' but without the protocol
 
-        elif '//' in redirect_to and re.match(r'[^\?]*//', redirect_to):
-                redirect_to = fb_app['REDIRECT-URL']
-        """
+#        # TODO: Check only if the domain is in 'DOMAIN' or 'facebook.com' but without the protocol
+#
+#        elif '//' in redirect_to and re.match(r'[^\?]*//', redirect_to):
+#                redirect_to = fb_app['REDIRECT-URL']
+#
 
         new_user = authenticate(graph=graph)
         logger.debug('new user: %s' %new_user)
@@ -68,8 +70,10 @@ def login(request, template_name='registration/login.html',
                 signals.user_registered.send(sender='facebook_login',
                                          user=new_user,
                                          request=request)
-
-        return redirect(redirect_to)
+        if request.is_ajax():
+            return HttpResponse('auth ok')
+        else:
+            return redirect(redirect_to)
 
     return auth_views.login(request, template_name,
                             redirect_field_name, authentication_form)

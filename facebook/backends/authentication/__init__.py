@@ -5,8 +5,8 @@ from django.db import IntegrityError, transaction
 from django.template.defaultfilters import slugify
 
 import facebook
-from facebook.models import User as FacebookUser
-from facebook.utils import get_graph
+from facebook.modules.profile.user.models import User as FacebookUser
+from facebook.graph import get_graph
 from datetime import datetime
 
 import logging
