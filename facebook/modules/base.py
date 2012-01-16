@@ -130,8 +130,8 @@ class Base(models.Model):
 
     def save_from_facebook(self, response, update_slug=False, save_related=True):
         self.to_django(response, save_related)
-        if update_slug:
-            self.slug = slugify(self.id)
+        if update_slug or not self.slug:
+            self.generate_slug()
         self.save()
     save_from_facebook.alters_data = True
 
@@ -209,6 +209,18 @@ class Base(models.Model):
             connection_object.save()
         #transaction.commit()
 
+    def generate_slug(self):
+        try:
+            # username is unique on facebook, but not every object has a username (ie. user have to make themself for pages and profiles)
+            if self._username:
+                self.slug = slugify(self._username)[:50]
+            elif self._name:
+                self.slug = slugify(self._name)[:50]
+            else:
+                self.slug = slugify(self.id)
+        except:
+            self.slug = slugify(self.id)
+
     def clean(self, refresh=True, *args, **kwargs):
         ''' On save, update timestamps '''
         if not self.id:
@@ -217,13 +229,7 @@ class Base(models.Model):
 
         # try to generate a slug, but only the first time (because the slug should be more persistent)
         if not self.slug:
-            try:
-                if self._name:
-                    self.slug = slugify(self._name)[:50]
-                else:
-                    self.slug = slugify(self.id)
-            except:
-                self.slug = self.id
+            self.generate_slug()
 
     def __unicode__(self):
         if hasattr(self, '_name') and self._name:
