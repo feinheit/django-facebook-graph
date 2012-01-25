@@ -342,7 +342,7 @@ class Graph(GraphAPI):
             return self._user_id
         else:
             me = self._get_me(self.access_token)
-            return getattr(me, 'id', None)
+            return me.get('id', None)
 
     @property
     def user_id(self):
@@ -350,7 +350,7 @@ class Graph(GraphAPI):
             return int(self._user_id)
         else:
             me = self._get_me(self.access_token)
-            id = getattr(me, 'id', None)
+            id = me.get('id', None)
             return int(id) if id else None
         
     def type(self, token=None):
