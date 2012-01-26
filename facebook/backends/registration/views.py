@@ -19,9 +19,11 @@ import facebook
 from facebook.graph import get_graph
 from facebook.modules.profile.application.utils import get_app_dict
 from facebook.modules.profile.user.models import User as FacebookUser
+from facebook.session import get_session
 
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -47,15 +49,13 @@ def login(request, template_name='registration/login.html',
         # Light security check on redirect_to (lifted from django.contrib.auth.views)
         netloc = urlparse.urlparse(redirect_to)[1]
 
-        if not redirect_to or netloc != request.get_host():
+        if not redirect_to or netloc and netloc != request.get_host():
             redirect_to = fb_app['REDIRECT-URL']
-
 
 #        # TODO: Check only if the domain is in 'DOMAIN' or 'facebook.com' but without the protocol
 #
 #        elif '//' in redirect_to and re.match(r'[^\?]*//', redirect_to):
 #                redirect_to = fb_app['REDIRECT-URL']
-#
 
         new_user = authenticate(graph=graph)
         logger.debug('new user: %s' %new_user)
@@ -70,10 +70,8 @@ def login(request, template_name='registration/login.html',
                 signals.user_registered.send(sender='facebook_login',
                                          user=new_user,
                                          request=request)
-        if request.is_ajax():
-            return HttpResponse('auth ok')
-        else:
-            return redirect(redirect_to)
+
+        return redirect(redirect_to)
 
     return auth_views.login(request, template_name,
                             redirect_field_name, authentication_form)
@@ -94,11 +92,7 @@ def logout(request, next_page=None,
     # This might lead to unexpected results with multiple apps.
     response.delete_cookie("fbsr_" + fb_app['ID'])
 
-    redirect_to = next_page or request.REQUEST.get(redirect_field_name, '')
-    if not redirect_to or ' ' in redirect_to:
-        redirect_to = fb_app['REDIRECT-URL']
-
-    return redirect(redirect_to)
+    return response
 
 
 def connect(request, redirect_field_name=REDIRECT_FIELD_NAME, app_name=None):
