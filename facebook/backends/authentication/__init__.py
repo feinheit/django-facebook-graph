@@ -54,8 +54,9 @@ class AuthenticationBackend(object):
                     return facebook_user.user
             except User.DoesNotExist:
                 pass
-        #we use the Facebook id as username because 'me.name' is not unique enough.
-        user = get_or_create_user(me['id'], {
+        # use slug as username
+        facebook_user.generate_slug()
+        user = get_or_create_user(facebook_user.slug, {
                 'email': me.get('email', u''),
                 'first_name': me.get('first_name', u''),
                 'last_name': me.get('last_name', u''),
