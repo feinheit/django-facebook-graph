@@ -33,7 +33,7 @@ class Achievement(Base):
     https://developers.facebook.com/docs/achievements/
     """
     id = models.BigIntegerField(primary_key=True)
-    points = models.SmallIntegerField(_('Points'))
+    points = models.SmallIntegerField(_('Points'), blank=True, null=True)
 
     _type = models.CharField(max_length=50, default='games.achievement')
     _title = models.CharField(_('Title'), max_length=255, blank=True, null=True)
