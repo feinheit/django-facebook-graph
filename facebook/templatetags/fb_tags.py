@@ -76,8 +76,8 @@ def messages_escaped(message, user):
     return mark_safe(escapejs(message.render(user)))
 
 @register.simple_tag
-def access_token(request):
-    graph = get_graph(request)
+def access_token(request, app_name=None):
+    graph = get_graph(request, app_name=app_name)
     return mark_safe(graph.access_token)
     
 @register.simple_tag(takes_context=True)
@@ -99,3 +99,11 @@ def post_uid(value):
 @stringfilter
 def parse_date(value):
     return datetime.strptime(value, '%Y-%m-%dT%H:%M:%S+0000')  # 2011-07-13T10:24:18+0000
+
+
+@register.simple_tag
+def add_to_page_dialog(app_name=None):
+    app_dict = get_app_dict(application=app_name)
+    link = u'<a href="https://www.facebook.com/dialog/pagetab?app_id=%s&display=popup&next=%s">Add to page</a>'\
+            % (app_dict['ID'], app_dict['REDIRECT-URL'])
+    return mark_save(link)

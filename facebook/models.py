@@ -229,11 +229,14 @@ class Base(models.Model):
         else:
             return unicode(self.id)
     
-    def delete(self, facebook=False, graph=None, *args, **kwargs):
+    def delete(self, facebook=False, graph=None, target=None, *args, **kwargs):
         """ Deletes the local model and if facebook is true, also the facebook instance."""
         if facebook:
-            if not graph: graph = get_graph()
-            graph.delete_object(str(self.id))
+            if not graph:
+                graph = get_graph()
+            if not target:
+                target = str(self.id)
+            graph.delete_object(target)
         try:
             # if the model is abstract, it cannot be saved, but thats ok
             super(Base, self).delete(*args, **kwargs)
@@ -589,6 +592,44 @@ class Request(Base):
             graph = get_graph() # get app graph only
         super(Request, self).get_from_facebook(graph=graph, save=True)
     
+    def __unicode__(self):
+        return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)
+
+
+class Apprequest(Base):
+    """ Request 2.0 Efficient """
+    id = models.BigIntegerField(primary_key=True, unique=True)
+    # Cached Facebook Graph fields for db lookup
+    _application_id = models.BigIntegerField('Application', max_length=30, choices=FACEBOOK_APPS_CHOICE, blank=True, null=True)
+    _to = models.ManyToManyField(User, blank=True, null=True, symmetrical=False)
+    _from = models.ForeignKey(User, blank=True, null=True, related_name='apprequest_from_set')
+    _data = models.TextField(blank=True, null=True)
+    _message = models.TextField(blank=True, null=True)
+    _created_time = models.DateTimeField(blank=True, null=True)
+
+    objects = RequestManager()
+
+    def delete(self, user_id, facebook=True, graph=None, app_name=None, *args, **kwargs):
+        if not graph:
+            graph = get_graph(request=None, app_name=app_name) # Method needs static graph
+        target = '%s_%s' % (self.id, user_id)
+        try:
+            super(Request, self).delete(facebook=facebook, graph=graph, target=target, *args, **kwargs)
+        except GraphAPIError:
+            graph = get_graph(request=None, app_name=app_name)
+            try:
+                super(Request, self).delete(facebook=facebook, graph=graph, target=target, *args, **kwargs)
+            except GraphAPIError:
+                super(Request, self).delete(facebook=False, graph=None, *args, **kwargs)
+
+    def get_from_facebook(self, graph=None, save=settings.DEBUG, quick=True):
+        """ Only saves the request to the db if DEBUG is True."""
+        if quick and save and self._graph:
+            return self
+        if not graph:
+            graph = get_graph() # get app graph only
+        super(Request, self).get_from_facebook(graph=graph, save=True)
+
     def __unicode__(self):
         return u'%s from %s: to %s: data: %s' % (self._id, self._from, self._to, self._data)
 
