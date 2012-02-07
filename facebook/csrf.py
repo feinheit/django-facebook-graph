@@ -30,6 +30,12 @@ class CsrfViewMiddleware(DjangoCsrfViewMiddleware):
         if request.method == 'POST':
             if getattr(request, '_dont_enforce_csrf_checks', False):
                 return self._accept(request)
+            # let initial signed requests pass
+            if 'signed_request' in request.POST:
+                post = request.POST.copy()
+                post.pop('signed_request')
+                if len(post) == 0:
+                    return self._accept(request)
 
             if request.is_secure() and getattr(settings, 'HTTPS_REFERER_REQUIRED', True):
                 referer = request.META.get('HTTP_REFERER')
