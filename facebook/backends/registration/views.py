@@ -71,7 +71,7 @@ def login(request, template_name='registration/login.html',
                                          user=new_user,
                                          request=request)
 
-            return redirect(redirect_to)
+        return redirect(redirect_to)
 
     return auth_views.login(request, template_name,
                             redirect_field_name, authentication_form)

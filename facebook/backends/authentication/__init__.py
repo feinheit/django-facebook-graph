@@ -56,18 +56,20 @@ class AuthenticationBackend(object):
             if isinstance(facebook_user.user, User) and facebook_user.user.is_authenticated():
                 return facebook_user.user
         except User.DoesNotExist:
-            facebook_user.generate_slug()
-            user = get_or_create_user(facebook_user.slug, {
-                    'email': me.get('email', u''),
-                    'first_name': me.get('first_name', u''),
-                    'last_name': me.get('last_name', u''),
-                    'password': UNUSABLE_PASSWORD,
-                    'date_joined': datetime.now()
-                    })
-            facebook_user.user = user
-            facebook_user.save()
+            pass
 
-            return user
+        facebook_user.generate_slug()
+        user = get_or_create_user(facebook_user.slug, {
+                'email': me.get('email', u''),
+                'first_name': me.get('first_name', u''),
+                'last_name': me.get('last_name', u''),
+                'password': UNUSABLE_PASSWORD,
+                'date_joined': datetime.now()
+                })
+        facebook_user.user = user
+        facebook_user.save()
+
+        return user
 
     def get_user(self, user_id):
         try:
