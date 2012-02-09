@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.utils.safestring import mark_safe
+
 """ This context processor is depreciated.
     It only works it if you only have one Facebook App. 
     Use the fb_tags instead.
@@ -20,7 +22,7 @@ def session_without_cookies(request):
     
     return {'session_GET' : '%s=%s' %(cookie_name, session_key),
             'session_id'  : session_key,
-            'session_hidden_field' : '<div style="display:none"><input type="hidden" name="%s" value="%s" /></div>' %(cookie_name, session_key)}
+            'session_hidden_field' : mark_safe(u'<div style="display:none"><input type="hidden" name="%s" value="%s" /></div>' %(cookie_name, session_key))}
 
 def is_page_fan(request):
     """ checks if the user likes the page, the tab is in. """

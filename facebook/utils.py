@@ -8,13 +8,15 @@ import itertools
 import mimetools
 import mimetypes
 
+import re
+
 import urllib
 import urllib2
-import urlparse
 
 import facebook
 
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.shortcuts import redirect
 from django.utils import simplejson
 from django.utils.http import urlquote
@@ -379,7 +381,7 @@ class Graph(facebook.GraphAPI):
         if not self.fb_session.access_token:
             return None
         self._user_id = self.fb_session.user_id
-        if self.type() <> 'user':
+        if self.type(token=self.fb_session.access_token) <> 'user':
             return None
         self.access_token = self.fb_session.access_token
         return self.access_token
@@ -509,25 +511,32 @@ class Graph(facebook.GraphAPI):
             id = getattr(me, 'id', None)
             return int(id) if id else None
         
-    def type(self):
-        if not self.access_token:
+    def type(self, token=None):
+        access_token = token or self.access_token
+        if not access_token:
             return None
-        return 'app' if len(self.access_token) < 80 else 'user'
+        return 'app' if len(access_token) < 80 else 'user'
 
     def revoke_auth(self):
         return self.request('me/permissions', post_args={"method": "delete"})
     
-    def put_photo(image, message=None, album_id=None, **kwargs):
+    def put_photo_url(self, image_url, message='', album_id='me', caption=''):
+        """ Upload a photo by letting Facebook grab it from the URL provided. """
+        return self.request('%s/photos' % album_id, post_args={'url': image_url,
+                                                     'message': message
+                                                     })
+
+    def put_photo(self, image, message=None, album_id=None, **kwargs):
         """
         Shortcut for put_media to upload a photo
         """
-        self.put_media(image, message, album_id, fxtype='photos', kwargs=kwargs)
+        self.put_media(image, message, album_id, mediatype='photos', kwargs=kwargs)
 
-    def put_video(image, message=None, album_id=None, **kwargs):
+    def put_video(self, image, message=None, album_id=None, **kwargs):
         """
         Shortcut for put_media to upload a video
         """
-        self.put_media(image, message, album_id, fxtype='videos', kwargs=kwargs)
+        self.put_media(image, message, album_id, mediatype='videos', kwargs=kwargs)
     
     def put_media(self, mediafile, message=None, album_id=None, mediatype=None, **kwargs):
         """ Uploads a file using multipart/form-data
@@ -540,7 +549,7 @@ class Graph(facebook.GraphAPI):
         object = album_id or "me"
         
         form = MultiPartForm()
-        form.add_field('access_token', access_token)
+        form.add_field('access_token', self.access_token)
         form.add_field('message', message)
         form.add_file('source', mediafile.name, mediafile)
         if kwargs:
@@ -548,7 +557,6 @@ class Graph(facebook.GraphAPI):
                 form.add_field(k, v)
     
         request = urllib2.Request('https://graph.facebook.com/%s/%s' % (object, mediatype))
-        logger.debug('posting photo to: https://graph.facebook.com/%s/photos %s' % (object, image))
         body = str(form)
         request.add_header('Content-type', form.get_content_type())
         request.add_header('Content-length', len(body))
@@ -596,7 +604,7 @@ def get_session(request=None):
 def post_image(access_token, image, message, object='me'):
     graph = get_graph()
     graph.access_token = access_token
-    return graph.put_media(graph, mediafile=image, message=message, mediatype='photos')
+    return graph.put_media(mediafile=image, message=message, mediatype='photos')
 
 
 # from http://www.doughellmann.com/PyMOTW/urllib2/
@@ -639,7 +647,7 @@ class MultiPartForm(object):
             [part_boundary,
               'Content-Disposition: form-data; name="%s"' % name,
               '',
-              str(value),
+              value,
             ]
             for name, value in self.form_fields
             )
@@ -651,7 +659,7 @@ class MultiPartForm(object):
                  (field_name, filename),
               'Content-Type: %s' % content_type,
               '',
-              str(body)
+              body
             ]
             for field_name, filename, content_type, body in self.files
             )
@@ -686,4 +694,23 @@ def totimestamp(instance):
     
 
 
-
+def validate_redirect(url):
+    """ validates the redirect url """
+    
+    valid = re.compile(r'^[a-zA-Z0-9_?=&.:/-]+$')
+    
+    if not valid.match(url):
+        return False
+        
+    domain = urlparse.urlparse(url).netloc
+    if domain.find('www.') == 0:
+        domain = domain[4:]
+    if Site.objects.filter(domain=domain):
+        return True
+    else:
+        for APP in getattr(settings, 'FACEBOOK_APPS', []):
+            parsed_canvas = urlparse.urlparse(settings.FACEBOOK_APPS[APP]['CANVAS-PAGE'])
+            if 0 < url.find(parsed_canvas.netloc + parsed_canvas.path ) <= 8:
+                logger.debug(parsed_canvas)
+                return True
+    return False

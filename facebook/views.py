@@ -1,7 +1,7 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect,\
     HttpResponseForbidden
 from django.conf import settings
-from facebook.utils import get_graph, parseSignedRequest, get_app_dict, get_session
+from facebook.utils import get_graph, parseSignedRequest, get_app_dict, get_session, validate_redirect
 import functools, sys, logging
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, redirect, get_object_or_404, render
@@ -9,7 +9,9 @@ from django.template.defaultfilters import urlencode
 from django.template import loader, RequestContext
 from django.core.urlresolvers import resolve, Resolver404, reverse
 from django.contrib.sites.models import Site
+
 from datetime import datetime, timedelta
+
 logger = logging.getLogger(__name__)
 
 import urllib2
@@ -61,58 +63,57 @@ def input(request, action):
     return HttpResponseBadRequest('action %s not implemented' % action)
 
 
-def redirect_to_page(view):
-    """ Decorator that redirects a canvas URL to a page using the path that is in app_data.path """
-    """ Decorate the views where you have links to the app page. """
+def redirect_to_page(app_name=None):
+    def _redirect_to_page(view):
+        """ Decorator that redirects a canvas URL to a page using the path that is in app_data.path.
+            Decorate the views where you have links to the app page.
+            usage: @redirect_to_page() or @redirect_to_page('app_name'). """
 
-    @functools.wraps(view)
-    def wrapper(*args, **kwargs):
-        request = args[0]
-        # if this is already the callback, do not wrap.
-        if getattr(request, 'avoid_redirect', False):
-            logger.debug('entered calback. View: %s, kwargs: %s' %(view, kwargs))
-            return view(*args, **kwargs)
+        def wrapper(request, *args, **kwargs):
+            # if this is already the callback, do not wrap.
+            if getattr(request, 'avoid_redirect', False):
+                logger.debug('entered calback. View: %s, kwargs: %s' %(view, kwargs))
+                return view(request, *args, **kwargs)
 
-        session = request.session.get('facebook', dict())
-        try:
-            signed_request = session['signed_request']
-        except KeyError:
-            logger.debug('No signed_request in current session. Returning View.')
-            return view(*args, **kwargs)
+            if 'facebook' in request.META['HTTP_USER_AGENT']:
+                return view(request, *args, **kwargs)
 
-        logger.debug('signed_request: %s' %signed_request)
-
-        if 'app_data' in signed_request:
-            app_data = signed_request['app_data']
-            del request.session['facebook']['signed_request']['app_data']
-            request.session.modified = True
-            logger.debug('found app_data url: %s' %app_data)
-            #return HttpResponseRedirect(app_data)
+            session = request.session.get('facebook', dict())
             try:
-                original_view = resolve(app_data)
-            except Resolver404:
-                logger.debug('Did not find view for %s.' %app_data)
-                url = u'%s?sk=app_%s' % (redirect_url, app_id)
-                return render_to_response('redirecter.html', {'destination': url }, RequestContext(request))
-
-            logger.debug('found original view url: %s' %original_view)
-            setattr(request, 'avoid_redirect' ,  True)
-            # call the view that was originally requested:
-            return original_view.func(request, *original_view.args, **original_view.kwargs)
-        else:
-            #check if the app is inside the specified page.
-            try:
-                page = signed_request['page']['id']
+                signed_request = session['signed_request']
             except KeyError:
-                page = None
-            if page <> page_id and not runserver:
-                logger.debug('Tab is not in original Page. Redirecting...')
-                url = u'%s?sk=app_%s&app_data=%s' % (redirect_url, app_id, urlencode(request.path))
-                return render_to_response('redirecter.html', {'destination': url }, RequestContext(request))
+                logger.debug('No signed_request in current session. Returning View.')
+                return view(request, *args, **kwargs)
 
-        return view(*args, **kwargs)
+            app_dict = get_app_dict(app_name)
 
-    return wrapper
+            logger.debug('signed_request: %s' %signed_request)
+            # This is handled by the Redirect2AppDataMiddleware
+
+            if 'app_data' in signed_request:
+                app_data = signed_request['app_data']
+                del request.session['facebook']['signed_request']['app_data']
+                request.session.modified = True
+                logger.debug('found app_data url: %s' %app_data)
+                return HttpResponseRedirect(app_data)
+
+            else:
+                #check if the app is inside the specified page.
+                try:
+                    page = signed_request['page']['id']
+                except KeyError:
+                    page = 0
+
+                if int(page) not in app_dict['PAGES'] and getattr(settings, 'FB_REDIRECT', True):
+                    url = u'%s?sk=app_%s&app_data=%s' % (app_dict['REDIRECT-URL'], app_dict['ID'], urlencode(request.path))
+                    logger.debug('Tab is not in original Page (id: %s, should be: %s. Redirecting to: %s' %(page, app_dict['PAGES'][0], url))
+                    return render_to_response('facebook/redirecter.html', {'destination': url }, RequestContext(request))
+
+            return view(request, *args, **kwargs)
+
+        return functools.wraps(view)(wrapper)
+    return _redirect_to_page
+
 
 @csrf_exempt
 def channel(request):
@@ -150,10 +151,31 @@ def deauthorize_and_delete(request):
 
 
 @csrf_exempt
-def redirect(request):
-    encoded_url = request.GET.get('next','')
+def parent_redirect(request):
     """ Forces a _parent redirect to the specified url. """
-    return render(request, 'facebook/redirecter.html', {'destination': urllib2.unquote(encoded_url) })
+    
+    encoded_url = request.GET.get('next','')
+    unquoted_url = urllib2.unquote(encoded_url)
+    
+    if validate_redirect(unquoted_url):
+        return render(request, 'facebook/redirecter.html', {'destination': unquoted_url })
+    else:
+        return HttpResponseForbidden('The next= paramater is not an allowed redirect url.')
+
+
+@csrf_exempt
+def internal_redirect(request):
+    """ Forces a GET redirect. Use this if you do a parent redirect to your view
+        if your view is csrf protected.
+    """
+    
+    encoded_url = request.GET.get('page','')
+    unquoted_url = urllib2.unquote(encoded_url)
+    
+    if validate_redirect(unquoted_url):
+        return render(request, 'facebook/internalredirecter.html', {'destination': urllib2.unquote(unquoted_url) })
+    else:
+        return HttpResponseForbidden('The next= paramater is not an allowed redirect url.')
 
 
 """ Allows to register client-side errors. """

@@ -50,3 +50,23 @@ That's how it looks::
     
 Make sure you have the `canvas url` parameters in the developer app set to the root
 or wherever facebook should fetch the redirect from.
+
+
+Login while keeping the App requests
+------------------------------------
+
+On some browsers you have to make sure that all protocols match. I.e. if your iframe is loaded 
+via https you cannot redirect to a http url. The problem here is that if Facebook itself is on a 
+http url the redirect will be to the http url as well.
+::
+    <fb:login-button scope="email" onlogin="login_redirect();"></fb:login-button>
+    
+    function login_redirect(){
+        window.location = ('https:' == location.protocol ? 'https://' : 'http://')+'yourdomain.com{% url join_team %}{% if request.GET.request_ids %}?request_ids={{ request.GET.request_ids }}{% endif %}';
+    }
+    
+
+
+
+
+

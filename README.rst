@@ -21,6 +21,12 @@ http://readthedocs.org/docs/django-facebook-graph/en/latest/
 
 This version works with OAuth 2.0 only!
 
+Note
+====
+
+There is a new version in the works. You can check it out in the `structured` branch.
+Most of the new development is done there. Once it is ready this branch will be renamed to `legacy`.
+
 
 Graph helper tools:
 ==============================
