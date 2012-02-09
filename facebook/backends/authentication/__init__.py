@@ -60,7 +60,6 @@ class AuthenticationBackend(object):
                 'first_name': me.get('first_name', u''),
                 'last_name': me.get('last_name', u''),
                 'password': UNUSABLE_PASSWORD,
-                'date_joined': datetime.now()
                 })
         facebook_user.user = user
         facebook_user.save()
