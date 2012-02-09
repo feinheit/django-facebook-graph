@@ -46,11 +46,7 @@ class AuthenticationBackend(object):
 
         facebook_user, created = FacebookUser.objects.get_or_create(id=int(me['id']))
         facebook_user.access_token = graph.access_token
-
-        if created:
-            facebook_user.get_from_facebook(graph=graph, save=True)
-        else:
-            facebook_user.save()
+        facebook_user.get_from_facebook(graph=graph, save=True)
 
         try:
             if isinstance(facebook_user.user, User) and facebook_user.user.is_authenticated():
