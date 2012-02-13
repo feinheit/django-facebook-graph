@@ -77,16 +77,21 @@ def redirect_to_page(app_name=None):
             if 'facebook' in request.META['HTTP_USER_AGENT']:
                 return view(request, *args, **kwargs)
 
-            session = request.session.get('facebook', dict())
-            try:
-                signed_request = session['signed_request']
-            except KeyError:
-                logger.debug('No signed_request in current session. Returning View.')
-                return view(request, *args, **kwargs)
+            session = get_session(request)
 
             app_dict = get_app_dict(app_name)
 
-            logger.debug('signed_request: %s' %signed_request)
+            signed_request = session.signed_request
+
+            if not signed_request:
+                #logger.debug('No signed_request in current session. Returning View.')
+                #return view(request, *args, **kwargs)
+                logger.debug('No signed_request in current session. Redirecting.\n')
+                url = u'%s?sk=app_%s&app_data=%s' % (app_dict['REDIRECT-URL'], app_dict['ID'], urlencode(request.path))
+                return render_to_response('facebook/redirecter.html', {'destination': url }, RequestContext(request))
+
+
+            logger.debug('signed_request: %s\n' %signed_request)
             # This is handled by the Redirect2AppDataMiddleware
 
             if 'app_data' in signed_request:
