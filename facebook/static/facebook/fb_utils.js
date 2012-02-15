@@ -47,16 +47,14 @@ var fb = {
     };
 
 
-
 window.fbAsyncInit = function() {
     FB._https = (window.location.protocol == "https:");
     FB.init({appId: FACEBOOK_APP_ID, status: true, cookie: true,
-             xfbml: true, oauth: true,
-             channelUrl : document.location.protocol + '//' + document.location.host + FACEBOOK_CHANNEL_URL }
+             xfbml: true, oauth: true }
     );
     canvas_resize();
-    // This is needed so ID doesn't throw a permission denied exception.
-    FB.UIServer.setLoadedNode = function (a, b) {     FB.UIServer._loadedNodes[a.id] = b; };
+    // Apparently this has been fixed.
+
     FB.getLoginStatus(function(response) {
       log(response);
       fb['status'] = response.status;
@@ -68,15 +66,4 @@ window.fbAsyncInit = function() {
       FQ.run();
     }, 'json');
   };
-
-FQ.add(function(){
-    FB.Event.subscribe('auth.login', function(response){
-        if (fb.status != 'connected') {
-            var url = window.location.toString();
-            url.match(/\?(.+)$/);
-            var params = RegExp.$1;
-            top.location.href = FACEBOOK_REDIRECT_URL ;
-        }
-    });
-});
 
