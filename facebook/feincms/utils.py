@@ -1,4 +1,5 @@
 from feincms.module.page.models import Page
+from facebook.modules.profile.application.utils import get_app_dict
 
 def get_application_from_request(request):
     try:
@@ -20,7 +21,7 @@ def get_tab_url_from_request(request):
     except Page.DoesNotExist:
         return None
 
-    fb_app = getattr(page, 'facebook_application', None)
+    fb_app = get_app_dict(getattr(page, 'facebook_application', None))
     fb_page = getattr(page, 'facebook_page', None)
 
     if fb_page and fb_app:
@@ -28,6 +29,6 @@ def get_tab_url_from_request(request):
             separator = '&'
         else:
             separator = '?'
-        return u'%s%ssk=app_%s' % (fb_page.facebook_link, separator, fb_app.id)
+        return u'%s%ssk=app_%s' % (fb_page.facebook_link, separator, fb_app['ID'])
     else:
         return None
