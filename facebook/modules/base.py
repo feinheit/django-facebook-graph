@@ -3,9 +3,9 @@ logger = logging.getLogger(__name__)
 
 from datetime import datetime
 
-from django.conf import settings
 from django.db import models
 from django.contrib import admin
+from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import simplejson as json
@@ -215,7 +215,7 @@ class Base(models.Model):
             if self._username:
                 self.slug = slugify(self._username)[:50]
             elif self._name:
-                self.slug = slugify(self._name)[:50]
+                self.slug = slugify('%s-%s' % (self._name[:30], self.id[:20]))[:50]
             else:
                 self.slug = slugify(self.id)
         except:

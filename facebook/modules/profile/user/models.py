@@ -6,6 +6,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from facebook.modules.profile.models import Profile
+from facebook.graph import get_graph
 
 
 class UserBase(Profile):
@@ -35,8 +36,8 @@ class UserBase(Profile):
         return u'%s (%s)' % (self._name, self.id)
 
 
-    def get_friends(self, graph, save=False):
-        """ this function needs a valid access token."""
+    def get_friends(self, graph=None, save=False):
+        graph = graph or get_graph(access_token=self.access_token)
         response = graph.request('%s/friends' % self.id)
         friends = response['data']
 
