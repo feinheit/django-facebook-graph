@@ -13,7 +13,7 @@ class PostAdmin(AdminBase):
 
     list_display = ('icon_link', 'id', '_from', '_message', '_type', 'picture_link', '_created_time', '_link')
     list_display_links = ('id',)
-    readonly_fields = ('_graph', '_application', '_to', '_from', '_message', '_picture', '_subject',
+    readonly_fields = ('_graph', '_application', '_to', '_from', '_message', '_picture', '_story',
                        '_properties', '_actions', '_privacy', '_likes', '_comments', '_targeting')
     date_hierarchy = '_updated_time'
     list_filter = ('_type',)
