@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
+from facebook.graph import get_graph
 
+from django.conf import settings
 from facebook.modules.base import AdminBase
 
 from .models import Page
@@ -17,7 +19,8 @@ class PageAdmin(AdminBase):
     actions = ['get_page_access_token']
 
     def get_page_access_token(self, request, queryset):
-        graph = get_graph(request, force_refresh=True, prefer_cookie=True)
+        default_post_app = getattr(settings, 'DEFAULT_POST_APP', None)
+        graph = get_graph(request, app_name=default_post_app, force_refresh=True, prefer_cookie=True)
         response = graph.request('me/accounts/')   #&fields=id,access_token
         if response and response.get('data', False):
             data = response['data']

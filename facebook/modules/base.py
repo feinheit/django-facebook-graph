@@ -210,16 +210,8 @@ class Base(models.Model):
         #transaction.commit()
 
     def generate_slug(self):
-        try:
-            # username is unique on facebook, but not every object has a username (ie. user have to make themself for pages and profiles)
-            if self._username:
-                self.slug = slugify(self._username)[:50]
-            elif self._name:
-                self.slug = slugify('%s-%s' % (self._name[:30], self.id[:20]))[:50]
-            else:
-                self.slug = slugify(self.id)
-        except:
-            self.slug = slugify(self.id)
+        # overridden by base profile.
+        self.slug = slugify(self.id)
 
     def clean(self, refresh=True, *args, **kwargs):
         ''' On save, update timestamps '''
