@@ -77,6 +77,12 @@ class Base(models.Model):
             target = '%s?%s' % (target, args)
         try:
             response = graph.request(target)
+        except GraphAPIError:
+            logger.warning('Error in GraphAPI')
+            if save:
+                self.save()
+            return None
+        else:
             if response and save:
                 self.save_from_facebook(response)
             elif save:
@@ -86,11 +92,6 @@ class Base(models.Model):
                 self.save()
             else:
                 return response
-        except GraphAPIError:
-            logger.warning('Error in GraphAPI')
-            if save:
-                self.save()
-            return None
 
     def to_django(self, response, graph=None, save_related=True):
         """ update the local model with the response (JSON) from facebook

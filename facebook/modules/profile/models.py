@@ -40,3 +40,9 @@ class Profile(Base):
             self.slug = slugify(self.id)
 
 
+class ProfileAdmin(AdminBase):
+
+    def pic_img(self, obj):
+        return '<img src="%s" height="75" />' % obj._picture if obj._picture else ''
+    pic_img.allow_tags = True
+    pic_img.short_description = _('Picture')
