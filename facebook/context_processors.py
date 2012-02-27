@@ -11,7 +11,10 @@ def application_settings(request):
              'FACEBOOK_CANVAS_URL' : firstapp['CANVAS-URL']}
     
 def facebook_config(request):
-    return {'facebook' : request.session['facebook']}
+    if 'facebook' in request.session:
+        return {'facebook' : request.session['facebook']}
+    else:
+        return {'facebook' : False }
 
 def session_without_cookies(request):
     """ simple helper to use sessions without cookies """
