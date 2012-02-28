@@ -1,23 +1,27 @@
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
+from facebook.graph import get_graph
 
-from facebook.modules.base import AdminBase
+from django.conf import settings
+from facebook.modules.profile.models import ProfileAdmin
 
 from .models import Page
 
 
-class PageAdmin(AdminBase):
+class PageAdmin(ProfileAdmin):
     def has_access(self, obj):
         return not (obj._access_token == None or obj._access_token == '')
     has_access.short_description = _('Access Token')
     has_access.boolean = True
 
-    list_display = ('id', 'profile_link', 'slug', '_name', '_picture', '_likes', 'has_access')
-    readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link')
+    list_display = ('id', 'profile_link', 'slug', '_name', 'pic_img', '_likes', 'has_access')
+    readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link', '_location', '_phone',
+                       '_checkins', '_website', '_talking_about_count','_username', '_category')
     actions = ['get_page_access_token']
 
     def get_page_access_token(self, request, queryset):
-        graph = get_graph(request, force_refresh=True, prefer_cookie=True)
+        default_post_app = getattr(settings, 'DEFAULT_POST_APP', None)
+        graph = get_graph(request, app_name=default_post_app, force_refresh=True, prefer_cookie=True)
         response = graph.request('me/accounts/')   #&fields=id,access_token
         if response and response.get('data', False):
             data = response['data']

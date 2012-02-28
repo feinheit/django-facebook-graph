@@ -16,6 +16,7 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
+import warnings
 
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -62,6 +63,15 @@ def validate_redirect(url):
                 logger.info(parsed_canvas)
                 return True
     return False
+
+
+def warn_gone(item):
+    warnings.warn('%s has been removed by Facebook' %item, DeprecationWarning, stacklevel=2)
+
+def warn_deprecated(item):
+    warnings.warn('%s has been deprecated by Facebook and will be removed soon.' %item,
+        DeprecationWarning, stacklevel=2)
+
 
 
 # 02/2006 Will Holcomb <wholcomb@gmail.com>

@@ -1,15 +1,16 @@
 from django.db import models
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
+from django import forms
 
-from facebook.modules.base import Base
+from facebook.modules.base import Base, AdminBase
 
 
 class Profile(Base):
     """ Base Class for user, group, page, event and application. """
     id = models.BigIntegerField(primary_key=True, unique=True, help_text=_('The ID is the facebook page ID'))
     _name = models.CharField(max_length=200, blank=True, null=True)
-    _username = models.CharField(max_length=200, null=True, unique=True)
+    _username = models.CharField(max_length=200, blank=True, unique=True, null=True)
     _link = models.URLField(max_length=255, verify_exists=False, blank=True, null=True)
     _picture = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, help_text=_('Cached picture of the page'))
     _pic_square = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
@@ -21,10 +22,27 @@ class Profile(Base):
         abstract = True
         app_label = 'facebook'
 
-    @property
-    def username(self):
-        return self.slug
+    def clean(self):
+        super(Profile, self).clean()
+        # Turn empty String into None for Uniqueness check.
+        self._username = self._username or None
 
-    @username.setter
-    def username(self, name):
-        self.slug = slugify(name)
+
+    def generate_slug(self):
+        # username is unique on facebook, but not every object has a username (ie. user have to make themself for pages and profiles)
+        if self._username:
+            if len(self._username) >= 50:
+                self.slug = '%s_%s' % (slugify(self._username)[:30], self.id)
+            self.slug = slugify(self._username)[:50]
+        elif self._name:
+            self.slug = slugify('%s-%s' % (self._name[:30], self.id[:20]))[:50]
+        else:
+            self.slug = slugify(self.id)
+
+
+class ProfileAdmin(AdminBase):
+
+    def pic_img(self, obj):
+        return '<img src="%s" height="75" />' % obj._picture if obj._picture else ''
+    pic_img.allow_tags = True
+    pic_img.short_description = _('Picture')
