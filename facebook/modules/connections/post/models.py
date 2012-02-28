@@ -49,7 +49,7 @@ class PostBase(Base):
     class Facebook:
         publish = 'feed'
         connections = {'likes': None, 'comments': None }  # TODO: Create models for reference
-        arguments = ['message', 'picture', 'link', 'name', 'caption', 'description', 'source', 'actions', 'privacy']
+        arguments = ['message', 'picture', 'link', 'name', 'caption', 'description', 'source', 'actions']
 
 
     def __unicode__(self):
