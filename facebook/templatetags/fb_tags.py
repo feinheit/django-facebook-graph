@@ -81,8 +81,8 @@ def messages_escaped(message, user):
     return mark_safe(escapejs(message.render(user)))
 
 @register.simple_tag
-def access_token(request, app_name=None):
-    graph = get_graph(request, app_name)
+def access_token(request):
+    graph = get_graph(request)
     return mark_safe(graph.access_token)
     
 @register.simple_tag(takes_context=True)

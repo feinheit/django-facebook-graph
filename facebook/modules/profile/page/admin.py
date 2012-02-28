@@ -22,7 +22,7 @@ class PageAdmin(ProfileAdmin):
     def get_page_access_token(self, request, queryset):
         default_post_app = getattr(settings, 'DEFAULT_POST_APP', None)
         graph = get_graph(request, app_name=default_post_app, force_refresh=True, prefer_cookie=True)
-        response = graph.request('me/accounts/')   #&fields=id,access_token
+        response = graph.request('me/accounts/')
         if response and response.get('data', False):
             data = response['data']
             message = {'count': 0, 'message': u''}

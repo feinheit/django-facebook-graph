@@ -1,5 +1,7 @@
 import sys, logging, urllib2
 from datetime import datetime, timedelta
+import urllib
+import urlparse
 
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden,\
@@ -7,6 +9,7 @@ from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbid
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, get_object_or_404, render
 from django.template import loader, RequestContext
+from django.views.decorators.http import require_POST
 
 from facebook.utils import validate_redirect
 from facebook.graph import get_graph
@@ -19,6 +22,15 @@ from facebook.modules.profile.user.models import User
 logger = logging.getLogger(__name__)
 
 runserver = ('runserver' in sys.argv)
+
+# Find a JSON parser
+try:
+    import simplejson as json
+except ImportError:
+    try:
+        from django.utils import simplejson as json
+    except ImportError:
+        import json
 
 def input(request, action):
     """ method to save a graph-object query, that is retrieved client side """
@@ -143,3 +155,38 @@ def fql_console(request):
                                   RequestContext(request))
 
 
+@require_POST
+def exchange_token(request):
+    """ Exchanges the access token for a 60 day token.
+        https://developers.facebook.com/docs/offline-access-deprecation/#extend_token
+    """
+    save = request.POST.get('save', False)
+    app_name = request.POST.get('app_name', None)
+    app_dict = get_app_dict(application=app_name)
+    fb_exchange_token = request.POST.get('fb_exchange_token', None)
+    if not fb_exchange_token:
+        graph = get_graph(request, app_dict=app_dict)
+        fb_exchange_token = graph.access_token
+    args = {'client_id' : app_dict['ID'],
+            'client_secret': app_dict['SECRET'],
+            'grant_type': 'fb_exchange_token',
+            'fb_exchange_token': fb_exchange_token
+            }
+    file = urllib.urlopen("https://graph.facebook.com/oauth/access_token?",
+            urllib.urlencode(args))
+    raw = file.read()
+    file.close()
+    response = urlparse.parse_qs(raw)
+    # values are returned as lists.
+    response = dict((k, v[0]) for k,v in response.items())
+    if save and response and 'access_token' in response:
+        fb_session = get_session(request)
+        fb_session.access_token = response['access_token']
+        fb_session.token_expires = response.get('expires')
+        graph = get_graph(request, app_dict=app_dict)
+        if graph.user_id:
+            user, created = User.objects.get_or_create(id=graph.user_id)
+            user.access_token = response['access_token']
+            user.get_from_facebook(graph=graph, save=True)
+
+    return HttpResponse(json.dumps(response), mimetype="application/json")

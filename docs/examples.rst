@@ -109,4 +109,19 @@ PAGES=[<page_id>,...]. The decorator needs to be called with the app name as par
         more code here.
         
 
+Page Login
+==========
 
+To allow an app to post to a Facebook Page, a page administrator needs to grant the app the
+manage_pages permission.
+If you have multiple apps, you have to define the following in settings.py::
+
+    DEFAULT_POST_APP = 'myapp'
+
+You need to have a Facebook login button on the Page admin template and make sure you are
+logged in.
+Then select the pages you want to have the app access to and choose 'Get an access token for
+the selected page(s)' from the admin actions. If everything worked out, you should have a
+checkmark on the right. From now on your app can do the same things you can do.
+
+Keep in mind that new access token expire after 60 days.
