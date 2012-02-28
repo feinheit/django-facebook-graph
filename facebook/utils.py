@@ -144,3 +144,20 @@ class MultipartPostHandler(urllib2.BaseHandler):
     multipart_encode = Callable(multipart_encode)
 
     https_request = http_request
+
+def do_exchange_token(app_dict, exchange_token):
+    """ Exchanges the access token for a 60 day token.
+    """
+    args = {'client_id' : app_dict['ID'],
+                'client_secret': app_dict['SECRET'],
+                'grant_type': 'fb_exchange_token',
+                'fb_exchange_token': exchange_token
+                }
+    file = urllib.urlopen("https://graph.facebook.com/oauth/access_token",
+            urllib.urlencode(args))
+    raw = file.read()
+    file.close()
+    response = urlparse.parse_qs(raw)
+    # values are returned as lists.
+    response = dict((k, v[0]) for k,v in response.items())
+    return response

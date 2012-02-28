@@ -2,6 +2,9 @@ from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 from facebook.graph import get_graph
 
+import logging
+logger = logging.getLogger(__name__)
+
 from django.conf import settings
 from facebook.modules.profile.models import ProfileAdmin
 
@@ -23,6 +26,7 @@ class PageAdmin(ProfileAdmin):
         default_post_app = getattr(settings, 'DEFAULT_POST_APP', None)
         graph = get_graph(request, app_name=default_post_app, force_refresh=True, prefer_cookie=True)
         response = graph.request('me/accounts/')
+        logger.debug(response)
         if response and response.get('data', False):
             data = response['data']
             message = {'count': 0, 'message': u''}

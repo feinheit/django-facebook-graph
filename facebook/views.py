@@ -11,7 +11,7 @@ from django.shortcuts import render_to_response, get_object_or_404, render
 from django.template import loader, RequestContext
 from django.views.decorators.http import require_POST
 
-from facebook.utils import validate_redirect
+from facebook.utils import validate_redirect, do_exchange_token
 from facebook.graph import get_graph
 from facebook.oauth2 import parseSignedRequest
 from facebook.session import get_session
@@ -167,18 +167,7 @@ def exchange_token(request):
     if not fb_exchange_token:
         graph = get_graph(request, app_dict=app_dict)
         fb_exchange_token = graph.access_token
-    args = {'client_id' : app_dict['ID'],
-            'client_secret': app_dict['SECRET'],
-            'grant_type': 'fb_exchange_token',
-            'fb_exchange_token': fb_exchange_token
-            }
-    file = urllib.urlopen("https://graph.facebook.com/oauth/access_token?",
-            urllib.urlencode(args))
-    raw = file.read()
-    file.close()
-    response = urlparse.parse_qs(raw)
-    # values are returned as lists.
-    response = dict((k, v[0]) for k,v in response.items())
+    response = do_exchange_token(app_dict=app_dict, exchange_token=fb_exchange_token)
     if save and response and 'access_token' in response:
         fb_session = get_session(request)
         fb_session.access_token = response['access_token']

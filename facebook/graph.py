@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 from datetime import datetime, timedelta
 
+from facebook.modules.profile.application.utils import get_app_dict
 from facebook.oauth2 import authenticate, parseSignedRequest
 from facebook.session import get_session
 
@@ -184,8 +185,8 @@ class GraphAPI(object):
     
 
 class Graph(GraphAPI):
-    """ The Base Class for a Facebook Graph. Inherits from the Facebook SDK Class. """
-    """ Tries to get a facebook graph using different methods.
+    """ The Base Class for a Facebook Graph. Inherits from the Facebook SDK Class.
+    Tries to get a facebook graph using different methods.
     * via access_token: that one is simple
     * via request cookie (access token)
     * via application -> create an accesstoken for an application if requested.
@@ -195,7 +196,7 @@ class Graph(GraphAPI):
     
     """
     def __init__(self, app_dict, request=None, access_token=None, 
-                 code=None, request_token=True, force_refresh=False,
+                 request_token=True, force_refresh=False,
                  prefer_cookie=False):
         super(Graph, self).__init__(access_token)  # self.access_token = access_token
         logger.debug('app_secret: %s' %app_dict['SECRET'])
@@ -416,7 +417,6 @@ class Graph(GraphAPI):
 def get_graph(request=None, app_name=None, app_dict=None, *args, **kwargs):
     """ This is the main factory function that returns a graph class. """
     if not app_dict:
-        from facebook.modules.profile.application.utils import get_app_dict
         app_dict = get_app_dict(app_name)
     return Graph(app_dict=app_dict, request=request, *args, **kwargs)
 
