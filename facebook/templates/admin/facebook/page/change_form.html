@@ -1,0 +1,7 @@
+{% extends "admin/facebook/change_form.html" %}
+
+{% block after_field_sets %}
+{{ block.super }}
+<p>Page Access Token: {{ adminform.form.instance.cached.access_token }}</p>
+<a href="https://developers.facebook.com/tools/debug/access_token?q={{ adminform.form.instance.cached.access_token }}" target="_blank">Verify Page token</a>
+{% endblock %}

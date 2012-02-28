@@ -1,6 +1,12 @@
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
-from facebook.graph import get_graph
+from facebook.graph import get_graph, GraphAPIError
+
+import logging
+from facebook.modules.profile.application.utils import get_app_dict
+from facebook.utils import do_exchange_token
+
+logger = logging.getLogger(__name__)
 
 from django.conf import settings
 from facebook.modules.profile.models import ProfileAdmin
@@ -22,7 +28,17 @@ class PageAdmin(ProfileAdmin):
     def get_page_access_token(self, request, queryset):
         default_post_app = getattr(settings, 'DEFAULT_POST_APP', None)
         graph = get_graph(request, app_name=default_post_app, force_refresh=True, prefer_cookie=True)
-        response = graph.request('me/accounts/')   #&fields=id,access_token
+        app_dict = get_app_dict(default_post_app)
+        token_exchange = do_exchange_token(app_dict, graph.access_token)
+        logger.debug('exchanged token: %s' % token_exchange)
+        if 'access_token' in token_exchange:
+            graph.access_token = token_exchange['access_token']
+        try:
+            response = graph.request('me/accounts/')
+        except GraphAPIError as e:
+            self.message_user(request, 'There was an error: %s' % e.message )
+            return False
+        #logger.debug(response)
         if response and response.get('data', False):
             data = response['data']
             message = {'count': 0, 'message': u''}
