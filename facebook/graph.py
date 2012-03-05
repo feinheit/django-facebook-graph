@@ -308,12 +308,6 @@ class Graph(GraphAPI):
         if not access_token:
             if not self.access_token or not self.type()=='user' or not self.fb_session.app_is_authenticated:
                 return None
-            """
-            elif self._user_id:
-                self._me, created = User.objects.get_or_create(id=self._user_id)
-                if created:
-                    self._me.get_from_facebook(graph=self, save=True)                
-            """
         
         try:
             me = self.request('me')

@@ -116,6 +116,14 @@ class PostBase(Base):
             except AttributeError:
                 return ''
 
+    def status(self):
+        if self._graph and 'id' in self._graph:
+            return u'published'
+        elif not self._graph:
+            return u'not published'
+        else:
+            return u'error: %s' % self._graph
+
 
 class Post(PostBase):
     class Meta(PostBase.Meta):
