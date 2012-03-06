@@ -14,7 +14,9 @@ if 'south' in settings.INSTALLED_APPS:
 
 class JSONFormField(forms.fields.CharField):
     def clean(self, value, *args, **kwargs):
-        if value:
+        if value == '{}': # let empty value pass.
+            pass
+        elif value:
             try:
                 # Run the value through JSON so we can normalize formatting and at least learn about malformed data:
                 value = json.dumps(json.loads(value), cls=DjangoJSONEncoder)

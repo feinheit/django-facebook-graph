@@ -124,6 +124,10 @@ class Base(models.Model):
                     # Check for Birthday:
                     setattr(self, field, datetime.strptime(val, "%m/%d/%Y").date())
                 else:
+                    if val == 'true':
+                        val = True
+                    if val == 'false':
+                        val = False
                     setattr(self, field, val)
             if prop == 'from' and hasattr(self, '_%s_id' % prop):
                 setattr(self, '_%s_id' % prop, val['id'])

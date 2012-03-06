@@ -17,6 +17,7 @@ class PostBase(Base):
     id = models.CharField(_('id'), max_length=40, primary_key=True)
     _from = models.ForeignKey(User, blank=True, null=True, verbose_name=_('from'),
                               related_name='%(app_label)s_%(class)s_posts_sent')
+    # This field does not appear in the graph.
     _to = JSONField(_('to'), blank=True, null=True)  # could be M2M but nees JSON processor.
     _message = models.TextField(_('message'), blank=True)
     _message_tags = JSONField(_('message_tags'), blank=True, null=True, editable=False)
@@ -41,6 +42,7 @@ class PostBase(Base):
     _application = JSONField(_('application'), blank=True, null=True)
     _created_time = models.DateTimeField(_('created time'), blank=True, null=True)
     _updated_time = models.DateTimeField(_('updated time'), blank=True, null=True)
+    _is_published = models.NullBooleanField(_('is published'), blank=True, null=True)
 
     class Meta(Base.Meta):
         abstract=True
@@ -91,7 +93,10 @@ class PostBase(Base):
 
     @property
     def to(self):
-        return self._to.get('data')[0]
+        if hasattr(self._to, 'data'):
+            return self._to.get('data')[0]
+        else:
+            return {'id': int(self.id.split('_')[0])}
 
     @property
     def actions(self):
@@ -110,6 +115,14 @@ class PostBase(Base):
                 return self.get_absolute_url()
             except AttributeError:
                 return ''
+
+    def status(self):
+        if self._graph and 'id' in self._graph:
+            return u'published'
+        elif not self._graph:
+            return u'not published'
+        else:
+            return u'error: %s' % self._graph
 
 
 class Post(PostBase):

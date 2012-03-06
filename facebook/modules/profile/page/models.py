@@ -9,7 +9,7 @@ from facebook.graph import get_graph, GraphAPIError
 
 from facebook.modules.profile.models import Profile
 
-class Page(Profile):
+class PageBase(Profile):
     # Cached Facebook Graph fields for db lookup
     _likes = models.IntegerField(blank=True, null=True, help_text=_('Cached fancount of the page'))
     _access_token = models.CharField(max_length=255, blank=True, null=True)
@@ -19,6 +19,11 @@ class Page(Profile):
     _checkins = models.IntegerField(_('checkins'), blank=True, null=True)
     _website = models.URLField(_('website'), blank=True, null=True)
     _talking_about_count = models.PositiveIntegerField(_('talking about count'), blank=True, null=True)
+
+    class Meta(Profile.Meta):
+        abstract = True
+        verbose_name = _('Page')
+        verbose_name_plural = _('Pages')
 
     @property
     def name(self):
@@ -74,3 +79,8 @@ class Page(Profile):
         member_fields = []
         connections = ['feed', 'posts', 'tagged', 'statuses', 'links', 'notes', 'photos', 'albums', 'events', 'videos']
         type = 'page'
+
+
+class Page(PageBase):
+    class Meta(PageBase.Meta):
+        abstract = False
