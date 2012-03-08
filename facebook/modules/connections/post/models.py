@@ -70,6 +70,8 @@ class PostBase(Base):
 
     # Note has no type attribute.
     def guess_type(self):
+        if self._type:
+            return self._type
         if self._subject:
             self._type = 'note'
         elif self._story and self._picture:

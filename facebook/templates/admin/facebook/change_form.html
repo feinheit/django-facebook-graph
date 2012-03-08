@@ -14,7 +14,7 @@
 		<option value="{{ app }}">{{ app }}</option>
 		{% endfor %}
 	</select-->Application: {% fb_first_app %} &nbsp;
-    <fb:login-button show-faces="false" width="200" max-rows="1" scope="user_events, email, rsvp_event, create_event, friends_events, read_stream, publish_stream, user_photos, manage_pages"></fb:login-button>
+    <fb:login-button show-faces="false" width="200" max-rows="1" scope="user_events, email, rsvp_event, create_event, friends_events, read_stream, publish_stream, user_photos, manage_pages, read_insights"></fb:login-button>
 </div>
 <p>App Access Token: {{ graph.access_token }}, via {{ graph.via }}</p>
 <p>User Access Token: <span id="user-access-token">None</span></p>
