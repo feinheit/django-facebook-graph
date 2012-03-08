@@ -43,7 +43,6 @@ class PageAdmin(ProfileAdmin):
     insight_link.allow_tags = True
     insight_link.short_description = _('Name')
 
-
     list_display = ('id', 'profile_link', 'slug', 'insight_link', 'pic_img', '_likes', 'has_access', 'token_expires_in')
     readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link', '_location', '_phone',
                        '_checkins', '_website', '_talking_about_count','_username', '_category')
