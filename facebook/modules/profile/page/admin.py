@@ -13,7 +13,6 @@ from facebook.modules.profile.models import ProfileAdmin
 
 from .models import Page
 
-
 class PageAdmin(ProfileAdmin):
     def has_access(self, obj):
         if obj.updated + datetime.timedelta(days=60) < datetime.datetime.now():
@@ -23,7 +22,16 @@ class PageAdmin(ProfileAdmin):
     has_access.short_description = _('Access Token')
     has_access.boolean = True
 
-    list_display = ('id', 'profile_link', 'slug', '_name', 'pic_img', '_likes', 'has_access')
+    def insight_link(self, obj):
+        if '?' in obj.facebook_link:
+            return u'<a href="%s&sk=page_insights" target="_blank">%s</a>' % (obj.facebook_link, obj._name)
+        else:
+            return u'<a href="%s?sk=page_insights" target="_blank">%s</a>' % (obj.facebook_link, obj._name)
+    insight_link.allow_tags = True
+    insight_link.short_description = _('Name')
+
+
+    list_display = ('id', 'profile_link', 'slug', 'insight_link', 'pic_img', '_likes', 'has_access')
     readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link', '_location', '_phone',
                        '_checkins', '_website', '_talking_about_count','_username', '_category')
     actions = ['get_page_access_token']
@@ -62,6 +70,5 @@ class PageAdmin(ProfileAdmin):
             self.message_user(request, 'There was an error: %s' % response )
 
     get_page_access_token.short_description = _('Get an access token for the selected page(s)')
-
 
 admin.site.register(Page, PageAdmin)
