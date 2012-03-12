@@ -84,8 +84,18 @@ class GraphAPI(object):
         return self.request("", args)
 
     def get_connections(self, id, connection_name, **args):
-        """Fetchs the connections for given object."""
+        """Fetches the connections for given object."""
         return self.request(id + "/" + connection_name, args)
+
+    def batch_request(self, batch):
+        """ Combines multiple requests into one.
+            Batch must be a List of Dicts in the format:
+            [{"method": "GET", "relative_url": "me"},
+            {"method": "GET", "relative_url": "me/friends?limit=50"}]
+            It returns a list of response dicts:
+            http://developers.facebook.com/docs/reference/api/batch/
+        """
+        return self.request('', None, {'batch': json.dumps(batch)})
 
     def put_object(self, parent_object, connection_name, **data):
         """Writes the given object to the graph, connected to the given parent.
