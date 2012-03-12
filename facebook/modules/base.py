@@ -133,8 +133,8 @@ class Base(models.Model):
                 setattr(self, '_%s_id' % prop, val['id'])
 
 
-    def save_from_facebook(self, response, update_slug=False, save_related=True):
-        self.to_django(response, save_related)
+    def save_from_facebook(self, response, update_slug=False, save_related=True, graph=None):
+        self.to_django(response, graph=graph, save_related=save_related)
         if update_slug or not self.slug:
             self.generate_slug()
         self.save()
