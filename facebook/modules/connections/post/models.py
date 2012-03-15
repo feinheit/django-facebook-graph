@@ -145,6 +145,7 @@ class PagePost(models.Model):
     content_type = models.ForeignKey(ContentType)
     object_id = models.BigIntegerField()
     to = generic.GenericForeignKey()
+    created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         app_label = 'facebook'

@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.http import HttpResponse
 from django.shortcuts import redirect
 
 from feincms.module.page.models import Page
@@ -9,8 +10,9 @@ def redirect_to_slug(request):
 
     try:
         facebook_page = request.session['facebook']['signed_request']['page']
-    except e:
-        return '<!-- could not redirect to slug via facebook page signed request params: %s -->' % e
+    except KeyError as e:
+        return HttpResponse('<!-- could not redirect to slug via facebook page signed request params: %s -->' % e)
+
 
     page = Page.objects.from_request(request, best_match=True)
     if facebook_page['admin'] and facebook_page['liked']:
@@ -32,4 +34,4 @@ def redirect_to_slug(request):
     try:
         return redirect(page.get_children().filter(slug='unliked')[0])
     except IndexError:
-        return '<!-- no childpage with matching slug found. looked for slugs: admin-liked, liked, admin, unliked -->'
+        return HttpResponse('<!-- no childpage with matching slug found. looked for slugs: admin-liked, liked, admin, unliked -->')
