@@ -120,6 +120,9 @@ class Base(models.Model):
                         obj.get_from_facebook(graph=graph, save=True)
                     elif created and not save_related and 'name' in val:
                         obj._name = val['name']
+                    elif not created and 'name' in val:
+                        # make sure name is defined:
+                        obj._name = val['name']
                 elif isinstance(fieldclass, models.DateField):
                     # Check for Birthday:
                     setattr(self, field, datetime.strptime(val, "%m/%d/%Y").date())
