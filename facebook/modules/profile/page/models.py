@@ -13,6 +13,7 @@ class PageBase(Profile):
     # Cached Facebook Graph fields for db lookup
     _likes = models.IntegerField(blank=True, null=True, help_text=_('Cached fancount of the page'))
     _access_token = models.CharField(max_length=255, blank=True, null=True)
+    _access_token_expires = models.DateTimeField(blank=True, null=True)
     _category = models.CharField(_('category'), max_length=255, blank=True, null=True)
     _location = JSONField(_('location'), blank=True, null=True)
     _phone = models.CharField(_('phone'), max_length=255, blank=True, null=True)
