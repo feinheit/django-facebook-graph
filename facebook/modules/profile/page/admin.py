@@ -22,6 +22,17 @@ class PageAdmin(ProfileAdmin):
     has_access.short_description = _('Access Token')
     has_access.boolean = True
 
+    def token_expires_in(self, obj):
+        if not obj._access_token:
+            return ''
+        expires_in = (obj.updated - datetime.datetime.now() + datetime.timedelta(days=60)).days
+        if expires_in > 10:
+            return _('%s days' % expires_in)
+        else:
+            return _('<span style="color:red;font-weight:bold;">%s days</span>' % expires_in)
+    token_expires_in.short_description = _('expires in')
+    token_expires_in.allow_tags = True
+
     def insight_link(self, obj):
         if '?' in obj.facebook_link:
             return u'<a href="%s&sk=page_insights" target="_blank">%s</a>' % (obj.facebook_link, obj._name)
@@ -31,7 +42,7 @@ class PageAdmin(ProfileAdmin):
     insight_link.short_description = _('Name')
 
 
-    list_display = ('id', 'profile_link', 'slug', 'insight_link', 'pic_img', '_likes', 'has_access')
+    list_display = ('id', 'profile_link', 'slug', 'insight_link', 'pic_img', '_likes', 'has_access', 'token_expires_in')
     readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link', '_location', '_phone',
                        '_checkins', '_website', '_talking_about_count','_username', '_category')
     actions = ['get_page_access_token']
