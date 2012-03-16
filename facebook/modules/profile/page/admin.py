@@ -32,6 +32,7 @@ class PageAdmin(ProfileAdmin):
             return _('<span style="color:red;font-weight:bold;">expired</span>')
         else:
             return _('<span style="color:orange;font-weight:bold;">%s days</span>' % expires_in)
+
     token_expires_in.short_description = _('expires in')
     token_expires_in.allow_tags = True
 
@@ -42,6 +43,7 @@ class PageAdmin(ProfileAdmin):
             return u'<a href="%s?sk=page_insights" target="_blank">%s</a>' % (obj.facebook_link, obj._name)
     insight_link.allow_tags = True
     insight_link.short_description = _('Name')
+
 
     list_display = ('id', 'profile_link', 'slug', 'insight_link', 'pic_img', '_likes', 'has_access', 'token_expires_in')
     readonly_fields = ('_name', '_picture', '_likes', '_graph', '_link', '_location', '_phone',
