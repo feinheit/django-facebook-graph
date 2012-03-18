@@ -21,6 +21,8 @@ class UserBase(Profile):
     _location = models.CharField(max_length=70, blank=True, null=True)
     _gender = models.CharField(max_length=10, blank=True, null=True)
     _locale = models.CharField(max_length=6, blank=True, null=True)
+    _timezone = models.IntegerField(blank=True, null=True)
+    _verified = models.BooleanField(blank=True)
 
     friends = models.ManyToManyField('self')
     
