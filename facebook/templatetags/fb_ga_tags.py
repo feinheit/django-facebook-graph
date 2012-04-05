@@ -5,7 +5,7 @@ from django.template.defaultfilters import escapejs
 register = template.Library()
 
 @register.simple_tag(takes_context=True)
-def userVar(context):
+def user_var(context):
     """ Adds the user informations from the FB signed request to Google Analytics.
         You need to put this tag before the _trackPageview call.
     """
