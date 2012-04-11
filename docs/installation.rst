@@ -56,6 +56,7 @@ entry for every app in your project. It is recommended to use different app
                 'SECURE-CANVAS-URL': '',
                 'REDIRECT-URL': '',
                 'DOMAIN' : 'localhost.local:8000',
+                'NAMESPACE': 'mynamespace',
         }
     }
 
@@ -76,6 +77,7 @@ Add this to the header section of your base template::
         FACEBOOK_APP_ID = '{% fb_app_id %}';
         FACEBOOK_REDIRECT_URL = '{% fb_redirect_url %}';
         FACEBOOK_CHANNEL_URL = '{% url channel %}';
+        FACEBOOK_APP_NAMESPACE = '{% fb_app_namespace %}'; // needed for og actions.
     </script>
     <script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>
 

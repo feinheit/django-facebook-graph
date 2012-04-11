@@ -46,6 +46,11 @@ def fb_domain(app_name=None):
     app = get_app_dict(app_name)
     return app['DOMAIN']
 
+@register.simple_tag
+def fb_app_namespace(app_name=None):
+    app = get_app_dict(app_name)
+    return app['NAMESPACE']
+
 # TODO: Check request.is_secure on server. Local always True.
 @register.simple_tag
 def fb_canvas_url(request, app_name=None):
