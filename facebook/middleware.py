@@ -31,6 +31,10 @@ class OAuth2ForCanvasMiddleware(object):
 
         logger.debug('Request Method = %s\n, AccessToken=%s' % (request.method, fb.access_token))
 
+        if 'deauthorize' in request.path:
+            logger.debug('deauthorize call, SignedRequestMiddleware returning...')
+            return None
+            
         if 'feincms' in settings.INSTALLED_APPS:
             # if feincms is installed, try to get the application from the page
             from facebook.feincms.utils import get_application_from_request

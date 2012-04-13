@@ -9,6 +9,9 @@ class PreventForeignApp(object):
     associated page """
     
     def process_request(self, request):
+        if 'deauthorize' in request.path:
+            return None
+        
         if 'facebook' in request.session and 'signed_request' in request.session['facebook']:
             facebook_page = get_page_from_request(request)
             signed_request = request.session['facebook']['signed_request']

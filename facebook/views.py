@@ -99,9 +99,15 @@ def deauthorize_and_delete(request):
     if request.method == 'GET':
         raise Http404
     if 'signed_request' in request.POST:
+<<<<<<< Updated upstream
         application = get_app_dict()
         parsed_request = parseSignedRequest(request.REQUEST['signed_request'], application['SECRET'])
         user = get_object_or_404(User, id=parsed_request['user_id'])
+=======
+        application = get_app_dict(app_name)
+        parsed_request = parseSignedRequest(request.POST.get('signed_request'), application['SECRET'])
+        user = get_object_or_404(User, id=int(parsed_request.get('user_id')))
+>>>>>>> Stashed changes
         if settings.DEBUG == False:
             user.delete()
             logger.info('Deleting User: %s' % user)
