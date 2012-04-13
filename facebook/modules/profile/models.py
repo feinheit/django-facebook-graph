@@ -20,9 +20,10 @@ class Profile(Base):
     _pic_crop = models.URLField(max_length=500, blank=True, null=True, verify_exists=False, editable=False)
 
     # get all posts for the selected profile
-    # TODO:  this needs to set dynamically only if post is installed.
-    #post_throughs = generic.GenericRelation('PagePost', related_name="%(app_label)s_%(class)s_related")
-
+    #    posts = [p.post for p in page.post_throughs.select_related('post').all()]
+    if 'facebook.modules.connections.post' in settings.INSTALLED_APPS:
+        post_throughs = generic.GenericRelation('PagePost',
+                            related_name="%(app_label)s_%(class)s_related")
 
     class Meta(Base.Meta):
         abstract = True
