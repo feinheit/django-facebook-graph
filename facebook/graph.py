@@ -212,7 +212,7 @@ class Graph(GraphAPI):
         logger.debug('app_secret: %s' %app_dict['SECRET'])
         logger.debug('app_id: %s' %app_dict['ID'])
         self.HttpRequest = request
-        self._me, self._user_id = None, None
+        self._me, self._user_id = {}, None
         self.app_dict = app_dict,
         self.app_id, self.app_secret = app_dict['ID'], app_dict['SECRET']
         self.via = 'No token requested'
@@ -317,7 +317,7 @@ class Graph(GraphAPI):
     def _get_me(self, access_token=False):
         if not access_token:
             if not self.access_token or not self.type()=='user' or not self.fb_session.app_is_authenticated:
-                return None
+                return {}
         
         try:
             me = self.request('me')

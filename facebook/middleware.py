@@ -113,7 +113,13 @@ class Redirect2AppDataMiddleware(object):
         try:
             # only execute first time (Facebook will POST the tab with signed_request parameter)
             if request.method == 'POST' and request.POST.has_key('signed_request'):
-                target_url = request.session['facebook']['signed_request']['app_data']
+                app_data = request.session['facebook']['signed_request']['app_data']
+
+                if '//' in app_data or '..' in app_data:
+                    logger.warn('Possible defacing in app_data detected: %s' % app_data)
+                    return None
+
+                target_url = '%s%s' % (request.META['SCRIPT_NAME'], app_data)
                 logger.debug('got target url: %s' % target_url)
                 del request.session['facebook']['signed_request']['app_data']
                 request.session.modified = True

@@ -54,8 +54,9 @@ entry for every app in your project. It is recommended to use different app
                 'CANVAS-PAGE': 'https://apps.facebook.com/yourapp',
                 'CANVAS-URL': '',
                 'SECURE-CANVAS-URL': '',
-                'REDIRECT-URL': '',
+                'REDIRECT-URL': 'mydomain.com/facebook/redirect/?next=%2F%2Fwww.facebook.com%2Fpages%2F',
                 'DOMAIN' : 'localhost.local:8000',
+                'NAMESPACE': 'mynamespace',
         }
     }
 
@@ -74,8 +75,9 @@ Add this to the header section of your base template::
     {% load fb_tags %}
     <script type="text/javascript">
         FACEBOOK_APP_ID = '{% fb_app_id %}';
-        FACEBOOK_REDIRECT_URL = '{% fb_redirect_url %}';
+        FACEBOOK_REDIRECT_URL = document.location.protocol + '//' + '{% fb_redirect_url %}';
         FACEBOOK_CHANNEL_URL = '{% url channel %}';
+        FACEBOOK_APP_NAMESPACE = '{% fb_app_namespace %}'; // needed for og actions.
     </script>
     <script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>
 
@@ -85,7 +87,7 @@ Facebook applications in one installation::
     {% load fb_tags %}
     <script type="text/javascript">
         FACEBOOK_APP_ID = '{% fb_app_id feincms_page.facebook_application %}';
-        FACEBOOK_REDIRECT_URL = '{% fb_redirect_url feincms_page.facebook_application %}';
+        FACEBOOK_REDIRECT_URL = document.location.protocol + '//' + '{% fb_redirect_url feincms_page.facebook_application %}';
         FACEBOOK_CHANNEL_URL = '{% url channel %}';
     </script>
     <script type="text/javascript" src="{{ STATIC_URL }}facebook/fb_utils.js"></script>

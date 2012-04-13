@@ -2,6 +2,7 @@ from django.contrib.contenttypes import generic
 from django.db import models
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 
 from facebook.modules.base import Base, AdminBase
 
@@ -20,8 +21,9 @@ class Profile(Base):
 
     # get all posts for the selected profile
     #    posts = [p.post for p in page.post_throughs.select_related('post').all()]
-    post_throughs = generic.GenericRelation('PagePost', related_name="%(app_label)s_%(class)s_related")
-
+    if 'facebook.modules.connections.post' in settings.INSTALLED_APPS:
+        post_throughs = generic.GenericRelation('PagePost',
+                            related_name="%(app_label)s_%(class)s_related")
 
     class Meta(Base.Meta):
         abstract = True
