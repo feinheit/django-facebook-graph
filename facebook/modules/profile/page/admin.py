@@ -33,7 +33,6 @@ class PageAdmin(ProfileAdmin):
         else:
             return _('<span style="color:orange;font-weight:bold;">%s days</span>' % expires_in)
 
-
     token_expires_in.short_description = _('expires in')
     token_expires_in.allow_tags = True
 
