@@ -1,7 +1,5 @@
 import sys, logging, urllib2
 from datetime import datetime, timedelta
-import urllib
-import urlparse
 
 from django.conf import settings
 from django.contrib import admin
@@ -181,8 +179,8 @@ def internal_redirect(request):
         return HttpResponseForbidden('The next= paramater is not an allowed redirect url.')
 
 
-""" Allows to register client-side errors. """
 def log_error(request):
+    """ Allows to register client-side errors. """
     if not request.is_ajax() or not request.method == 'POST':
         raise Http404
     logger.error(request.POST.get('message'))
