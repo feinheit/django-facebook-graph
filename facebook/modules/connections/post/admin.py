@@ -1,7 +1,4 @@
-from django.contrib.admin.options import InlineModelAdmin
 from facebook.modules.base import AdminBase
-
-from django.contrib.contenttypes.models import ContentType
 
 class PostAdmin(AdminBase):
     def picture_link(self, obj):
