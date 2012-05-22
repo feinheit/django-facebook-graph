@@ -27,6 +27,7 @@ class UserBase(Profile):
     friends = models.ManyToManyField('self')
     
     class Meta(Profile.Meta):
+        app_label = 'facebook'
         abstract=True
     
     class Facebook:
@@ -94,7 +95,9 @@ class UserBase(Profile):
 
 
 class User(UserBase):
-    pass
+    class Meta(UserBase.Meta):
+        abstract = False
+        app_label = 'facebook'
 
 
 # This code is for backwards compability only. Will be removed with verison 1.1.
