@@ -120,6 +120,9 @@ class Base(models.Model):
                         obj.get_from_facebook(graph=graph, save=True)
                     elif created and not save_related and 'name' in val:
                         obj._name = val['name']
+                    elif not created and 'name' in val:
+                        # make sure name is defined:
+                        obj._name = val['name']
                 elif isinstance(fieldclass, models.DateField):
                     # Check for Birthday:
                     setattr(self, field, datetime.strptime(val, "%m/%d/%Y").date())
@@ -133,8 +136,8 @@ class Base(models.Model):
                 setattr(self, '_%s_id' % prop, val['id'])
 
 
-    def save_from_facebook(self, response, update_slug=False, save_related=True):
-        self.to_django(response, save_related)
+    def save_from_facebook(self, response, update_slug=False, save_related=True, graph=None):
+        self.to_django(response, graph=graph, save_related=save_related)
         if update_slug or not self.slug:
             self.generate_slug()
         self.save()

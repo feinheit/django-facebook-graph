@@ -17,3 +17,4 @@ class PostAdmin(AdminBase):
                        '_properties', '_actions', '_privacy', '_likes', '_comments', '_targeting')
     date_hierarchy = '_updated_time'
     list_filter = ('_type',)
+

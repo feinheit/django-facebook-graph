@@ -1,15 +1,17 @@
 import sys, logging, urllib2
 from datetime import datetime, timedelta
-import urllib
-import urlparse
 
 from django.conf import settings
+from django.contrib import admin
+from django.contrib.admin.util import get_deleted_objects
+from django.db import router
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden,\
     Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, get_object_or_404, render
 from django.template import loader, RequestContext
 from django.views.decorators.http import require_POST
+from django.contrib.admin import helpers
 
 from facebook.utils import validate_redirect, do_exchange_token
 from facebook.graph import get_graph
@@ -17,6 +19,8 @@ from facebook.oauth2 import parseSignedRequest
 from facebook.session import get_session
 from facebook.modules.profile.application.utils import get_app_dict
 from facebook.modules.profile.user.models import User
+from facebook.modules.profile.user.admin import UserAdmin
+from django.utils.translation import ugettext_lazy as _
 
 
 logger = logging.getLogger(__name__)
@@ -94,14 +98,50 @@ def channel(request):
 # Deauthorize callback, signed request: {u'issued_at': 1305126336, u'user_id': u'xxxx', u'user': {u'locale': u'de_DE', u'country': u'ch'}, u'algorithm': u'HMAC-SHA256'}
 
 @csrf_exempt
-def deauthorize_and_delete(request):
+def deauthorize_and_delete(request, app_name=None):
     """ Deletes a user on a deauthorize callback. """
     if request.method == 'GET':
-        raise Http404
+        if request.user.is_superuser:
+            application = get_app_dict(app_name)
+            # Preview callback
+            if 'userid' in request.GET:
+                queryset = User.objects.filter(id=int(request.GET.get('userid'), 0))
+                opts = User._meta
+                modeladmin = UserAdmin(User, admin.site)
+                using = router.db_for_write(User)
+                # Populate deletable_objects, a data structure of all related objects that
+                # will also be deleted.
+                deletable_objects, perms_needed, protected = get_deleted_objects(
+                    queryset, opts, request.user, modeladmin.admin_site, using)
+
+                context = {
+                        "title": _("Preview deauthorization callback"),
+                        "objects_name": 'User',
+                        "deletable_objects": [deletable_objects],
+                        'queryset': queryset,
+                        "perms_lacking": perms_needed,
+                        "protected": protected,
+                        "opts": opts,
+                        "root_path": modeladmin.admin_site.root_path,
+                        "app_label": 'facebook',
+                        'action_checkbox_name': helpers.ACTION_CHECKBOX_NAME,
+                    }
+
+                return render(request, [
+                    "admin/facebook/delete_selected_confirmation.html",
+                     "admin/delete_selected_confirmation.html"
+                    ], context)
+            else:
+                return HttpResponse(u"""Deauthorize callback for app %s
+                    with id %s called with GET. Call with userid= as
+                    parameter to preview cascade.""" % (app_name, application['ID']))
+        else:
+            raise Http404
     if 'signed_request' in request.POST:
-        application = get_app_dict()
-        parsed_request = parseSignedRequest(request.REQUEST['signed_request'], application['SECRET'])
-        user = get_object_or_404(User, id=parsed_request['user_id'])
+        application = get_app_dict(app_name)
+        parsed_request = parseSignedRequest(request.POST.get('signed_request'), application['SECRET'])
+        user = get_object_or_404(User, id=int(parsed_request.get('user_id')))
+
         if settings.DEBUG == False:
             user.delete()
             logger.info('Deleting User: %s' % user)
@@ -139,8 +179,8 @@ def internal_redirect(request):
         return HttpResponseForbidden('The next= paramater is not an allowed redirect url.')
 
 
-""" Allows to register client-side errors. """
 def log_error(request):
+    """ Allows to register client-side errors. """
     if not request.is_ajax() or not request.method == 'POST':
         raise Http404
     logger.error(request.POST.get('message'))

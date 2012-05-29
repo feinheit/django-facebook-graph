@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes import generic
 
 from facebook.fields import JSONField
 from facebook.modules.base import Base
@@ -55,7 +57,7 @@ class PostBase(Base):
 
 
     def __unicode__(self):
-        return u'%s, %s %s' % (self.id, self._message[:50], self._picture)
+        return u'%s, %s' % (self.id, self._message[:50])
 
     # Deal with changes from Facebook
     @property
@@ -70,6 +72,8 @@ class PostBase(Base):
 
     # Note has no type attribute.
     def guess_type(self):
+        if self._type:
+            return self._type
         if self._subject:
             self._type = 'note'
         elif self._story and self._picture:
@@ -126,9 +130,26 @@ class PostBase(Base):
 
 
 class Post(PostBase):
+
     class Meta(PostBase.Meta):
         app_label = 'facebook'
         verbose_name = _('Post')
         verbose_name_plural = _('Posts')
         abstract = False
 
+
+class PagePost(models.Model):
+    """ This is a generic intermediate model to attach posts to Pages or Profiles
+    """
+    post = models.ForeignKey(Post)
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.BigIntegerField()
+    to = generic.GenericForeignKey()
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = 'facebook'
+        unique_together = (('post', 'content_type', 'object_id'),)
+
+    def __unicode__(self):
+        return u'%s to %s' % (self.post, self.to)

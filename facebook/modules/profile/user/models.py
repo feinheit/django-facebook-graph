@@ -21,10 +21,13 @@ class UserBase(Profile):
     _location = models.CharField(max_length=70, blank=True, null=True)
     _gender = models.CharField(max_length=10, blank=True, null=True)
     _locale = models.CharField(max_length=6, blank=True, null=True)
+    _timezone = models.IntegerField(blank=True, null=True)
+    _verified = models.BooleanField(blank=True)
 
     friends = models.ManyToManyField('self')
     
     class Meta(Profile.Meta):
+        app_label = 'facebook'
         abstract=True
     
     class Facebook:
@@ -92,7 +95,9 @@ class UserBase(Profile):
 
 
 class User(UserBase):
-    pass
+    class Meta(UserBase.Meta):
+        abstract = False
+        app_label = 'facebook'
 
 
 # This code is for backwards compability only. Will be removed with verison 1.1.
