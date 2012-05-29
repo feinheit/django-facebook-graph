@@ -7,8 +7,20 @@ Installation
 Add ``'facebook'`` to your ``INSTALLED_APPS``
 ---------------------------------------------
 
-This will create Django classes for the main Facebook models. The classes
-synchronize to Facebook only one-way.
+The app has a lot of models. To only create the tables you need you have to add
+the models that you want separately.
+Here is an example::
+
+    INSTALLED_APPS = (
+        ...
+        'facebook',
+        'facebook.modules.profile.page',
+        'facebook.modules.profile.user',
+        'facebook.modules.profile.event',
+        'facebook.modules.profile.application',
+        'facebook.modules.connections.post',
+        ...
+    )
 
 
 Add the middlewares

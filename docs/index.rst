@@ -6,6 +6,8 @@
 Welcome to django-facebook-graph's documentation!
 =================================================
 
+Version: 0.1 structured
+
 Contents:
 
 .. toctree::
