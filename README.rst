@@ -17,7 +17,7 @@ Features
 
 
 Read the documentation on:
-http://readthedocs.org/docs/django-facebook-graph/en/latest/
+http://readthedocs.org/docs/django-facebook-graph/en/structured/
 
 This version works with OAuth 2.0 only!
 
@@ -60,14 +60,16 @@ Facebook Models
 
 The facebook app adds the models: Users, Events, Pages, Photos, Posts and Requests to the admin interface. Django can fetch the
 data from facebook on save and store it locally. It is not yet possible to create a model this way and upload it to facebook except for Photos.
-There is a login button so you can access private data as well. 
+There is a login button so you can access private data as well.
+Scores and achievements can also be created and tracked.
+And if someone is fed up with your app, the deauthorize callback can automatically delete all his data.
 
 
 
 Simple usage of Facebook Auth:
 ==============================
 
- * add 'facebook' to your INSTALLED_APPS. it will create a table where to store all connected facebook users.
+ * add 'facebook' and the required models to your INSTALLED_APPS. It will create a table where to store all connected facebook users.
  * add 'facebook.backends.authentication.AuthenticationBackend' to AUTHENTICATION_BACKENDS
  * add url(r'^accounts/', include('facebook.backends.registration.urls')) to your urls
  * now you can insert the facebook button: <fb:login-button perms="email" onlogin="window.location.href='{% url auth_login %}?next={{ request.get_full_path }}'"></fb:login-button> 
