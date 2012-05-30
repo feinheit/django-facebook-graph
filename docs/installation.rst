@@ -113,12 +113,13 @@ Add this to the bottom of your base template in the scripts section::
 
     <div id="fb-root"></div>
     <script type="text/javascript">
-    (function() {
-        var e = document.createElement('script'); e.async = true;
-        e.src = document.location.protocol +
-        '//connect.facebook.net/de_DE/all.js';
-        document.getElementById('fb-root').appendChild(e);
-    }());
+    (function(d){
+         var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+         if (d.getElementById(id)) {return;}
+         js = d.createElement('script'); js.id = id; js.async = true;
+         js.src = "//connect.facebook.net/en_US/all.js";
+         ref.parentNode.insertBefore(js, ref);
+       }(document));
     </script>
 
 The Facebook script is loaded asynchronously. Therefore you have to use the FQ,

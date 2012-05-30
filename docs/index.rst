@@ -17,6 +17,7 @@ Contents:
    getting-started
    reference
    examples
+   feincms
 
 
 Indices and tables
