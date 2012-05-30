@@ -3,7 +3,7 @@
 .*.swp
 \#*#
 *.mo
-/.DS_Store
+.DS_Store
 .settings
 .project
 .pydevproject
