@@ -30,13 +30,18 @@ The ``SignedRequestMiddleware`` is the main middleware that stores the signed
 request in a special session object and allows your app to access it. Most
 of the framework expects this middleware to be installed to function correctly.
 
+Because Facebook calls your page initially with POST, you need a custom csrf middleware
+that lets facebook pass.
+
 The ``AppRequestMiddleware`` adds some tools to help dealing with app requests::
 
     MIDDLEWARE_CLASSES = (
+        'facebook.csrf.CsrfViewMiddleware',
         <other middlewares>,
         'facebook.middleware.SignedRequestMiddleware',
-        'facebook.middleware.AppRequestMiddleware',
+        'facebook.middleware.AppRequestMiddleware', # optional.
     )
+
 
 
 Add the URLs
