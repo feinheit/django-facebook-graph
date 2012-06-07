@@ -25,6 +25,9 @@ from utils import get_graph, post_image, get_FQL, get_app_dict
 
 FACEBOOK_APPS_CHOICE = tuple((v['ID'], unicode(k)) for k,v in settings.FACEBOOK_APPS.items())
 
+warnings.warn('This branch of django-facebook-graph has been deprecated. Use the structured branch.',
+    DeprecationWarning, stacklevel=2)
+
 class Base(models.Model):
     # Last Lookup JSON
     _graph = JSONField(blank=True, null=True)

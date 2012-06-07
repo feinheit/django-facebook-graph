@@ -2,6 +2,9 @@
 A toolset to use facebooks graph api with django
 ================================================
 
+This branch has been deprecated. Go check out the 'structured' branch.
+----------------------------------------------------------------------
+
 Features
 ========
 
