@@ -1,5 +1,6 @@
 import logging
 import urlparse
+
 from django.utils.datetime_safe import datetime
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ from facebook.graph import GraphAPIError
 from facebook.modules.profile.application.models import Request as AppRequest
 
 
-class OAuth2ForCanvasMiddleware(object):
+class SignedRequestMiddleware(object):
     def process_request(self, request):
         """
         Writes the signed_request into the Session
@@ -46,13 +47,15 @@ class OAuth2ForCanvasMiddleware(object):
         if 'access_token' in request.GET:
             fb.store_token(request.GET.get('access_token'))
 
-        # default POST/GET request from facebook with a signed request
+        # default POST request from facebook with a signed request
         if 'signed_request' in request.POST:
             try:
                 parsed_request = parseSignedRequest(request.POST['signed_request'], application['SECRET'])
             except ValueError:
                 return HttpResponseForbidden()
             logger.debug(u'got signed_request from facebook: %s' % parsed_request)
+            # Make sure csrfViewMiddleware lets this pass:
+            setattr(request, 'csrf_processing_done', True)
             if 'user' in parsed_request:
                 language = parsed_request['user']['locale']
                 logger.debug('language: %s' %language)
@@ -97,9 +100,13 @@ class OAuth2ForCanvasMiddleware(object):
         return response
 
 
-class SignedRequestMiddleware(OAuth2ForCanvasMiddleware):
-    #  experimental new name
-    pass
+class OAuth2ForCanvasMiddleware(SignedRequestMiddleware):
+    #  deprecated old name
+    def __init__(self, *args, **kwargs):
+        import warnings
+        warnings.warn('The name OAuth2ForCanvasMiddleware is deprecated. Use SignedRequestMiddleware instead',
+            DeprecationWarning, stacklevel=2)
+        super(OAuth2ForCanvasMiddleware, self).__init__(*args, **kwargs)
 
 
 class Redirect2AppDataMiddleware(object):

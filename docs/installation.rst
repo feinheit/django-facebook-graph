@@ -30,15 +30,22 @@ The ``SignedRequestMiddleware`` is the main middleware that stores the signed
 request in a special session object and allows your app to access it. Most
 of the framework expects this middleware to be installed to function correctly.
 
-Because Facebook calls your page initially with POST, you need a custom csrf middleware
-that lets facebook pass.
+Because Facebook calls your page initially with POST, you need to pay attention
+to put the ``SignedRequestMiddleware`` before the ``CsrfViewMiddleware`` but after the
+``SessionMiddleware``.
+
+The ``FakeSessionCookieMiddleware`` reads the session key from request.GET. This is
+necessary for Safari 5.0.1 (OSX Leopard) since that browser does not support sessions in
+iFrames. It comes with a template tag, too.
 
 The ``AppRequestMiddleware`` adds some tools to help dealing with app requests::
 
     MIDDLEWARE_CLASSES = (
-        'facebook.csrf.CsrfViewMiddleware',
-        <other middlewares>,
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'facebook.middleware.FakeSessionCookieMiddleware', # for Safari 5.0.1
         'facebook.middleware.SignedRequestMiddleware',
+        'django.middleware.csrf.CsrfViewMiddleware',
+        <other middlewares>,
         'facebook.middleware.AppRequestMiddleware', # optional.
     )
 
