@@ -18,6 +18,7 @@ Contents:
    reference
    examples
    feincms
+   release_notes
 
 
 Indices and tables
