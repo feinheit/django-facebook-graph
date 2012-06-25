@@ -14,6 +14,11 @@ logger = logging.getLogger(__name__)
 
 CSRF_KEY_LENGTH = 32
 
+import warnings
+warnings.warn('facebook.csrf.CsrfViewMiddleware is no longer necessary. '
+              'Just make sure the SignedRequestMiddleware gets called before the '
+              'standard django CsrfViewMiddleware.', DeprecationWarning, stacklevel=2)
+
 # CSRF view middleware changed significantly in Django 1.4
 
 if django.VERSION[0]==1 and django.VERSION[1] >= 4:

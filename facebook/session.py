@@ -100,8 +100,12 @@ class FBSession(SessionBase):
             self.access_token = token
             if not expires:
                 expires=datetime.now() + timedelta(hours=1)
-            self.token_expires = expires
-    
+            # Check if there is already a longer lasting token:
+            if isinstance(self.token_expires, datetime) and self.token_expires > expires:
+                pass
+            else:
+                self.token_expires = expires
+
     def _clear_token(self):
         self.access_token = None
         self.user_id = None

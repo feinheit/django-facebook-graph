@@ -1,10 +1,11 @@
 #coding=utf-8
-
-from facebook.models import User
-from models import Score
-
 """ Views for game-related task such as getting and settings scores and achievments. """
-from facebook.utils import get_static_graph
+
+from facebook.modules.profile.user.models import User
+from facebook.modules.profile.application.utils import get_app_dict
+from .models import Score
+
+from facebook.graph import get_static_graph
 
 def get_user_score(user_id, graph):
     """If the user has granted your app with the user_games_activity permission then 
