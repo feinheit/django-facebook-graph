@@ -5,6 +5,9 @@ from facebook.fields import JSONField
 from facebook.modules.base import Base
 from facebook.modules.profile.user.models import User
 
+import logging
+logger = logging.getLogger(__name__)
+
 class Score(Base):
     """ The score object stores a game score for a user. It is automatically
         posted in the user's activity feed.
@@ -23,9 +26,28 @@ class Score(Base):
     class Facebook:
         access_token_type = 'app'
         type = 'score'
+        publish = 'scores'
 
     def __unicode__(self):
         return u'%s, %s' % (self._user, self._score)
+
+    def save(self,  graph=None, facebook=True, *args, **kwargs):
+        super(Score, self).save(*args, **kwargs)
+
+        if facebook:
+            if self._score < 0:
+                raise AttributeError, 'The score must be an integer >= 0.'
+            response = graph.put_object(parent_object=str(self._user.id),
+                                connection_name=self.Facebook.publish,
+                                score=self._score)
+            logger.debug(response)
+            return response
+
+
+    def delete(self, app_name=None, *args, **kwargs):
+        graph = get_static_graph(app_name=app_name)
+        graph.request('%s/scores' % self.user.id, post_args={'method': 'delete'})
+        super(Score, self).delete(*args, **kwargs)
 
 
 class Achievement(Base):

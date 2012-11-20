@@ -40,12 +40,12 @@ def set_user_score(user_id, score, app_name=None, facebook=True):
         user, created = User.objects.get_or_create(id=user_id)
         if created:
             user.get_from_facebook(save=True, graph=graph)
-    obj, created = Score.objects.get_or_create(user_id=user_id, defaults={'score':0})
-    if not created and int(score) < obj.score:
+    obj, created = Score.objects.get_or_create(_user_id=user_id, defaults={'_score':0})
+    if not created and int(score) < obj._score:
         return 'score lower than current score. Not updated.'
     else:
-        obj.score = int(score)
-        obj.user = user
+        obj._score = int(score)
+        obj._user = user
         response = obj.save(graph=graph)
         return response
     
