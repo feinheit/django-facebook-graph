@@ -100,6 +100,12 @@ class Base(models.Model):
         self._graph = json.dumps(response, cls=DjangoJSONEncoder)
         for prop, (val) in response.items():
             field = '_%s' % prop
+            if prop == 'application':
+                try:
+                    self._application_id = int(val['id'])
+                except (AttributeError, KeyError):
+                    pass
+                continue
             if prop != 'id' and hasattr(self, field):
                 fieldclass = self._meta.get_field(field)
                 if isinstance(fieldclass, models.DateTimeField):
