@@ -31,10 +31,11 @@ class Score(Base):
     def __unicode__(self):
         return u'%s, %s' % (self._user, self._score)
 
-    def save(self,  graph=None, facebook=True, *args, **kwargs):
+    def save(self,  graph=None, *args, **kwargs):
+        """ save to facebook if graph is passed. """
         super(Score, self).save(*args, **kwargs)
 
-        if facebook:
+        if graph:
             if self._score < 0:
                 raise AttributeError, 'The score must be an integer >= 0.'
             response = graph.put_object(parent_object=str(self._user.id),
