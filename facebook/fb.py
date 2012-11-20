@@ -22,4 +22,7 @@ if 'facebook.modules.connections.post' in settings.INSTALLED_APPS:
 
 if 'facebook.modules.connections.game' in settings.INSTALLED_APPS:
     from facebook.modules.connections.game.models import Score, Achievement
+    from facebook.modules.connections.game.views import (get_user_score,
+            get_user_and_friends_scores, set_user_score, delete_user_score,
+            delete_all_scores)
 
