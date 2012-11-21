@@ -151,7 +151,13 @@ class AppRequestMiddleware(object):
             request_ids = request_ids.split(',')
             logger.debug('Got app request ids: %s' % request_ids)
             for id in request_ids:
-                r, created = AppRequest.objects.get_or_create(id=int(id))
+                if fb.user_id:
+                    r, created = AppRequest.objects.get_or_create(
+                        id="%s_%s" % (id, fb.user_id))
+                else:
+                    r = AppRequest(id=id)
+                    created = True
+
                 if settings.DEBUG and created:
                     try:
                         graph = get_graph(request)
