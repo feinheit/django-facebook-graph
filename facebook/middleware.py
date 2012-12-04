@@ -43,9 +43,6 @@ class SignedRequestMiddleware(object):
             if application:
                 application = get_app_dict(page_app)
 
-        # Temporary OAuth2.0 fix due to missing access_token in cookie sr:
-        if 'access_token' in request.GET:
-            fb.store_token(request.GET.get('access_token'))
 
         # default POST request from facebook with a signed request
         if 'signed_request' in request.POST:
