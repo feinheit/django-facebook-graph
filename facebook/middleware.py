@@ -1,5 +1,6 @@
 import logging
 import urlparse
+from django.middleware.csrf import _get_new_csrf_key
 
 from django.utils.datetime_safe import datetime
 logger = logging.getLogger(__name__)
@@ -53,6 +54,10 @@ class SignedRequestMiddleware(object):
             logger.debug(u'got signed_request from facebook: %s' % parsed_request)
             # Make sure csrfViewMiddleware lets this pass:
             setattr(request, 'csrf_processing_done', True)
+            # but still set a cookie for later use
+            request.META["CSRF_COOKIE"] = _get_new_csrf_key()
+            cookie_is_new = True
+
             if 'user' in parsed_request:
                 language = parsed_request['user']['locale']
                 logger.debug('language: %s' %language)
