@@ -46,13 +46,11 @@ class Request(Base):
             return u'%s' % self.id
 
     def save(self, *args, **kwargs):
-        if not self._to and '_' in self.id:
-            request_id = self.id.split('_')
-            to, created = User.objects.get_or_create(id=int(request_id[1]))
-            self._to = to
-        elif not '_' in self.id and self._to:
-            self.id = "%s_%s" % (self.id, self._to)
+        # _to should not be stored in the database because it is ambiguous
+        to = self._to
+        self._to = None
         super(Request, self).save(*args, **kwargs)
+        self._to = to
 
     def delete(self, facebook=True, graph=None, to=None, app_name=None, *args, **kwargs):
         """
