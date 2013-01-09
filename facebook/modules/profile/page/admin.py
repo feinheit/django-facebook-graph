@@ -3,6 +3,7 @@ from django.utils.translation import ugettext_lazy as _
 from facebook.graph import get_graph, GraphAPIError
 
 import logging, datetime
+from django.utils import timezone
 from facebook.modules.profile.application.utils import get_app_dict
 from facebook.utils import do_exchange_token
 
@@ -15,7 +16,7 @@ from .models import Page
 
 class PageAdmin(ProfileAdmin):
     def has_access(self, obj):
-        if obj.updated + datetime.timedelta(days=60) < datetime.datetime.now():
+        if obj.updated + datetime.timedelta(days=60) < timezone.now():
             # Token expired unless the page still has a never-expiring token.
             return False
         return not (obj._access_token == None or obj._access_token == '')
