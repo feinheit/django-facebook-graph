@@ -1,5 +1,7 @@
 from django import template
 from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils.text import normalize_newlines
 from django.utils.translation import ugettext as _
 register = template.Library()
 from django.utils.safestring import mark_safe
@@ -11,7 +13,7 @@ VERBOSE_WEEKDAYS = (_('Mon'), _('Tue'), _('Wed'),
 
 WEEKDAYS = getattr(settings, 'WEEKDAYS', VERBOSE_WEEKDAYS)
 
-@register.inclusion_tag('facebook/opening_hours.html')
+@register.simple_tag()
 def opening_hours(hours):
     """
     This tag prettifies the opening hours field for facebook places
@@ -20,7 +22,7 @@ def opening_hours(hours):
     from_day = WEEKDAYS[0]
     to_day = WEEKDAYS[0]
     o1, o2, c1, c2 = None, None, None, None
-    result = u''
+    result = []
 
     for i in range(len(WEEK)):
         no1 = hours.get('%s_1_open' % WEEK[i], None)
@@ -42,18 +44,21 @@ def opening_hours(hours):
         else:
             if from_day == to_day:
                 if o2:
-                    result += u'%s: %s-%s %s-%s<br />' % (from_day, o1, c1, o2, c2)
+                    result.append(((from_day, None),(o1,c1),(o2,c2)))
                 else:
-                    result += u'%s: %s-%s<br />' % (from_day, o1, c1)
+                    result.append(((from_day, None),(o1,c1), None))
             else:
                 if o2:
-                    result += u'%s-%s: %s-%s %s-%s<br />' % (from_day, to_day, o1, c1, o2, c2)
+                    result.append(((from_day, to_day),(o1,c1),(o2,c2)))
                 else:
-                    result += u'%s-%s: %s-%s<br />' % (from_day, to_day, o1, c1)
+                    result.append(((from_day, to_day),(o1,c1), None))
             from_day = WEEKDAYS[i]
             to_day = WEEKDAYS[i]
             o1, o2, c1, c2 = no1, no2, nc1, nc2
 
+    context = {'hours': result }
+    response = render_to_string('facebook/opening_hours.html', context)
+    response = normalize_newlines(response).replace('\n','')
 
-    context = {'hours': mark_safe(result) }
-    return context
+    return mark_safe(response)
+

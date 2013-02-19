@@ -1,1 +1,16 @@
-<div class="opening_hours">{{ hours }}</div>
+<div class="opening_hours">
+    <table>
+    <tbody>
+    {% for line in hours %}
+      {% with days=line.0 morning=line.1 afternoon=line.2 %}
+      <tr>
+        <th class="th_opening_hours">{{ days.0 }}{% if days.1 %}-{{ days.1 }}{% endif %}</th>
+        <td class="td_opening_hours">{{ morning.0 }}-{{ morning.1 }}
+            {% if afternoon %}| {{ afternoon.0 }}-{{ afternoon.1 }}{% endif %}
+        </td>
+      </tr>
+      {% endwith %}
+    {% endfor %}
+    </tbody>
+    </table>
+</div>
