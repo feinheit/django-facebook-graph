@@ -8,173 +8,481 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-04-15 11:30+0200\n"
+"POT-Creation-Date: 2013-02-19 17:53+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: \n"
 
-#: contents.py:28
-msgid "Like Button"
+#: views.py:118
+msgid "Preview deauthorization callback"
 msgstr ""
 
-#: contents.py:29
-msgid "Like Box"
-msgstr ""
-
-#: contents.py:30
-msgid "Newsletter"
-msgstr ""
-
-#: contents.py:31
-msgid "Add to page"
-msgstr ""
-
-#: contents.py:32
-msgid "Upcoming Events"
-msgstr ""
-
-#: contents.py:65
-msgid ""
-"If you want to add a \"Like Box\", you have to specify the URL of the "
-"Facebook Page to like."
-msgstr ""
-
-#: contents.py:123
-msgid "Plugin"
-msgstr ""
-
-#: contents.py:134
-msgid "dimension"
-msgstr ""
-
-#: contents.py:154
-msgid "Facebook Social Plugin"
-msgstr ""
-
-#: contents.py:155
-msgid "Facebook Social Plugins"
-msgstr ""
-
-#: models.py:274
-msgid "The ID is the facebook page ID"
-msgstr ""
-
-#: models.py:277
-msgid "Cached name of the page"
-msgstr ""
-
-#: models.py:278
-msgid "Cached picture of the page"
-msgstr ""
-
-#: models.py:279
-msgid "Cached fancount of the page"
-msgstr ""
-
-#: models.py:308
-msgid "The applications API Key"
-msgstr ""
-
-#: models.py:309
-msgid "The applications Secret"
-msgstr ""
-
-#: models.py:333
-msgid "Active"
-msgstr ""
-
-#: models.py:334
-msgid "The ID is the facebook event ID"
-msgstr ""
-
-#: feincms/extensions.py:8
+#: feincms/extensions.py:21
 msgid ""
 "Link this page to a facebook app. Used for Facebook Tabs, to determine the "
 "underlaying FB App"
 msgstr ""
 
-#: feincms/extensions.py:9
+#: feincms/extensions.py:22
 msgid ""
 "Link this page to a facebook page. Used for Facebook Tabs, to determine the "
 "underlaying FB Page and prevent the Tab to be added to a random foreign page"
 msgstr ""
 
-#: feincms/extensions.py:11
+#: feincms/extensions.py:24
 msgid "Facebook Application"
 msgstr ""
 
-#: feincms/extensions.py:25
+#: feincms/extensions.py:38
 msgid "both"
 msgstr ""
 
-#: feincms/extensions.py:26
+#: feincms/extensions.py:39
 msgid "true"
 msgstr ""
 
-#: feincms/extensions.py:27
+#: feincms/extensions.py:40
 msgid "false"
 msgstr ""
 
-#: feincms/extensions.py:33
+#: feincms/extensions.py:46
 msgid "render like"
 msgstr ""
 
-#: feincms/extensions.py:33
+#: feincms/extensions.py:46
 msgid "Render this content only, if requesting user likes the page."
 msgstr ""
 
-#: feincms/extensions.py:34
+#: feincms/extensions.py:47
 msgid "app installed"
 msgstr ""
 
-#: feincms/extensions.py:34
+#: feincms/extensions.py:47
 msgid ""
 "Render this content only, if requesting user has installed the corresponding "
 "app."
 msgstr ""
 
-#: templates/content/facebook/Addtab.html:3
-#: templates/content/facebook/addtab.html:4
-msgid "Binde diesen Tab auf deiner FB-Page ein"
+#: modules/base.py:268
+msgid "Delete selected objects (also on Facebook)"
 msgstr ""
 
-#: templates/content/facebook/events.html:12
-msgid "I'm attending"
+#: modules/connections/game/models.py:17 modules/connections/game/models.py:22
+msgid "Score"
 msgstr ""
 
-#: templates/content/facebook/events.html:13
-msgid "Maybe"
+#: modules/connections/game/models.py:18
+msgid "Application"
 msgstr ""
 
-#: templates/content/facebook/events.html:14
-msgid "No"
+#: modules/connections/game/models.py:23
+msgid "Scores"
 msgstr ""
 
-#: templates/content/facebook/events.html:17
-msgid "Event URL:"
+#: modules/connections/game/models.py:59
+msgid "Points"
 msgstr ""
 
-#: templates/content/facebook/events.html:18
-msgid "Share"
+#: modules/connections/game/models.py:62
+msgid "Title"
 msgstr ""
 
-#: templates/content/facebook/newsletter.html:4
-msgid ""
-"\n"
-"    Bleibe per Email am Ball und erfahre die neusten entwicklungen unserer "
-"Bewegung. Bleibe aktiv und informiere dich. Es lohnt sich.\n"
-"    Der Newsletter wird alle zwei Wochen versendet.\n"
-"    "
+#: modules/connections/game/models.py:63
+msgid "url"
 msgstr ""
 
-#: templates/content/facebook/newsletter.html:8
-msgid "Register for our Newsletter"
+#: modules/connections/game/models.py:64
+msgid "Description"
 msgstr ""
 
-#: templates/content/facebook/thanks.html:21
-msgid "Back"
+#: modules/connections/game/models.py:65
+msgid "image"
+msgstr ""
+
+#: modules/connections/game/models.py:66
+msgid "data"
+msgstr ""
+
+#: modules/connections/game/models.py:67
+msgid "updated_time"
+msgstr ""
+
+#: modules/connections/game/models.py:68
+msgid "context"
+msgstr ""
+
+#: modules/connections/game/models.py:71
+msgid "Achievement"
+msgstr ""
+
+#: modules/connections/game/models.py:72
+msgid "Achievements"
+msgstr ""
+
+#: modules/connections/likes/models.py:20
+#: modules/connections/likes/models.py:21 modules/profile/page/admin.py:46
+msgid "Name"
+msgstr ""
+
+#: modules/connections/likes/models.py:25
+msgid "Liked page id"
+msgstr ""
+
+#: modules/connections/likes/models.py:28
+msgid "Post id"
+msgstr ""
+
+#: modules/connections/likes/models.py:32
+msgid "Profile Like"
+msgstr ""
+
+#: modules/connections/likes/models.py:33
+msgid "Profile Likes"
+msgstr ""
+
+#: modules/connections/likes/models.py:62
+msgid "URL"
+msgstr ""
+
+#: modules/connections/likes/models.py:65
+msgid "URL Like"
+msgstr ""
+
+#: modules/connections/likes/models.py:66
+msgid "URL Likes"
+msgstr ""
+
+#: modules/connections/milestone/models.py:22
+msgid "Milestone"
+msgstr ""
+
+#: modules/connections/milestone/models.py:23
+msgid "Milestones"
+msgstr ""
+
+#: modules/connections/post/models.py:12
+msgid "Status message"
+msgstr ""
+
+#: modules/connections/post/models.py:13
+msgid "Link"
+msgstr ""
+
+#: modules/connections/post/models.py:14
+msgid "Photo"
+msgstr ""
+
+#: modules/connections/post/models.py:15
+msgid "Video"
+msgstr ""
+
+#: modules/connections/post/models.py:16
+msgid "Note"
+msgstr ""
+
+#: modules/connections/post/models.py:19
+msgid "id"
+msgstr ""
+
+#: modules/connections/post/models.py:20
+msgid "from"
+msgstr ""
+
+#: modules/connections/post/models.py:23
+msgid "to"
+msgstr ""
+
+#: modules/connections/post/models.py:24 modules/media/models.py:29
+msgid "message"
+msgstr ""
+
+#: modules/connections/post/models.py:25
+msgid "message_tags"
+msgstr ""
+
+#: modules/connections/post/models.py:26
+msgid "story"
+msgstr ""
+
+#: modules/connections/post/models.py:28
+msgid "picture url"
+msgstr ""
+
+#: modules/connections/post/models.py:29
+msgid "link url"
+msgstr ""
+
+#: modules/connections/post/models.py:30
+msgid "link name"
+msgstr ""
+
+#: modules/connections/post/models.py:31
+msgid "link caption"
+msgstr ""
+
+#: modules/connections/post/models.py:32
+msgid "link description"
+msgstr ""
+
+#: modules/connections/post/models.py:33
+msgid "movie source"
+msgstr ""
+
+#: modules/connections/post/models.py:34
+msgid "movie properties"
+msgstr ""
+
+#: modules/connections/post/models.py:35 modules/media/models.py:36
+msgid "icon"
+msgstr ""
+
+#: modules/connections/post/models.py:36
+msgid "actions"
+msgstr ""
+
+#: modules/connections/post/models.py:37
+msgid "privacy"
+msgstr ""
+
+#: modules/connections/post/models.py:38
+msgid "type"
+msgstr ""
+
+#: modules/connections/post/models.py:39
+msgid "likes"
+msgstr ""
+
+#: modules/connections/post/models.py:40
+msgid "place"
+msgstr ""
+
+#: modules/connections/post/models.py:41
+msgid "story tags"
+msgstr ""
+
+#: modules/connections/post/models.py:42
+msgid "comments"
+msgstr ""
+
+#: modules/connections/post/models.py:43
+msgid "object id"
+msgstr ""
+
+#: modules/connections/post/models.py:44
+msgid "application"
+msgstr ""
+
+#: modules/connections/post/models.py:45
+msgid "created time"
+msgstr ""
+
+#: modules/connections/post/models.py:46
+msgid "updated time"
+msgstr ""
+
+#: modules/connections/post/models.py:47
+msgid "is published"
+msgstr ""
+
+#: modules/connections/post/models.py:136
+msgid "Post"
+msgstr ""
+
+#: modules/connections/post/models.py:137
+msgid "Posts"
+msgstr ""
+
+#: modules/media/models.py:12
+msgid "x"
+msgstr ""
+
+#: modules/media/models.py:14
+msgid "y"
+msgstr ""
+
+#: modules/media/models.py:18
+msgid "Tag"
+msgstr ""
+
+#: modules/media/models.py:19
+msgid "Tags"
+msgstr ""
+
+#: modules/media/models.py:38
+msgid "picture"
+msgstr ""
+
+#: modules/media/models.py:40
+msgid "source"
+msgstr ""
+
+#: modules/media/models.py:42
+msgid "height"
+msgstr ""
+
+#: modules/media/models.py:44
+msgid "width"
+msgstr ""
+
+#: modules/media/models.py:46
+msgid "link"
+msgstr ""
+
+#: modules/media/models.py:48
+msgid "position"
+msgstr ""
+
+#: modules/profile/models.py:12
+msgid "The ID is the facebook page ID"
+msgstr ""
+
+#: modules/profile/models.py:16
+msgid "Cached picture of the page"
+msgstr ""
+
+#: modules/profile/models.py:55
+msgid "Picture"
+msgstr ""
+
+#: modules/profile/event/models.py:100
+msgid "attending"
+msgstr ""
+
+#: modules/profile/event/models.py:101
+msgid "unsure"
+msgstr ""
+
+#: modules/profile/event/models.py:102
+msgid "declined"
+msgstr ""
+
+#: modules/profile/event/models.py:103
+msgid "not_replied"
+msgstr ""
+
+#: modules/profile/page/admin.py:23
+msgid "Access Token"
+msgstr ""
+
+#: modules/profile/page/admin.py:31
+#, python-format
+msgid "%s days"
+msgstr ""
+
+#: modules/profile/page/admin.py:33
+msgid "<span style=\"color:red;font-weight:bold;\">expired</span>"
+msgstr ""
+
+#: modules/profile/page/admin.py:35
+#, python-format
+msgid "<span style=\"color:orange;font-weight:bold;\">%s days</span>"
+msgstr ""
+
+#: modules/profile/page/admin.py:37
+msgid "expires in"
+msgstr ""
+
+#: modules/profile/page/admin.py:91
+msgid "Get an access token for the selected page(s)"
+msgstr ""
+
+#: modules/profile/page/models.py:14
+msgid "Cached fancount of the page"
+msgstr ""
+
+#: modules/profile/page/models.py:17
+msgid "category"
+msgstr ""
+
+#: modules/profile/page/models.py:18
+msgid "location"
+msgstr ""
+
+#: modules/profile/page/models.py:19
+msgid "phone"
+msgstr ""
+
+#: modules/profile/page/models.py:20
+msgid "checkins"
+msgstr ""
+
+#: modules/profile/page/models.py:21
+msgid "website"
+msgstr ""
+
+#: modules/profile/page/models.py:22
+msgid "talking about count"
+msgstr ""
+
+#: modules/profile/page/models.py:23
+msgid "opening hours"
+msgstr ""
+
+#: modules/profile/page/models.py:27
+msgid "Page"
+msgstr ""
+
+#: modules/profile/page/models.py:28
+msgid "Pages"
+msgstr ""
+
+#: modules/profile/user/models.py:114
+msgid "Belongs to"
+msgstr ""
+
+#: modules/profile/user/models.py:114
+msgid "The app the testuser has been created with."
+msgstr ""
+
+#: modules/profile/user/models.py:137
+msgid "Test user"
+msgstr ""
+
+#: modules/profile/user/models.py:138
+msgid "Test users"
+msgstr ""
+
+#: templates/facebook/internalredirecter.html:10
+#: templates/facebook/redirecter.html:10 templates/registration/logout.html:10
+msgid "You are redirected automatically. If it doesnt work, click me"
+msgstr ""
+
+#: templates/facebook/includes/testuser_choice.html:15
+msgid "choose a testuser"
+msgstr ""
+
+#: templates/facebook/includes/testuser_choice.html:19
+msgid "No testusers available"
+msgstr ""
+
+#: templatetags/fb_page_tags.py:10
+msgid "Mon"
+msgstr ""
+
+#: templatetags/fb_page_tags.py:10
+msgid "Tue"
+msgstr ""
+
+#: templatetags/fb_page_tags.py:10
+msgid "Wed"
+msgstr ""
+
+#: templatetags/fb_page_tags.py:11
+msgid "Thu"
+msgstr ""
+
+#: templatetags/fb_page_tags.py:11
+msgid "Fri"
+msgstr ""
+
+#: templatetags/fb_page_tags.py:11
+msgid "Sat"
+msgstr ""
+
+#: templatetags/fb_page_tags.py:11
+msgid "Sun"
 msgstr ""
