@@ -20,6 +20,7 @@ class PageBase(Profile):
     _checkins = models.IntegerField(_('checkins'), blank=True, null=True)
     _website = models.URLField(_('website'), blank=True, null=True)
     _talking_about_count = models.PositiveIntegerField(_('talking about count'), blank=True, null=True)
+    _hours = JSONField(_('opening hours'), blank=True, null=True)
 
     class Meta(Profile.Meta):
         abstract = True
