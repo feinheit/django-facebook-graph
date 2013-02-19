@@ -2,7 +2,7 @@ from django import template
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.text import normalize_newlines
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 register = template.Library()
 from django.utils.safestring import mark_safe
 
